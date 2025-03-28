@@ -1,0 +1,10 @@
+{
+  "name": "A-framework",
+  "uuid": "997e4a3e-db77-487c-8737-e99517ea765b",
+  "creator": {
+    "version": "3.8.3"
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.2.2"
+  }
+}
