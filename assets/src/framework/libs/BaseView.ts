@@ -6,8 +6,23 @@ type IView = starmaker.core.IView;
 type IModel = starmaker.core.IModel;
 type IManager = starmaker.core.IManager;
 
-export abstract class BaseCocosView extends Component implements IView {
-    abstract onOpened(args?: any): void;
+export abstract class BaseView extends Component implements IView {
+    /** @internal */
+    readonly __isIView__: boolean = true;
+    /** @internal */
+    __group__: string | undefined = undefined;
+    onEnter(args?: any): void {
+        throw new Error('Method not implemented.');
+    }
+    onExit(): void {
+        throw new Error('Method not implemented.');
+    }
+    onPause(): void {
+        throw new Error('Method not implemented.');
+    }
+    onResume(): void {
+        throw new Error('Method not implemented.');
+    }
 
     protected getManager<T extends IManager>(ctor: new () => T): T {
         // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进

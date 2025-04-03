@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 export namespace starmaker.core {
+    //#region 装饰器
     // 通过symbol实现接口标识
     const interfaceSymbols = new Map<Function, symbol>();
     export function getInterface<T extends Function>(ctor: T): symbol {
@@ -107,6 +108,7 @@ export namespace starmaker.core {
             );
         };
     }
+    //#endregion
 
     class Container {
         private ctor2ins = new Map<Function, any>();// 使用构造函数作为键
@@ -151,7 +153,10 @@ export namespace starmaker.core {
     }
 
     export interface IView {
-        onOpened(args?: any): void;
+        onEnter(args?: any): void;
+        onExit(): void;
+        onPause(): void;
+        onResume(): void;
     }
 
     // 事件管理器接口（解耦第三方库依赖）
@@ -160,6 +165,17 @@ export namespace starmaker.core {
         on(eventType: string, handler: (data?: any) => void): void;
         off(eventType: string): void;
         clear(): void;
+    }
+
+    export interface IUIManager {
+        // open<T extends IView>(viewType: new () => T, args?: any): Promise<T>;
+        // close<T extends IView>(viewortype: T | (new () => T), destory?: boolean): void;
+    }
+
+    export interface IResManager {
+        load(path: string, type: any): Promise<any>;
+        loadPrefab(path: string): Promise<any>;
+        loadSpriteFrame(path: string): Promise<any>;
     }
 
     export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {

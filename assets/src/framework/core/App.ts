@@ -1,10 +1,8 @@
 import { starmaker } from "./Core";
 const { ServiceLocator } = starmaker.core
-type IView = starmaker.core.IView;
-type IModel = starmaker.core.IModel;
-type IManager = starmaker.core.IManager;
 type ICore = starmaker.core.ICore;
 type IEventManager = starmaker.core.IEventManager;
+type IUIManager = starmaker.core.IUIManager;
 
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式
@@ -19,7 +17,9 @@ export class app {
     }
     static readonly log: any = null;
     static readonly config: any = null;
-    static readonly gui: any = null;
+    static get gui(): IUIManager{
+        return ServiceLocator.getService<IUIManager>('UIManager')
+    }
     static readonly http: any = null;
     static readonly socket: any = null;
     static readonly res: any = null;
