@@ -1,4 +1,3 @@
-import { UIManager } from "../libs/UIManager";
 import { starmaker } from "./Core";
 const { ServiceLocator } = starmaker.core
 type ICore = starmaker.core.ICore;
@@ -18,8 +17,8 @@ export class app {
     }
     static readonly log: any = null;
     static readonly config: any = null;
-    static get gui(): UIManager{
-        return ServiceLocator.getService<UIManager>('UIManager')
+    static get gui(): IUIManager{
+        return ServiceLocator.getService<IUIManager>('UIManager')
     }
     static readonly http: any = null;
     static readonly socket: any = null;

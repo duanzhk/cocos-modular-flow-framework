@@ -168,8 +168,12 @@ export namespace starmaker.core {
     }
 
     export interface IUIManager {
-        // open<T extends IView>(viewType: new () => T, args?: any): Promise<T>;
-        // close<T extends IView>(viewortype: T | (new () => T), destory?: boolean): void;
+        open<T extends IView>(viewType: new () => T, args?: any): Promise<T>;
+        close<T extends IView>(viewortype: T | (new () => T), destory?: boolean): void;
+        openAndPush<T extends IView>(viewType: new () => T, group: string, args?: any): Promise<T>
+        closeAndPop(group: string, destroy?: boolean): void
+        getTopView(): IView | undefined
+        clearStack(group: string, destroy?: boolean): void
     }
 
     export interface IResManager {

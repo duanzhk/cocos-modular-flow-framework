@@ -2,8 +2,6 @@ import { Component, director, input, instantiate, Node, Input, EventTouch, Widge
 import { starmaker } from "../core/Core";
 const { ServiceLocator } = starmaker.core
 
-type IView = starmaker.core.IView & Component
-
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
     widget.isAlignLeft = widget.isAlignRight = widget.isAlignTop = widget.isAlignBottom = true;
@@ -49,7 +47,7 @@ const UIMask = new Proxy({} as Node, {
         }
         const value = Reflect.get(_uiMask!, prop);
         // 如果是放的话，可能要绑定原始实例上下文
-        return typeof value === 'function' ? value.bind(_uiMask) : value; 
+        return typeof value === 'function' ? value.bind(_uiMask) : value;
         // return Reflect.get(_uiMask, prop)
     },
     set(target: Node, p: string | symbol, newValue: any, receiver: any): boolean {
@@ -61,11 +59,45 @@ const UIMask = new Proxy({} as Node, {
     }
 })
 
-export class UIManager implements starmaker.core.IUIManager {
+type IView = starmaker.core.IView
+type ICocosView = IView & Component
+// 接口隔离，实现具体的CcocosUIManager
+abstract class CcocosUIManager implements starmaker.core.IUIManager {
+    getTopView(): IView | undefined {
+        return this.internalGetTopView();
+    }
+    open<T extends IView>(viewType: new () => T, args?: any): Promise<T> {
+        let vt = viewType as unknown as new () => ICocosView;
+        return this.internalOpen(vt, args) as unknown as Promise<T>;
+    }
+    close<T extends IView>(viewortype: T | (new () => T), destory?: boolean): void {
+        this.internalClose(viewortype as any, destory);
+    }
+    openAndPush<T extends IView>(viewType: new () => T, group: string, args?: any): Promise<T> {
+        let vt = viewType as unknown as new () => ICocosView;
+        return this.internalOpenAndPush(vt, group, args) as unknown as Promise<T>;
+    }
+    closeAndPop(group: string, destroy?: boolean): void {
+        this.internalCloseAndPop(group, destroy);
+    }
+    clearStack(group: string, destroy?: boolean): void {
+        this.internalClearStack(group, destroy);
+    }
+
+    protected abstract internalOpen<T extends ICocosView>(viewType: new () => T, args?: any): Promise<T>
+    protected abstract internalClose<T extends ICocosView>(viewortype: T | (new () => T), destory?: boolean): void
+    protected abstract internalOpenAndPush<T extends ICocosView>(viewType: new () => T, group: string, args?: any): Promise<T>
+    protected abstract internalCloseAndPop(group: string, destroy?: boolean): void;
+    protected abstract internalClearStack(group: string, destroy?: boolean): void
+    protected abstract internalGetTopView(): ICocosView | undefined
+}
+
+export class UIManager extends CcocosUIManager {
     private _cache: Map<string, Node> = new Map();
-    private _groupStacks: Map<string, IView[]> = new Map();
+    private _groupStacks: Map<string, ICocosView[]> = new Map();
 
     public constructor() {
+        super()
         UIMask.on(Node.EventType.TOUCH_END, (event: EventTouch) => {
             let view = this.getTopView()!
             if ('__group__' in view) {
@@ -78,7 +110,7 @@ export class UIManager implements starmaker.core.IUIManager {
         });
     }
 
-    private _getPrefabPath<T extends IView>(viewType: new () => T): string {
+    private _getPrefabPath<T extends ICocosView>(viewType: new () => T): string {
         let prototype = Object.getPrototypeOf(viewType);
         // 沿着原型链向上查找直到找到定义__path__的基类。注意通过类只能找到静态属性。
         while (prototype) {
@@ -116,7 +148,7 @@ export class UIManager implements starmaker.core.IUIManager {
         }
     }
 
-    private async _load<T extends IView>(viewType: new () => T, args?: any): Promise<T> {
+    private async _load<T extends ICocosView>(viewType: new () => T, args?: any): Promise<T> {
         let target: Node
         if (this._cache.has(viewType.name)) {
             target = this._cache.get(viewType.name)!;
@@ -130,7 +162,7 @@ export class UIManager implements starmaker.core.IUIManager {
         return target.getComponent<T>(viewType)!
     }
 
-    private _remove<T extends IView>(viewortype: T | (new () => T), destroy?: boolean): void {
+    private _remove<T extends ICocosView>(viewortype: T | (new () => T), destroy?: boolean): void {
         if (typeof viewortype == 'function') {
             const cached = this._cache.get(viewortype.name);
             if (!cached) {
@@ -152,7 +184,7 @@ export class UIManager implements starmaker.core.IUIManager {
         }
     }
 
-    public getTopView(): IView | undefined {
+    protected internalGetTopView(): ICocosView | undefined {
         let target = UIRoot.children.reverse()[0]
         if (!target) {
             return undefined;
@@ -162,7 +194,7 @@ export class UIManager implements starmaker.core.IUIManager {
             const comp = comps[i];
             if ("__isIView__" in comp) {
                 if (comp.__isIView__) {
-                    return comp as unknown as IView;
+                    return comp as unknown as ICocosView;
                 }
             }
         }
@@ -170,7 +202,7 @@ export class UIManager implements starmaker.core.IUIManager {
         return undefined;
     }
 
-    async open<T extends IView>(viewType: new () => T, args?: any): Promise<T> {
+    protected async internalOpen<T extends ICocosView>(viewType: new () => T, args?: any): Promise<T> {
         this._blockInput(true);
         let view = await this._load(viewType, args);
         addChild(view.node)
@@ -180,12 +212,12 @@ export class UIManager implements starmaker.core.IUIManager {
         return view;
     }
 
-    close<T extends IView>(viewortype: T | (new () => T), destroy?: boolean): void {
+    protected internalClose<T extends ICocosView>(viewortype: T | (new () => T), destroy?: boolean): void {
         this._remove(viewortype, destroy);
         this._adjustMaskLayer();
     }
 
-    async openAndPush<T extends IView>(viewType: new () => T, group: string, args?: any): Promise<T> {
+    protected async internalOpenAndPush<T extends ICocosView>(viewType: new () => T, group: string, args?: any): Promise<T> {
         this._blockInput(true);
         let view = await this._load(viewType, args);
         let stack = this._groupStacks.get(group) || []
@@ -206,7 +238,7 @@ export class UIManager implements starmaker.core.IUIManager {
         return view;
     }
 
-    closeAndPop(group: string, destroy?: boolean): void {
+    protected internalCloseAndPop(group: string, destroy?: boolean): void {
         let stack = this._groupStacks.get(group)
         if (!stack) {
             console.warn(`No stack found for group ${group}`);
@@ -225,7 +257,7 @@ export class UIManager implements starmaker.core.IUIManager {
         this._adjustMaskLayer();
     }
 
-    clearStack(group: string, destroy?: boolean): void {
+    protected internalClearStack(group: string, destroy?: boolean): void {
         let stack = this._groupStacks.get(group);
         if (!stack) {
             console.warn(`No stack found for group ${group}`);
