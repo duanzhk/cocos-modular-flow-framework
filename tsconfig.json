@@ -6,5 +6,8 @@
   "compilerOptions": {
     // "strict": false
     "emitDecoratorMetadata": true, // 启用元数据反射
+    "paths": {
+      "uiexport": ["./extensions/ui-export/*"],
+    }
   }
 }

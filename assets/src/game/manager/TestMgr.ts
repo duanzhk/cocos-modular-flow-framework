@@ -1,4 +1,4 @@
-import { starmaker } from "../framework/core/Core";
+import { starmaker } from "../../framework/core/Core";
 import { IUserMgr } from "./UserMgr";
 const { injectManager, managedWithClean } = starmaker.core;
 

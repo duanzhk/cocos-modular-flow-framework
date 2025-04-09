@@ -1,4 +1,5 @@
-import { starmaker } from "../framework/core/Core";
+import { starmaker } from "../../framework/core/Core";
+
 const { managedWithClean, getInterface } = starmaker.core;
 
 @managedWithClean()

@@ -4,32 +4,60 @@ const { ServiceLocator } = starmaker.core
 
 type IView = starmaker.core.IView & Component
 
+function addWidget(node: Node) {
+    const widget = node.getComponent(Widget) || node.addComponent(Widget);
+    widget.isAlignLeft = widget.isAlignRight = widget.isAlignTop = widget.isAlignBottom = true;
+    widget.left = widget.right = widget.top = widget.bottom = 0;
+}
+
 let _uiRoot: Node | undefined
 const UIRoot = new Proxy({} as Node, {
     get(target, prop) {
         if (!_uiRoot) {
             const canvas = director.getScene()!.getChildByPath('Canvas')!;
+            director.addPersistRootNode(canvas);
             _uiRoot = new Node('__UIRoot__')
+            _uiRoot.layer = canvas.layer
             _uiRoot.setParent(canvas);
+            addWidget(_uiRoot);
         }
         return Reflect.get(_uiRoot, prop)
     }
 })
 
+function setLayer(node: Node) {
+    node.layer = UIRoot.layer;
+    node.children.forEach(child => {
+        setLayer(child);
+    });
+}
+
+function addChild(node: Node) {
+    UIRoot.addChild(node)
+    setLayer(node);
+}
+
 let _uiMask: Node | undefined
 const UIMask = new Proxy({} as Node, {
     get(target, prop) {
         if (!_uiMask) {
-            _uiMask = new Node('__Mask__');
-            UIRoot.addChild(_uiMask);
+            _uiMask = new Node('__UIMask__');
+            addChild(_uiMask);
+            addWidget(_uiMask);
             _uiMask.setPosition(0, 0);
-            const widget = _uiMask.addComponent(Widget);
-            widget.isAlignLeft = widget.isAlignRight = widget.isAlignTop = widget.isAlignBottom = true;
-            widget.left = widget.right = widget.top = widget.bottom = 0;
-            let sp = _uiMask.addComponent(Sprite);
-            sp.color.set(0, 0, 0, 0.5);
+            _uiMask.addComponent(Sprite).color.set(0, 0, 0, 0.5);
         }
-        return Reflect.get(_uiMask, prop)
+        const value = Reflect.get(_uiMask!, prop);
+        // 如果是放的话，可能要绑定原始实例上下文
+        return typeof value === 'function' ? value.bind(_uiMask) : value; 
+        // return Reflect.get(_uiMask, prop)
+    },
+    set(target: Node, p: string | symbol, newValue: any, receiver: any): boolean {
+        if (p === 'active') {
+            _uiMask!.active = newValue;
+            return true;
+        }
+        return Reflect.set(_uiMask!, p, newValue, receiver);
     }
 })
 
@@ -51,15 +79,13 @@ export class UIManager implements starmaker.core.IUIManager {
     }
 
     private _getPrefabPath<T extends IView>(viewType: new () => T): string {
-        let constructor = viewType//viewType instanceof Function ? viewType : viewType.constructor as new () => IView;
-        // 通过原型链查找基类
-        while (constructor) {
-            const parent = Object.getPrototypeOf(constructor);
-            if (parent.hasOwnProperty('prefabPath')) {
-                return parent.prefabPath as string;
+        let prototype = Object.getPrototypeOf(viewType);
+        // 沿着原型链向上查找直到找到定义__path__的基类。注意通过类只能找到静态属性。
+        while (prototype) {
+            if (prototype.hasOwnProperty('__path__')) {
+                return prototype.__path__ as string;
             }
-            if (parent === Function.prototype) break;
-            constructor = Object.getPrototypeOf(parent);
+            prototype = Object.getPrototypeOf(prototype);
         }
         throw new Error(`Prefab path not found for ${viewType.constructor.name}`);
     }
@@ -67,6 +93,11 @@ export class UIManager implements starmaker.core.IUIManager {
     // 调整Mask层级
     private _adjustMaskLayer(): void {
         let children = UIRoot.children;
+        if (children.length == 1) {
+            UIMask.active = false;
+            return;
+        }
+        UIMask.active = true;
         UIMask.setSiblingIndex(Math.max(children.length - 2, 0));
     }
 
@@ -126,23 +157,23 @@ export class UIManager implements starmaker.core.IUIManager {
         if (!target) {
             return undefined;
         }
-        target.components.forEach((comp) => {
+        const comps = target.components
+        for (let i = 0; i < comps.length; i++) {
+            const comp = comps[i];
             if ("__isIView__" in comp) {
                 if (comp.__isIView__) {
-                    return comp;
+                    return comp as unknown as IView;
                 }
             }
-        });
+        }
         console.warn(`No view found in ${target.name}`);
         return undefined;
     }
 
-
     async open<T extends IView>(viewType: new () => T, args?: any): Promise<T> {
         this._blockInput(true);
         let view = await this._load(viewType, args);
-        // 设置父节点为UI根节点
-        UIRoot.addChild(view.node)
+        addChild(view.node)
         this._adjustMaskLayer();
         view.onEnter(args);
         this._blockInput(false);
@@ -168,7 +199,7 @@ export class UIManager implements starmaker.core.IUIManager {
             view.__group__ = group
         }
         stack.push(view);
-        UIRoot.addChild(view.node);
+        addChild(view.node);
         this._adjustMaskLayer();
         view.onEnter(args);
         this._blockInput(false);
@@ -189,7 +220,7 @@ export class UIManager implements starmaker.core.IUIManager {
         let top = stack[stack.length - 1]
         if (top) {
             top.onResume();
-            UIRoot.addChild(top.node);
+            addChild(top.node);
         }
         this._adjustMaskLayer();
     }

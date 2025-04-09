@@ -1,0 +1,48 @@
+# @en Temporary files
+# @zh 编译器生成的中间文件
+*.o
+*.d
+
+# @en Preprocessor files
+# @zh 预处理器生成的临时文件
+*.ii
+*.id
+*.ix
+*.ip
+*.i
+
+# @en Executable files
+# @zh 可执行程序
+*.out
+*.exe
+
+# @en Log files
+# @zh 编译日志
+*.log
+
+# @en Simulator/device log files
+# @zh 模拟器/设备日志
+logs/
+
+# @en IDE files
+# @zh IDE 特定的文件
+*.vcproj
+*.sln
+*.sln.save
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.vcxproj.filters.user
+*.suo
+
+# @en Temporary files
+# @zh 系统临时文件
+*.tmp
+*.bak
+*.swp
+*.old
+.suo
+
+# @en Cache files
+# @zh 编译工具缓存
+*.cache
