@@ -1,4 +1,5 @@
 import { Component } from "cc";
+import '../framework/core/App';
 import { starmaker } from "../core/Core";
 import { EventManager } from "./EventManager";
 import { UIManager } from "./UIManager";
@@ -7,7 +8,7 @@ const { ServiceLocator, autoRegister } = starmaker.core
 
 class Core extends starmaker.core.AbstractCore<Core> {
     protected initialize(): void {
-        console.log('Core fromework initialize'); 
+        console.log('Core fromework initialize');
         // 注册框架基础服务
         ServiceLocator.regService('EventManager', new EventManager());
         ServiceLocator.regService('ResLoader', new ResLoader());
