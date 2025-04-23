@@ -1,6 +1,5 @@
 import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite } from "cc";
-import { starmaker } from "../core/Core";
-const { ServiceLocator } = starmaker.core
+import { IResManager, IUIManager, IView, ServiceLocator } from "core";
 
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
@@ -59,10 +58,9 @@ const UIMask = new Proxy({} as Node, {
     }
 })
 
-type IView = starmaker.core.IView
 type ICocosView = IView & Component
 // 接口隔离，实现具体的CcocosUIManager
-abstract class CcocosUIManager implements starmaker.core.IUIManager {
+abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
         return this.internalGetTopView();
     }
@@ -154,7 +152,7 @@ export class UIManager extends CcocosUIManager {
             target = this._cache.get(viewType.name)!;
         } else {
             let prefabPath = this._getPrefabPath(viewType);
-            const ResMgr = ServiceLocator.getService<starmaker.core.IResManager>('ResLoader');
+            const ResMgr = ServiceLocator.getService<IResManager>('ResLoader');
             const prefab = await ResMgr.loadPrefab(prefabPath)
             target = instantiate(prefab) as Node
             this._cache.set(viewType.name, target);

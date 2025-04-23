@@ -1,7 +1,7 @@
 import { AssetManager, assetManager, Prefab, resources } from "cc";
-import { starmaker } from "../core/Core";
+import { IResManager } from "core";
 
-export class ResLoader implements starmaker.core.IResManager {
+export class ResLoader implements IResManager {
     load(path: string, type: any): Promise<any> {
         throw new Error("Method not implemented.");
     }

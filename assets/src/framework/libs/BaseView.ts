@@ -1,10 +1,6 @@
 import { _decorator, Component } from 'cc';
-import { starmaker } from "../core/Core";
-import { app } from '../core/App';
+import { IView, IManager, IModel } from '../core';
 const { ccclass, property } = _decorator;
-type IView = starmaker.core.IView;
-type IModel = starmaker.core.IModel;
-type IManager = starmaker.core.IManager;
 
 export abstract class BaseView extends Component implements IView {
     /** @internal */

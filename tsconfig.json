@@ -8,6 +8,8 @@
     "emitDecoratorMetadata": true, // 启用元数据反射
     "paths": {
       "uiexport": ["./extensions/ui-export/*"],
+      "core" : ["./assets/src/framework/core/index.ts"],
+      "libs" : ["./assets/src/framework/libs/index.ts"],
     }
   }
 }

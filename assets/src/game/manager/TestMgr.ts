@@ -1,12 +1,12 @@
-import { starmaker } from "../../framework/core/Core";
+
+import { AbstractManager, IManager, injectManager, managedWithClean } from "../../framework/core";
 import { IUserMgr } from "./UserMgr";
-const { injectManager, managedWithClean } = starmaker.core;
 
 @managedWithClean()
-export class TestMgr extends starmaker.core.AbstractManager {
+export class TestMgr extends AbstractManager {
 
     @injectManager(IUserMgr)
-    private userMgr!: starmaker.core.IManager & { testUser(): void };
+    private userMgr!: IManager & { testUser(): void };
 
     initialize(): void {
     }

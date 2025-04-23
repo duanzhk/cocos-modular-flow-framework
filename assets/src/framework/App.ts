@@ -1,8 +1,4 @@
-import { starmaker } from "./Core";
-const { ServiceLocator } = starmaker.core
-type ICore = starmaker.core.ICore;
-type IEventManager = starmaker.core.IEventManager;
-type IUIManager = starmaker.core.IUIManager;
+import { ICore, IUIManager, IEventManager, ServiceLocator, IEventMsgKey } from "core";
 
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式

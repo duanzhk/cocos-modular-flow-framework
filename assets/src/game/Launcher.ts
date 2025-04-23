@@ -1,7 +1,6 @@
-import { _decorator, Component, Node } from 'cc';
-import { CocosCore } from '../framework/libs/CocosCore';
-import { app } from '../framework/core/App';
+import { _decorator} from 'cc';
 import { UITest } from './gui/UITest';
+import { CocosCore } from 'libs';
 const { ccclass, property, disallowMultiple } = _decorator;
 
 @ccclass('Launcher')

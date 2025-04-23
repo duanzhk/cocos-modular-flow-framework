@@ -1,9 +1,8 @@
-import { starmaker } from "../../framework/core/Core";
+import { AbstractManager, getInterface, managedWithClean } from "../../framework/core";
 
-const { managedWithClean, getInterface } = starmaker.core;
 
 @managedWithClean()
-class UserMgr extends starmaker.core.AbstractManager {
+class UserMgr extends AbstractManager {
     initialize(): void {
     }
 

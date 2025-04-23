@@ -5,9 +5,36 @@ const { ccclass, property } = _decorator;
 @ccclass('UITest')
 export class UITest extends BaseUITest {
     protected onLoad(): void {
-        console.log('UITest onLoad');
+        // console.log('UITest onLoad');
+        // let msg = new Broadcaster()
+        // msg.broadcast("onlogout")
+        // msg
+        // // msg.on('onregister',(data) => {
+        // //     console.log('onlogin', data);
+        // // })
+        // // msg.on({
+        // //     key: 'onlogin',
+        // //     listener: (data) => {
+        // //         console.log('onlogin', data);
+        // //     }
+        // // })
+
+        // msg.on({
+        //     key: 'onlogout',
+        //     listener: (value?: any, callback?: (data?: any, callBack?: any) => void, ...args: any[]) => {
+        //         console.log('onlogout', value);
+        //         if (callback) {
+        //             callback(0, 0);
+        //         }
+        //     }
+        // })
+        
+        app.event.on("onlogin", (data) => {
+            console.log('ss', data); 
+        })
     }
     protected start(): void {
+        
         console.log('UITest start');
     }
     protected onDisable(): void {
