@@ -1,5 +1,5 @@
 import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite } from "cc";
-import { IResManager, IUIManager, IView, ServiceLocator } from "core";
+import { IResManager, IUIManager, IView, ServiceLocator } from "@core";
 
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);

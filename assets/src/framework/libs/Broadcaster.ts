@@ -1,4 +1,4 @@
-import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "core";
+import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "@core";
 import { ObjectUtil } from "../utils/ObjectUtil";
 import { StringUtil } from "../utils/StringUtil";
 

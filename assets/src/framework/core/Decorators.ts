@@ -1,4 +1,4 @@
-import { ICore, IModel, IManager, ServiceLocator } from "core";
+import { ICore, IModel, IManager, ServiceLocator } from "@core";
 
 
 // 通过symbol实现接口标识

@@ -1,6 +1,6 @@
 
     import { _decorator, Component, Node } from 'cc';
-    import { BaseView } from "libs";
+    import { BaseView } from "@libs";
     const { ccclass, property, disallowMultiple } = _decorator;
     @disallowMultiple()
     export abstract class BaseUITest extends BaseView {

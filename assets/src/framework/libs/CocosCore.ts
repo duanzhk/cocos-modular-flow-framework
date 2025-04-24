@@ -1,6 +1,6 @@
 import { Component } from "cc";
-import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "core";
-import { UIManager, ResLoader, Broadcaster } from "libs";
+import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "@core";
+import { UIManager, ResLoader, Broadcaster } from "@libs";
 
 class Core extends AbstractCore<Core> {
     protected initialize(): void {

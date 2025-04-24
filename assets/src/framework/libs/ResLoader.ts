@@ -1,5 +1,5 @@
 import { AssetManager, assetManager, Prefab, resources } from "cc";
-import { IResManager } from "core";
+import { IResManager } from "@core";
 
 export class ResLoader implements IResManager {
     load(path: string, type: any): Promise<any> {
