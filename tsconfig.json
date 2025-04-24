@@ -6,11 +6,12 @@
   "compilerOptions": {
     // "strict": false
     "emitDecoratorMetadata": true, // 启用元数据反射
-    "baseUrl": ".",  // 必须设置根目录起点
+    "baseUrl": "./",  // 必须设置根目录起点
     "paths": {
-      "uiexport": ["./extensions/ui-export/*"],
-      "@core" : ["./assets/src/framework/core/index.ts"],
-      "@libs" : ["./assets/src/framework/libs/index.ts"],
+      "uiexport": ["extensions/ui-export/*"],
+      "@core" : ["assets/src/framework/core/index"],
+      "@libs" : ["assets/src/framework/libs/index"],
+      "@utils/*" : ["assets/src/framework/utils/*"],
     }
   }
 }

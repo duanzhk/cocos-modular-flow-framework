@@ -5,7 +5,7 @@ import { ICore, IUIManager, IEventManager, ServiceLocator, IEventMsgKey } from "
  * 
  * @class App
  */
-class App {
+export class App {
     static get core(): ICore {
         return ServiceLocator.getService<ICore>('core');
     }
@@ -29,4 +29,4 @@ declare global {
     var app: typeof App;
 }
 //例挂载到全局对象
-globalThis.app = app;
+globalThis.app = App;

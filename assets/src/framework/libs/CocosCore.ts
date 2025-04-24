@@ -1,6 +1,7 @@
 import { Component } from "cc";
 import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "@core";
 import { UIManager, ResLoader, Broadcaster } from "@libs";
+import { App } from "../App";
 
 class Core extends AbstractCore<Core> {
     protected initialize(): void {
@@ -19,5 +20,8 @@ class Core extends AbstractCore<Core> {
 export abstract class CocosCore extends Component {
     protected onLoad(): void {
         ServiceLocator.regService('core', new Core());
+        if (!globalThis.app) {
+            globalThis.app = App;
+        }
     }
 }

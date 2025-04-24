@@ -1,6 +1,8 @@
 {
-    "imports": {
-        "@core": "./assets/src/framework/core/index.ts",
-        "@libs": "./assets/src/framework/libs/index.ts"
-    }
+  "imports": {
+    "uiexport/": "./extensions/ui-export/",
+    "@core": "./assets/src/framework/core/index.ts",
+    "@libs": "./assets/src/framework/libs/index.ts",
+    "@utils/": "./assets/src/framework/utils/"
+  }
 }
