@@ -6,9 +6,4 @@
     export abstract class BaseUITest extends BaseView {
         /** @internal */
         private static readonly __path__: string = "prefabs/common/UITest";
-
-        abstract onEnter(args?: any): void
-        abstract onExit(): void
-        abstract onPause(): void
-        abstract onResume(): void
     }

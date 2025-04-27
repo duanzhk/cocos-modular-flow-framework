@@ -40,6 +40,7 @@ export function autoRegister(core: ICore) {
 // 依赖注入
 // ------------------------------------------------------------------------------------
 const INJECTED_PROPERTIES_KEY = 'injectedProperties';
+// 因为明文定义的属性会覆盖injectManager（通过defineProperty定义）注入的属性，所以需要在编译时删除明文定义的属性
 function CleanInjectedProperties<T extends { new(...args: any[]): {} }>(constructor: T) {
     return class extends constructor {
         constructor(...args: any[]) {

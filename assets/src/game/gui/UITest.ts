@@ -28,10 +28,6 @@ export class UITest extends BaseUITest {
         //         }
         //     }
         // })
-        
-        app.event.on("onlogin", (data) => {
-            console.log('ss', data); 
-        })
     }
     protected start(): void {
         

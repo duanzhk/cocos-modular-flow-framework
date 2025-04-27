@@ -1,5 +1,5 @@
 
-import { AbstractManager, IManager, injectManager, managedWithClean } from "../../framework/core";
+import { AbstractManager, IManager, injectManager, managedWithClean } from "@core";
 import { IUserMgr } from "./UserMgr";
 
 @managedWithClean()
