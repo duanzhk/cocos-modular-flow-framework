@@ -1,10 +1,26 @@
 {
-  "name": "A-framework",
-  "uuid": "997e4a3e-db77-487c-8737-e99517ea765b",
-  "creator": {
-    "version": "3.8.3"
-  },
-  "dependencies": {
-    "reflect-metadata": "^0.2.2"
-  }
+    "package_version": 2,
+    "name": "mflow-framework",
+    "version": "1.0.0",
+    "author": "duanzk",
+    "editor": ">=3.8.3",
+    "scripts": {
+        "build": "tsc -b",
+        "watch": "tsc -w"
+    },
+    "description": "i18n:mflow-framework.description",
+    "main": "./dist/main.js",
+    "devDependencies": {
+        "@cocos/creator-types": "^3.8.3",
+        "@types/node": "^18.17.1",
+        "typescript": "^4.3.4"
+    },
+    "contributions": {
+        "hierarchy": {
+            "menu": {
+                "methods": "./dist/hierarchy-menu.js",
+                "createMenu": "onHierarchyMenu"
+            }
+        }
+    }
 }

@@ -1,0 +1,7 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "rootDir": "",
+    },
+    "exclude": [] // 开发时不排除任何文件
+}

@@ -1,17 +1,17 @@
 {
-  /* Base configuration. Do not edit this field. */
-  "extends": "./temp/tsconfig.cocos.json",
-
-  /* Add your custom configuration here. */
-  "compilerOptions": {
-    // "strict": false
-    "emitDecoratorMetadata": true, // 启用元数据反射
-    "baseUrl": "./",  // 必须设置根目录起点
-    "paths": {
-      "uiexport": ["extensions/ui-export/*"],
-      "@core" : ["assets/src/framework/core/index"],
-      "@libs" : ["assets/src/framework/libs/index"],
-      "@utils/*" : ["assets/src/framework/utils/*"],
-    }
-  }
+    "extends": "./base.tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": "./src",// 只编译 src 目录
+        "emitDecoratorMetadata": true, // 启用元数据反射
+        "baseUrl": "./static/assets", // paths的起始目录
+        "paths": {
+            "@core": ["core/index"],
+            "@libs": ["libs/index"],
+            "@utils/*": ["utils/*"]
+        }
+    },
+    "exclude": [
+        "static/assets/**/*" // 排除 static/assets 目录
+    ],
 }
