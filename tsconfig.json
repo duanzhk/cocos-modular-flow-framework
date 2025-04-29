@@ -6,9 +6,9 @@
         "emitDecoratorMetadata": true, // 启用元数据反射
         "baseUrl": "./static/assets", // paths的起始目录
         "paths": {
-            "@core": ["core/index"],
-            "@libs": ["libs/index"],
-            "@utils/*": ["utils/*"]
+            "@mflow/api": ["core/index"],
+            "@mflow/libs": ["libs/index"],
+            "@mflow/utils": ["utils/index"],
         }
     },
     "exclude": [

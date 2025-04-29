@@ -1,4 +1,4 @@
-import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager } from "@core";
+import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager } from "@mflow/api";
 
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式
@@ -28,7 +28,7 @@ export class App {
 }
 
 declare global {
-    var app: typeof App;
+    var mf: typeof App;
 }
 //例挂载到全局对象
-globalThis.app = App;
+globalThis.mf = App;

@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ICore, IEventManager, IManager, IModel, getInterface, ServiceLocator } from "@core";
+import { ICore, IEventManager, IManager, IModel, getInterface, ServiceLocator } from "@mflow/api";
 
 class Container {
     private ctor2ins = new Map<Function, any>();// 使用构造函数作为键
