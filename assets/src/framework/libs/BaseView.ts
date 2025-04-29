@@ -1,5 +1,5 @@
-import { _decorator, Component } from 'cc';
-import { IView, IManager, IModel, IEventManager, IResManager } from '@core';
+import { _decorator, Asset, Component } from 'cc';
+import { IView, IManager, IModel, IEventManager, ICocosResManager } from '@core';
 const { ccclass, property } = _decorator;
 
 export abstract class BaseView extends Component implements IView {
@@ -36,10 +36,26 @@ export abstract class BaseView extends Component implements IView {
     }
 
     //loader代理对象
-    private _loaderProxy?: IResManager
-    private _loaderHandlers: any = null;
-    protected get loader(): any {
-        return app.res;
+    private _loaderProxy?: ICocosResManager
+    private _loaderHandlers: { path: string, asset: Asset }[] = [];
+    protected get res(): ICocosResManager {
+        if (!this._loaderProxy) {
+            this._loaderProxy = new Proxy(app.res, {
+                get: (target, prop: string) => {
+                    //劫持所有load相关方法
+                    if (prop.startsWith('load')) {
+                        return (path: string, type: any, nameOrUrl?: string) => {
+                            return Reflect.get(target, prop).apply(target, [path, type, nameOrUrl]).then((asset: Asset) => {
+                                this._loaderHandlers.push({ path, asset });
+                                return asset;
+                            })
+                        }
+                    }
+                    return Reflect.get(target, prop);
+                }
+            })
+        }
+        return this._loaderProxy;
     }
 
     abstract onPause(): void
@@ -51,11 +67,15 @@ export abstract class BaseView extends Component implements IView {
             app.event.off(key, listener as any);
         });
         this._eventHandlers = [];
+    }
 
-        // 清理loader
-        this._loaderHandlers.forEach(() => {
+    protected onDestroy(): void {
+        // 自动清理加载的资源
+        this._loaderHandlers.forEach(({ path, asset }) => {
+            app.res.release(path, asset.constructor as any);
+            // app.res.release(asset);
         });
-        this._loaderHandlers = [];
+        this._loaderHandlers = []
     }
 
     protected getManager<T extends IManager>(ctor: new () => T): T {

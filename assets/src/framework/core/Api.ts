@@ -33,11 +33,7 @@ export interface IUIManager {
     clearStack(group: string, destroy?: boolean): void
 }
 
-export interface IResManager {
-    load(path: string, type: any): Promise<any>;
-    loadPrefab(path: string): Promise<any>;
-    loadSpriteFrame(path: string): Promise<any>;
-}
+export interface IResManager { }
 
 // 基础空类型，由业务层扩展
 export interface IEventMsgKey { }
