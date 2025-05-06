@@ -44,7 +44,7 @@ export class Broadcaster<MsgKeyType extends IEventMsgKey, ValueType = any, Resul
     }
 
     //检查是否有有效的监听器，如果没有就删除这个key
-    private _checkLintenerValidity(key: keyof MsgKeyType) {
+    private _checkListenerValidity(key: keyof MsgKeyType) {
         if (!key) return;
         const handlers = this._listenerHandlerMap[key]
         if (handlers && handlers.length > 0) {
@@ -197,7 +197,7 @@ export class Broadcaster<MsgKeyType extends IEventMsgKey, ValueType = any, Resul
         const handler = handlers.fastRemoveAt(index)
         this._recoverHandler(handler)
 
-        this._checkLintenerValidity(key);
+        this._checkListenerValidity(key);
         return this;
     }
 
@@ -221,7 +221,7 @@ export class Broadcaster<MsgKeyType extends IEventMsgKey, ValueType = any, Resul
                 const shouldRemove = !hasContext || handlers[i].context === context;
                 shouldRemove && this._recoverHandler(handlers.fastRemoveAt(i));
             }
-            this._checkLintenerValidity(msgKey);
+            this._checkListenerValidity(msgKey);
         };
 
         if (key) { //清除指定key的所有监听
@@ -272,7 +272,7 @@ export class Broadcaster<MsgKeyType extends IEventMsgKey, ValueType = any, Resul
                 this.off(key, handler.listener)
             }
         }
-        this._checkLintenerValidity(key);
+        this._checkListenerValidity(key);
     }
 
     /**
