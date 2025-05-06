@@ -13,7 +13,7 @@ export abstract class BaseView extends Component implements IView {
     private _eventHandlers: { key: any; listener: Function }[] = [];
     protected get event(): IEventManager {
         if (!this._eventProxy) {
-            this._eventProxy = new Proxy(app.event, {
+            this._eventProxy = new Proxy(mf.event, {
                 get: (target, prop) => {
                     if (prop === 'on' || prop === 'once') {
                         return (keyOrHandler: any, listener?: any, context?: any, args?: any[]) => {
@@ -40,7 +40,7 @@ export abstract class BaseView extends Component implements IView {
     private _loaderHandlers: { path: string, asset: Asset }[] = [];
     protected get res(): ICocosResManager {
         if (!this._loaderProxy) {
-            this._loaderProxy = new Proxy(app.res, {
+            this._loaderProxy = new Proxy(mf.res, {
                 get: (target, prop: string) => {
                     //劫持所有load相关方法
                     if (prop.startsWith('load')) {
@@ -65,7 +65,7 @@ export abstract class BaseView extends Component implements IView {
         // 自动清理所有事件监听
         this._eventHandlers.forEach(({ key, listener }) => {
             //@ts-ignore
-            app.event.off(key, listener as any);
+            mf.event.off(key, listener as any);
         });
         this._eventHandlers = [];
     }
@@ -73,20 +73,20 @@ export abstract class BaseView extends Component implements IView {
     protected onDestroy(): void {
         // 自动清理加载的资源
         this._loaderHandlers.forEach(({ path, asset }) => {
-            app.res.release(path, asset.constructor as any);
-            // app.res.release(asset);
+            mf.res.release(path, asset.constructor as any);
+            // mf.res.release(asset);
         });
         this._loaderHandlers = []
     }
 
     protected getManager<T extends IManager>(ctor: new () => T): T {
         // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return app.core.getManager<T>(ctor);
+        return mf.core.getManager<T>(ctor);
     }
 
     protected getModel<T extends IModel>(ctor: new () => T): T {
         // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return app.core.getModel<T>(ctor);
+        return mf.core.getModel<T>(ctor);
     }
 
 }
