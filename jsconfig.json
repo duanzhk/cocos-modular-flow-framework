@@ -1,5 +1,0 @@
-//VS Code 会优先解析 jsconfig.json，并继承 tsconfig.editor.json 的配置。
-//这样就可以实现只编译src目录，同时开发时也可以索引到static/assets目录。
-{
-    "extends": "./tsconfig.editor.json"
-}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2015",
+    "module": "ES2015",
+    "strict": true,
+    "types": [
+      "./temp/declarations/cc.custom-macro",
+      "./temp/declarations/jsb",
+      "./temp/declarations/cc",
+      "./temp/declarations/cc.env"
+    ],
+    "experimentalDecorators": true,
+    "isolatedModules": true,
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true
+  }
+}

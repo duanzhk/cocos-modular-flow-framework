@@ -17,9 +17,12 @@
     "contributions": {
         "hierarchy": {
             "menu": {
-                "methods": "./dist/hierarchy-menu.js",
+                "methods": "./dist/editor/hierarchy-menu.js",
                 "createMenu": "onHierarchyMenu"
             }
         }
+    },
+    "dependencies": {
+        "reflect-metadata": "^0.2.2"
     }
 }
