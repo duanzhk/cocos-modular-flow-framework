@@ -1,5 +1,5 @@
-import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "@mflow/api";
-import { ObjectUtil, StringUtil } from "@mflow/utils";
+import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "../core";
+import { ObjectUtil, StringUtil } from "../utils";
 
 type ListenerHandlerOptions<keyType extends keyof any = any> = ListenerHandler<keyType> & { once?: boolean }
 // 广播参数结构

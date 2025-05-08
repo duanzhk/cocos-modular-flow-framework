@@ -1,5 +1,5 @@
 import { Component } from "cc";
-import { IUIManager, IView } from "@mflow/api";
+import { IUIManager, IView } from "../core";
 type ICocosView = IView & Component;
 declare abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined;

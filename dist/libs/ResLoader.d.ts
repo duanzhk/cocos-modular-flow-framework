@@ -1,5 +1,5 @@
 import { Asset, Prefab, SpriteFrame, Sprite, sp } from "cc";
-import { ICocosResManager, AssetType } from "@mflow/api";
+import { ICocosResManager, AssetType } from "../core";
 export declare class ResLoader implements ICocosResManager {
     loadAsset<T extends Asset>(path: string, type: AssetType<T>, nameOrUrl?: string): Promise<T>;
     loadPrefab(path: string, nameOrUrl?: string): Promise<Prefab>;

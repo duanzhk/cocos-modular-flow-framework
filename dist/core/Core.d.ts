@@ -1,5 +1,4 @@
-import 'reflect-metadata';
-import { ICore, IEventManager, IManager, IModel } from ".";
+import { ICore, IEventManager, IManager, IModel } from "./Api";
 export declare abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     private readonly container;
     constructor();

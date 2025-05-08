@@ -1,5 +1,6 @@
-import 'reflect-metadata';
-import { ICore, IEventManager, IManager, IModel, getInterface, ServiceLocator } from ".";
+import { ICore, IEventManager, IManager, IModel } from "./Api";
+import { ServiceLocator } from "./ServiceLocator";
+import { getInterface } from "./Decorators";
 
 class Container {
     private ctor2ins = new Map<Function, any>();// 使用构造函数作为键

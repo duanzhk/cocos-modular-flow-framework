@@ -1,4 +1,4 @@
-import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager } from "@mflow/api";
+import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager } from "./core";
 
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式

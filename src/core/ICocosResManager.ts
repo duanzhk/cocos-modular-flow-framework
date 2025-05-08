@@ -1,4 +1,4 @@
-import { IResManager } from ".";
+import { IResManager } from "./Api";
 import { Asset, Prefab, sp, Sprite, SpriteFrame } from "cc";
 
 export type AssetType<T> = new (...args: any[]) => T

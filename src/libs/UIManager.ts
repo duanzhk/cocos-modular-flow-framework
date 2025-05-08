@@ -1,5 +1,5 @@
 import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite } from "cc";
-import { ICocosResManager, IUIManager, IView, ServiceLocator } from "@mflow/api";
+import { ICocosResManager, IUIManager, IView, ServiceLocator } from "../core";
 
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);

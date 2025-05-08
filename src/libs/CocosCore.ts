@@ -1,7 +1,8 @@
 import { Component } from "cc";
-import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "@mflow/api";
-import { UIManager, ResLoader, Broadcaster } from ".";
-
+import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "../core";
+import { UIManager} from "./UIManager";
+import { ResLoader} from "./ResLoader";
+import { Broadcaster} from "./Broadcaster";
 
 class Core extends AbstractCore<Core> {
     protected initialize(): void {

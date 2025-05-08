@@ -1,5 +1,5 @@
 import { _decorator, Asset, Component } from 'cc';
-import { IView, IManager, IModel, IEventManager, ICocosResManager } from '@mflow/api';
+import { IView, IManager, IModel, IEventManager, ICocosResManager } from '../core';
 const { ccclass, property } = _decorator;
 
 export abstract class BaseView extends Component implements IView {

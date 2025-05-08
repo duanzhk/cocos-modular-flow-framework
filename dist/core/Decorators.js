@@ -1,5 +1,5 @@
-import 'reflect-metadata';
 import { ServiceLocator } from './ServiceLocator.js';
+import 'reflect-metadata';
 
 // 通过symbol实现接口标识
 const interfaceSymbols = new Map();

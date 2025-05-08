@@ -1,5 +1,5 @@
 import { Component } from 'cc';
-import { IView, IManager, IModel, IEventManager, ICocosResManager } from '@mflow/api';
+import { IView, IManager, IModel, IEventManager, ICocosResManager } from '../core';
 export declare abstract class BaseView extends Component implements IView {
     /** @internal */
     private readonly __isIView__;

@@ -1,5 +1,5 @@
 import { Node, Quat, toRadian, Vec3 } from "cc";
-import { MathUtil } from ".";
+import { MathUtil } from "./MathUtil";
 
 /** 旋转工具 */
 export class RotateUtil {

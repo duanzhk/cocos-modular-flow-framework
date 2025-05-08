@@ -1,5 +1,3 @@
-import 'cc';
-import './MathUtil.js';
 import { ObjectUtil } from './ObjectUtil.js';
 
 /** 字符串工具 */

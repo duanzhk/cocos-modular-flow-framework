@@ -1,4 +1,4 @@
-import { ObjectUtil } from ".";
+import { ObjectUtil } from "./ObjectUtil";
 
 /** 字符串工具 */
 export class StringUtil {

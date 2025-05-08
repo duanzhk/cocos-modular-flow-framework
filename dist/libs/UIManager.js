@@ -1,7 +1,7 @@
 import { __awaiter } from '../_virtual/_tslib.js';
 import { director, Node, Sprite, Widget, Input, input, instantiate } from 'cc';
-import 'reflect-metadata';
 import { ServiceLocator } from '../core/ServiceLocator.js';
+import 'reflect-metadata';
 
 function addWidget(node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);

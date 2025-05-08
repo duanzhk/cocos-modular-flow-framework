@@ -2,10 +2,9 @@ import { Component } from 'cc';
 import { AbstractCore } from '../core/Core.js';
 import { autoRegister } from '../core/Decorators.js';
 import { ServiceLocator } from '../core/ServiceLocator.js';
-import './BaseView.js';
-import { Broadcaster } from './Broadcaster.js';
-import { ResLoader } from './ResLoader.js';
 import { UIManager } from './UIManager.js';
+import { ResLoader } from './ResLoader.js';
+import { Broadcaster } from './Broadcaster.js';
 
 class Core extends AbstractCore {
     initialize() {

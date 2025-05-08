@@ -1,5 +1,6 @@
-import { ICore, IModel, IManager, ServiceLocator } from ".";
-
+import { ICore, IModel, IManager } from "./Api";
+import { ServiceLocator } from "./ServiceLocator";
+import 'reflect-metadata'
 
 // 通过symbol实现接口标识
 const interfaceSymbols = new Map<Function, symbol>();

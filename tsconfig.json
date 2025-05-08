@@ -3,15 +3,9 @@
     "compilerOptions": {
         "skipLibCheck": true,
         "outDir": "./dist",
-        "rootDir": "./src",// 只编译 src 目录
+        "rootDir": "./src",
         "emitDecoratorMetadata": true, // 启用元数据反射
-        "declaration": true, // 生成声明文件
-        "baseUrl": "./src", // paths的起始目录
-        "paths": {
-            "@mflow/api": ["core/index"],
-            "@mflow/libs": ["libs/index"],
-            "@mflow/utils": ["utils/index"],
-        },
+        "declaration": true, // 启用声明文件生成
         "types": [
             "node",
             "@cocos/creator-types/editor",

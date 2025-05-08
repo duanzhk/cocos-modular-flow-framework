@@ -1,6 +1,5 @@
-import 'reflect-metadata';
-import { getInterface } from './Decorators.js';
 import { ServiceLocator } from './ServiceLocator.js';
+import { getInterface } from './Decorators.js';
 
 class Container {
     constructor() {

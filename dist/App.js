@@ -1,5 +1,5 @@
-import 'reflect-metadata';
 import { ServiceLocator } from './core/ServiceLocator.js';
+import 'reflect-metadata';
 
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式

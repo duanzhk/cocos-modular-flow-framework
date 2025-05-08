@@ -1,5 +1,5 @@
 import { assetManager, Asset, AssetManager, Prefab, SpriteFrame, Sprite, sp } from "cc";
-import { ICocosResManager, AssetType } from "@mflow/api";
+import { ICocosResManager, AssetType } from "../core";
 
 const DefaultBundle = "resources";
 export class ResLoader implements ICocosResManager {
