@@ -1,5 +1,5 @@
 /** 时间工具 */
-export class TimeUtil {
+class TimeUtil {
     /** 间隔天数 */
     static daysBetween(time1, time2) {
         if (time2 == undefined || time2 == null) {
@@ -84,3 +84,5 @@ export class TimeUtil {
         return `${year}.${month}.${day}`;
     }
 }
+
+export { TimeUtil };

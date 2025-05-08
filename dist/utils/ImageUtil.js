@@ -1,8 +1,9 @@
-import { Color, Texture2D } from "cc";
+import { Color, Texture2D } from 'cc';
+
 /**
  * 图像工具
  */
-export class ImageUtil {
+class ImageUtil {
     /**
      * 获取纹理中指定像素的颜色，原点为左上角，从像素 (1, 1) 开始。
      * @param texture 纹理
@@ -92,3 +93,5 @@ export class ImageUtil {
         return new Blob([uint8Array], { type: type });
     }
 }
+
+export { ImageUtil };

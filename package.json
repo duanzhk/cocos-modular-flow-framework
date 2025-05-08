@@ -1,26 +1,41 @@
 {
-    "package_version": 2,
-    "name": "mflow-framework",
-    "version": "1.0.0",
-    "author": "duanzk",
-    "editor": ">=3.8.3",
-    "scripts": {
-        "build": "tsc -b",
-        "watch": "tsc -w"
+    "name": "@dzk/cc-mflow",
+    "version": "0.0.1-beta.1",
+    "description": "A modular design and process management framework developed for the cocos engine, suitable for decoupling and dependency injection.",
+    "author": "duanzhk",
+    "license": "MIT",
+    "keywords": [
+        "cocos",
+        "framework",
+        "mflow",
+        "modular",
+        "dependency",
+        "injection",
+        "decorator",
+        "flow"
+    ],
+    "type": "module",
+    "exports": {
+        "./*": "./dist/*.js",
+        "@mflow/api": "./dist/core/index.js",
+        "@mflow/libs": "./dist/libs/index.js",
+        "@mflow/utils": "./dist/utils/index.js"
     },
-    "description": "i18n:mflow-framework.description",
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "watch": "tsc -w",
+        "build": "rm -rf dist && rollup -c",
+        "pub-beta": "npm publish --tag beta"
+    },
     "devDependencies": {
         "@cocos/creator-types": "^3.8.3",
         "@types/node": "^18.17.1",
+        "glob": "^11.0.2",
+        "rollup": "^4.40.2",
+        "rollup-plugin-typescript2": "^0.36.0",
         "typescript": "^4.3.4"
-    },
-    "contributions": {
-        "hierarchy": {
-            "menu": {
-                "methods": "./dist/editor/hierarchy-menu.js",
-                "createMenu": "onHierarchyMenu"
-            }
-        }
     },
     "dependencies": {
         "reflect-metadata": "^0.2.2"

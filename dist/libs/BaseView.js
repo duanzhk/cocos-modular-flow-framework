@@ -1,6 +1,7 @@
 import { _decorator, Component } from 'cc';
+
 const { ccclass, property } = _decorator;
-export class BaseView extends Component {
+class BaseView extends Component {
     constructor() {
         super(...arguments);
         /** @internal */
@@ -78,3 +79,5 @@ export class BaseView extends Component {
         return mf.core.getModel(ctor);
     }
 }
+
+export { BaseView };

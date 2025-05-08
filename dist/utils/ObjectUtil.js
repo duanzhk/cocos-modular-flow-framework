@@ -1,5 +1,5 @@
 /** 对象工具 */
-export class ObjectUtil {
+class ObjectUtil {
     /**
      * 判断指定的值是否为对象
      * @param value 值
@@ -57,3 +57,5 @@ export class ObjectUtil {
         return JSON.parse(JSON.stringify(target));
     }
 }
+
+export { ObjectUtil };

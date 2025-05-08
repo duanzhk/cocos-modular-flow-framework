@@ -1,7 +1,8 @@
-import { Quat, toRadian, Vec3 } from "cc";
-import { MathUtil } from ".";
+import { Quat, Vec3, toRadian } from 'cc';
+import { MathUtil } from './MathUtil.js';
+
 /** 旋转工具 */
-export class RotateUtil {
+class RotateUtil {
     /**
      * 自由旋转
      * @param target     旋转目标
@@ -64,3 +65,5 @@ export class RotateUtil {
         return vec3;
     }
 }
+
+export { RotateUtil };

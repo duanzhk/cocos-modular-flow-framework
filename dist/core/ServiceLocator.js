@@ -1,5 +1,5 @@
 //ServiceLocator：管理跨领域基础服务
-export class ServiceLocator {
+class ServiceLocator {
     static regService(key, provider) {
         if (typeof provider === 'function') {
             // 注册工厂函数（延迟执行）
@@ -30,3 +30,5 @@ export class ServiceLocator {
     }
 }
 ServiceLocator.services = new Map();
+
+export { ServiceLocator };

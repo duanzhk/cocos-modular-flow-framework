@@ -1,5 +1,7 @@
 import 'reflect-metadata';
-import { getInterface, ServiceLocator } from ".";
+import { getInterface } from './Decorators.js';
+import { ServiceLocator } from './ServiceLocator.js';
+
 class Container {
     constructor() {
         this.ctor2ins = new Map(); // 使用构造函数作为键
@@ -25,7 +27,7 @@ class Container {
         return ins;
     }
 }
-export class AbstractCore {
+class AbstractCore {
     constructor() {
         this.container = new Container();
         this.initialize();
@@ -54,7 +56,7 @@ export class AbstractCore {
         }
     }
 }
-export class AbstractManager {
+class AbstractManager {
     dispose() {
         this.releaseEventManager();
     }
@@ -79,3 +81,5 @@ export class AbstractManager {
         }
     }
 }
+
+export { AbstractCore, AbstractManager };

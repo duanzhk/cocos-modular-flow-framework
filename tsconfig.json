@@ -5,6 +5,7 @@
         "outDir": "./dist",
         "rootDir": "./src",// 只编译 src 目录
         "emitDecoratorMetadata": true, // 启用元数据反射
+        "declaration": true, // 生成声明文件
         "baseUrl": "./src", // paths的起始目录
         "paths": {
             "@mflow/api": ["core/index"],
@@ -14,8 +15,6 @@
         "types": [
             "node",
             "@cocos/creator-types/editor",
-        ],
-        "declaration": true, // 启用声明文件生成
-        "declarationDir": "./dist/types" // 声明文件输出目录
+        ]
     }
 }

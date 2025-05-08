@@ -1,5 +1,9 @@
-import { ObjectUtil, StringUtil } from "@mflow/utils";
-export class Broadcaster {
+import 'cc';
+import '../utils/MathUtil.js';
+import { ObjectUtil } from '../utils/ObjectUtil.js';
+import { StringUtil } from '../utils/StringUtil.js';
+
+class Broadcaster {
     constructor() {
         this._persistBrodcastMap = {};
         this._listenerHandlerMap = {};
@@ -72,7 +76,6 @@ export class Broadcaster {
             args.push(...handler.args);
         }
         return handler.listener.apply(handler.context, args);
-        ;
     }
     _onHander(keyOrHandler, listener, context, once, args) {
         if (typeof keyOrHandler === "string") {
@@ -165,7 +168,6 @@ export class Broadcaster {
             console.warn(`没有注册广播：${key.toString()}`);
             return;
         }
-        ;
         for (let i = handlers.length - 1; i >= 0; i--) {
             let handler = handlers[i];
             this._runHandler(handler, data, callback);
@@ -242,3 +244,5 @@ export class Broadcaster {
         this._persistBrodcastMap = undefined;
     }
 }
+
+export { Broadcaster };

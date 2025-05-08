@@ -1,15 +1,8 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-import { assetManager, Asset, Prefab, SpriteFrame, sp } from "cc";
+import { __awaiter } from '../_virtual/_tslib.js';
+import { assetManager, Prefab, Asset, SpriteFrame, sp } from 'cc';
+
 const DefaultBundle = "resources";
-export class ResLoader {
+class ResLoader {
     loadAsset(path, type, nameOrUrl = DefaultBundle) {
         //TODO: bundle.release和assetManager.releaseAsset的区别?
         if (assetManager.assets.has(path)) {
@@ -83,3 +76,5 @@ export class ResLoader {
         }
     }
 }
+
+export { ResLoader };

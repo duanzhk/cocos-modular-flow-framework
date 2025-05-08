@@ -1,6 +1,9 @@
-import { ObjectUtil } from ".";
+import 'cc';
+import './MathUtil.js';
+import { ObjectUtil } from './ObjectUtil.js';
+
 /** 字符串工具 */
-export class StringUtil {
+class StringUtil {
     /** 获取一个唯一标识的字符串 */
     static guid() {
         let guid = "";
@@ -249,3 +252,5 @@ export class StringUtil {
         return /[^\x00-\xff]/.test(string);
     }
 }
+
+export { StringUtil };

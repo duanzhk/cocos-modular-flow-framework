@@ -1,10 +1,12 @@
-import { ServiceLocator } from ".";
+import 'reflect-metadata';
+import { ServiceLocator } from './ServiceLocator.js';
+
 // 通过symbol实现接口标识
 const interfaceSymbols = new Map();
 // 装饰器，方便自动注册manager和model
 const modelRegistry = [];
 const managerRegistry = [];
-export function getInterface(ctor) {
+function getInterface(ctor) {
     let sym = interfaceSymbols.get(ctor);
     if (!sym)
         throw new Error(`Manager ${ctor.name} not registered! Please use @manager() decorator to register it.`);
@@ -19,12 +21,12 @@ function manager() {
         managerRegistry.push(ctor);
     };
 }
-export function model() {
+function model() {
     return function (ctor) {
         modelRegistry.push(ctor);
     };
 }
-export function autoRegister(core) {
+function autoRegister(core) {
     modelRegistry.forEach(ctor => {
         console.log(`${ctor.name} initialize`);
         core.regModel(new ctor());
@@ -64,7 +66,7 @@ function CleanInjectedProperties(constructor) {
         }
     };
 }
-export function managedWithClean() {
+function managedWithClean() {
     return function (ctor) {
         // 先执行清理逻辑
         const decoratedCtor = CleanInjectedProperties(ctor);
@@ -74,7 +76,7 @@ export function managedWithClean() {
     };
 }
 // 懒加载依赖注入manager
-export function injectManager(sym) {
+function injectManager(sym) {
     return function (target, prop) {
         const injectionKey = Symbol.for(prop);
         Object.defineProperty(target, prop, {
@@ -99,3 +101,5 @@ export function injectManager(sym) {
         Reflect.defineMetadata(INJECTED_PROPERTIES_KEY, injectedProperties, target.constructor);
     };
 }
+
+export { autoRegister, getInterface, injectManager, managedWithClean, model };

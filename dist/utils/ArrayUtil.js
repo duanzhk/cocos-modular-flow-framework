@@ -1,5 +1,5 @@
 /** 数组工具 */
-export class ArrayUtil {
+class ArrayUtil {
     /**
      * 数组去重，并创建一个新数组返回
      * @param arr  源数组
@@ -92,3 +92,5 @@ export class ArrayUtil {
         return newArray;
     }
 }
+
+export { ArrayUtil };

@@ -1,14 +1,8 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-import { director, input, instantiate, Node, Input, Widget, Sprite } from "cc";
-import { ServiceLocator } from "@mflow/api";
+import { __awaiter } from '../_virtual/_tslib.js';
+import { director, Node, Sprite, Widget, Input, input, instantiate } from 'cc';
+import 'reflect-metadata';
+import { ServiceLocator } from '../core/ServiceLocator.js';
+
 function addWidget(node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
     widget.isAlignLeft = widget.isAlignRight = widget.isAlignTop = widget.isAlignBottom = true;
@@ -84,7 +78,7 @@ class CcocosUIManager {
         this.internalClearStack(group, destroy);
     }
 }
-export class UIManager extends CcocosUIManager {
+class UIManager extends CcocosUIManager {
     constructor() {
         super();
         this._cache = new Map();
@@ -261,3 +255,5 @@ export class UIManager extends CcocosUIManager {
         }
     }
 }
+
+export { UIManager };

@@ -1,12 +1,5 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
+import { __awaiter } from '../_virtual/_tslib.js';
+
 function getProps(uuid, result) {
     result !== null && result !== void 0 ? result : (result = {});
     return Editor.Message.request('scene', 'query-node-tree', uuid).then((data) => {
@@ -125,7 +118,7 @@ function setProps(uuid, props) {
         return promise;
     });
 }
-export function onHierarchyMenu(assetInfo) {
+function onHierarchyMenu(assetInfo) {
     return [
         {
             label: 'i18n:mflow-framework.export',
@@ -157,4 +150,5 @@ export function onHierarchyMenu(assetInfo) {
         },
     ];
 }
-;
+
+export { onHierarchyMenu };

@@ -1,6 +1,7 @@
-import { native, sys } from "cc";
+import { native, sys } from 'cc';
+
 /** 平台数据 */
-export class PlatformUtil {
+class PlatformUtil {
     /** 是否为安卓系统 */
     static isNativeAndroid() {
         if (typeof native == "undefined")
@@ -27,3 +28,5 @@ export class PlatformUtil {
             return 'h5';
     }
 }
+
+export { PlatformUtil };

@@ -1,6 +1,7 @@
-import { Mat4, Vec3 } from "cc";
+import { Vec3, Mat4 } from 'cc';
+
 /** 数学工具 */
-export class MathUtil {
+class MathUtil {
     /**
      * 获得随机方向
      * @param x -1为左，1为右
@@ -435,3 +436,5 @@ MathUtil.deg2Rad = Math.PI / 180;
  * 弧度转角度
  */
 MathUtil.rad2Deg = 180 / Math.PI;
+
+export { MathUtil };

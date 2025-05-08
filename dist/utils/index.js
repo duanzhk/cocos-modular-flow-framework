@@ -1,9 +1,9 @@
-export * from './ArrayUtil';
-export * from './CameraUtil';
-export * from './ImageUtil';
-export * from './MathUtil';
-export * from './ObjectUtil';
-export * from './PlatformUtil';
-export * from './RotateUtil';
-export * from './StringUtil';
-export * from './TimeUtil';
+export { ArrayUtil } from './ArrayUtil.js';
+export { CameraUtil } from './CameraUtil.js';
+export { ImageUtil } from './ImageUtil.js';
+export { MathUtil } from './MathUtil.js';
+export { ObjectUtil } from './ObjectUtil.js';
+export { PlatformUtil } from './PlatformUtil.js';
+export { RotateUtil } from './RotateUtil.js';
+export { StringUtil } from './StringUtil.js';
+export { TimeUtil } from './TimeUtil.js';
