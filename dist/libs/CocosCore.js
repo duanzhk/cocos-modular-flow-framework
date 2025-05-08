@@ -5,6 +5,7 @@ import { ServiceLocator } from '../core/ServiceLocator.js';
 import { UIManager } from './UIManager.js';
 import { ResLoader } from './ResLoader.js';
 import { Broadcaster } from './Broadcaster.js';
+import '../App.js';
 
 class Core extends AbstractCore {
     initialize() {

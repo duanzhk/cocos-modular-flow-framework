@@ -3,6 +3,7 @@ import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "../cor
 import { UIManager} from "./UIManager";
 import { ResLoader} from "./ResLoader";
 import { Broadcaster} from "./Broadcaster";
+import '../App'
 
 class Core extends AbstractCore<Core> {
     protected initialize(): void {
