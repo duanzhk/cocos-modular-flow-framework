@@ -1,5 +1,3 @@
-import 'cc';
-import '../utils/MathUtil.js';
 import { ObjectUtil } from '../utils/ObjectUtil.js';
 import { StringUtil } from '../utils/StringUtil.js';
 

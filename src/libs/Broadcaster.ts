@@ -1,5 +1,6 @@
-import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "../core";
-import { ObjectUtil, StringUtil } from "../utils";
+import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "../core/Api";
+import { ObjectUtil } from "../utils/ObjectUtil";
+import { StringUtil } from "../utils/StringUtil";
 
 type ListenerHandlerOptions<keyType extends keyof any = any> = ListenerHandler<keyType> & { once?: boolean }
 // 广播参数结构

@@ -1,4 +1,4 @@
-import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "../core";
+import { ListenerHandler, ToAnyIndexKey, OnListenerResult, IEventManager, OnListener, IEventMsgKey } from "../core/Api";
 export declare class Broadcaster<MsgKeyType extends IEventMsgKey, ValueType = any, ResultType = any> implements IEventManager<MsgKeyType, ValueType, ResultType> {
     private _persistBrodcastMap;
     private _listenerHandlerMap;

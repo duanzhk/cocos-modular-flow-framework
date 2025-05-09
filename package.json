@@ -1,6 +1,6 @@
 {
     "name": "dzkcc-mflow",
-    "version": "0.0.1-beta.5",
+    "version": "0.0.1-beta.6",
     "description": "A modular design and process management framework developed for the cocos engine, suitable for decoupling and dependency injection.",
     "author": "duanzhk",
     "license": "MIT",
@@ -16,7 +16,10 @@
     ],
     "type": "module",
     "exports": {
-        "./*": "./dist/*.js"
+        "./*": "./dist/*.js",
+        "./libs": "./dist/libs/index.js",
+        "./core": "./dist/core/index.js",
+        "./utils": "./dist/utils/index.js"
     },
     "files": [
         "dist"
