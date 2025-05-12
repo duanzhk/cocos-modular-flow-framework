@@ -5,8 +5,10 @@ const DefaultBundle = "resources";
 export class ResLoader implements ICocosResManager {
     loadAsset<T extends Asset>(path: string, type: AssetType<T>, nameOrUrl: string = DefaultBundle): Promise<T> {
         //TODO: bundle.release和assetManager.releaseAsset的区别?
+        //TODO: prefab是否需要addRef，prefab被克隆出来的节点被销毁时，对应的prefab如何处理?
         if (assetManager.assets.has(path)) {
             const asset = assetManager.assets.get(path) as T;
+            asset.addRef();
             return Promise.resolve<T>(asset);
         }
         return new Promise((resolve, reject) => {

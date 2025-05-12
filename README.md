@@ -4,8 +4,5 @@ A modular design and process management framework developed for the cocos engine
 ## Install
 
 ```bash
-# Install dependent modules
-npm install
-# build
-npm run build
+npm i dzkcc-mflow@beta
 ```
