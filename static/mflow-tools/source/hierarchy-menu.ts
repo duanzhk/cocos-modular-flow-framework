@@ -39,7 +39,7 @@ async function createScript(info: { url: string, name: string, props: Props }): 
     //创建base脚本
     let content = `
 import { _decorator,Component,${imports} } from 'cc';
-import { BaseView } from "@mflow/libs";
+import { BaseView } from "dzkcc-mflow/libs";
 const { ccclass, property, disallowMultiple } = _decorator;
 @disallowMultiple()
 export abstract class ${basescript} extends BaseView {
@@ -124,7 +124,7 @@ async function setProps(uuid: string, props: Props) {
 export function onHierarchyMenu(assetInfo: AssetInfo) {
     return [
         {
-            label: 'i18n:mflow-framework.export',
+            label: 'i18n:mflow-tools.export',
             enabled: true,
             async click() {
                 try {
