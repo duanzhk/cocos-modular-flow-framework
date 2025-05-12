@@ -9,6 +9,12 @@
         "types": [
             "node",
             "@cocos/creator-types/editor",
-        ]
-    }
+        ],
+        "paths": {
+            "cc": ["./temp/declarations/cc"]
+        }
+    },
+    "include": [
+        "src/**/*.ts"  // 明确指定包含src目录下的所有ts文件
+    ]
 }
