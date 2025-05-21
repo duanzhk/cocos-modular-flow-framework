@@ -6,3 +6,4 @@ A modular design and process management framework developed for the cocos engine
 ```bash
 npm i dzkcc-mflow@beta
 ```
+安装完成后，重启cocoscreator引擎。
