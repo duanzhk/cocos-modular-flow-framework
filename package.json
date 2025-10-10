@@ -28,7 +28,7 @@
     "scripts": {
         "watch": "tsc -w",
         "build": "rm -rf dist && rollup -c && node ./scripts/build-tools.js",
-        "pub-beta": "npm publish --tag beta",
+        "pub-beta": "npm version patch && npm publish --tag beta",
         "postinstall": "node ./scripts/postinstall.js"
     },
     "devDependencies": {
