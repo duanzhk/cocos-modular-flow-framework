@@ -155,28 +155,13 @@ async function getSelectedAssetInfo() {
         throw new Error('选中的资源不是prefab类型');
     }
 
-
-    // 4. 获取prefab的名字
-    const prefabName = assetInfo.name;
-
-    // 5. 获取以"db://assets/resources"开始的资源路径
-    // 方法一：直接使用assetInfo.url（如果已经是以db://开头的）
-    let resourcePath = assetInfo.url;
-
-    // 如果url不是以db://assets/resources开头，则需要转换
-    if (!resourcePath.startsWith('db://assets/resources')) {
-        // 方法二：构造路径
-        resourcePath = `db://assets/resources/${assetInfo.path}`;
-    }
-
-    // 6. 获取UUID
-    const uuid = assetInfo.uuid;
-
     // 返回结果
     return {
-        name: prefabName,
-        path: resourcePath,
-        uuid: uuid,
+        name: assetInfo.name.slice(0, -".prefab".length), //去除.prefab后缀
+        path: assetInfo.path,
+        // assetInfo.url:'db://assets/xxxx.prefab',
+        // assetInfo.path:'db://assets/xxxx',
+        uuid: assetInfo.uuid, //资源uuid
         originalInfo: assetInfo
     };
 }
@@ -187,29 +172,29 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
             label: 'i18n:mflow-tools.export',
             enabled: true,
             async click() {
-                const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
-                console.log('uuid:', uuid);
+                // const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
+                // console.log('uuid:', uuid);
                 // const node = await Editor.Message.request('scene', 'query-node', uuid);
                 // console.log('node:', node);
                 // const script = node.name.value as string
                 // const path = await Editor.Message.request('asset-db', 'query-url', node.__prefab__.uuid);
                 // console.log('path:', path);
                 const assetInfo = await getSelectedAssetInfo();
-                // const uuid = assetInfo!.uuid;
-                const path = assetInfo!.path;
-                const script = assetInfo!.name;
 
                 // 设置属性等需要打开prefab
-                await Editor.Message.request('asset-db', 'open-asset', uuid);
+                await Editor.Message.request('asset-db', 'open-asset', assetInfo.uuid);
 
+                //场景中节点的 UUID，而不是资源的 UUID
+                const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
+                console.log('场景中节点的 UUID:', uuid);
                 //获取prefab中被指定导出的属性
                 const props = await getProps(uuid);
 
                 //创建脚本
-                await createScript({ url: path!, name: script, props: props })
+                await createScript({ url: assetInfo.path, name: assetInfo.name, props: props })
 
                 //挂载脚本
-                await createComponent(uuid, script);
+                await createComponent(uuid, assetInfo.name);
 
                 //设置属性
                 await setProps(uuid, props);
@@ -217,6 +202,7 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 //保存prefab
                 await Editor.Message.request('scene', 'save-scene');
                 console.log('全部完成');
+                // await Editor.Message.request('scene', 'close-scene');
             },
         },
     ];
