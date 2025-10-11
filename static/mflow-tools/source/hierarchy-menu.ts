@@ -146,13 +146,13 @@ async function getSelectedAssetInfo() {
     if (!assetInfo) {
         throw new Error('资源不存在');
     }
+    console.log('assetInfo:', assetInfo);
 
     // 3. 判断是否为prefab类型
     if (assetInfo.type !== 'prefab') {
         throw new Error('选中的资源不是prefab类型');
     }
 
-    console.log('assetInfo:', assetInfo);
 
     // 4. 获取prefab的名字
     const prefabName = assetInfo.name;
