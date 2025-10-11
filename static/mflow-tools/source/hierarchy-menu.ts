@@ -47,7 +47,9 @@ export abstract class ${basescript} extends BaseView {
     private static readonly __path__: string = "${__path__}";
     ${defprops}
 }`;
-    await Editor.Message.request("asset-db", 'create-asset', `db://assets/src/views/${basescript}.ts`, content, { overwrite: true })
+    const basescripturl = `db://assets/src/views/${basescript}.ts`;
+    await Editor.Message.request("asset-db", 'create-asset', basescripturl, content, { overwrite: true })
+    await Editor.Message.request('asset-db', 'refresh-asset', basescripturl);
     console.log(`创建脚本成功: ${basescript}.ts`);
 
     //创建ui脚本
@@ -69,7 +71,9 @@ export class ${info.name} extends ${basescript} {
     onPause(): void { }
     onResume(): void { }
 }`
-    await Editor.Message.request("asset-db", 'create-asset', `db://assets/src/game/gui/${info.name}.ts`, content)
+    const uiurl = `db://assets/src/game/gui/${info.name}.ts`;
+    await Editor.Message.request("asset-db", 'create-asset', uiurl, content)
+    await Editor.Message.request('asset-db', 'refresh-asset', uiurl);
     console.log(`创建脚本成功: ${info.name}.ts`);
 }
 
@@ -78,12 +82,17 @@ async function createComponent(uuid: string, script: string) {
     //@ts-ignore
     const components = propnodeinfo.components as { type: string, value: string }[];
     if (components.findIndex((comp: any) => comp.type === script) < 0) {
-        const promise = await Editor.Message.request('scene', 'create-component', {
-            uuid: uuid,
-            component: script
-        });
-        console.log(`挂载${script}成功`);
-        return promise
+        try {
+            const promise = await Editor.Message.request('scene', 'create-component', {
+                uuid: uuid,
+                component: script
+            });
+            console.log(`挂载${script}成功`);
+            return promise
+        } catch (error) {
+            console.log(`挂载${script}失败`, error);
+            return Promise.reject(error);
+        }
     } else {
         console.log(`跳过：已经挂载了${script}，直接设置属性。请确保继承了Base${script}类。`);
     }

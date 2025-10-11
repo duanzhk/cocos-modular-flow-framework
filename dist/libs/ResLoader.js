@@ -5,8 +5,10 @@ const DefaultBundle = "resources";
 class ResLoader {
     loadAsset(path, type, nameOrUrl = DefaultBundle) {
         //TODO: bundle.release和assetManager.releaseAsset的区别?
+        //TODO: prefab是否需要addRef，prefab被克隆出来的节点被销毁时，对应的prefab如何处理?
         if (assetManager.assets.has(path)) {
             const asset = assetManager.assets.get(path);
+            asset.addRef();
             return Promise.resolve(asset);
         }
         return new Promise((resolve, reject) => {
