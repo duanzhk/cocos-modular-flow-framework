@@ -130,19 +130,73 @@ async function setProps(uuid: string, props: Props) {
     return promise
 }
 
+// 获取在Assets面板中选择的资源
+async function getSelectedAssetInfo() {
+    // 1. 获取选中的资源UUID
+    const selectedUuids = Editor.Selection.getSelected('asset');
+
+    if (selectedUuids.length === 0) {
+        throw new Error('未选中任何资源');
+    }
+
+    const assetUuid = selectedUuids[0];
+
+    // 2. 获取资源详细信息
+    const assetInfo = await Editor.Message.request('asset-db', 'query-asset-info', assetUuid);
+    if (!assetInfo) {
+        throw new Error('资源不存在');
+    }
+
+    // 3. 判断是否为prefab类型
+    if (assetInfo.type !== 'prefab') {
+        throw new Error('选中的资源不是prefab类型');
+    }
+
+    console.log('assetInfo:', assetInfo);
+
+    // 4. 获取prefab的名字
+    const prefabName = assetInfo.name;
+
+    // 5. 获取以"db://assets/resources"开始的资源路径
+    // 方法一：直接使用assetInfo.url（如果已经是以db://开头的）
+    let resourcePath = assetInfo.url;
+
+    // 如果url不是以db://assets/resources开头，则需要转换
+    if (!resourcePath.startsWith('db://assets/resources')) {
+        // 方法二：构造路径
+        resourcePath = `db://assets/resources/${assetInfo.path}`;
+    }
+
+    // 6. 获取UUID
+    const uuid = assetInfo.uuid;
+
+    // 返回结果
+    return {
+        name: prefabName,
+        path: resourcePath,
+        uuid: uuid,
+        originalInfo: assetInfo
+    };
+}
+
 export function onHierarchyMenu(assetInfo: AssetInfo) {
     return [
         {
             label: 'i18n:mflow-tools.export',
             enabled: true,
             async click() {
-                const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
-                console.log('uuid:', uuid);
-                const node = await Editor.Message.request('scene', 'query-node', uuid);
-                console.log('node:', node);
-                const script = node.name.value as string
-                const path = await Editor.Message.request('asset-db', 'query-url', node.__prefab__.uuid);
-                console.log('path:', path);
+                // const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
+                // console.log('uuid:', uuid);
+                // const node = await Editor.Message.request('scene', 'query-node', uuid);
+                // console.log('node:', node);
+                // const script = node.name.value as string
+                // const path = await Editor.Message.request('asset-db', 'query-url', node.__prefab__.uuid);
+                // console.log('path:', path);
+                const assetInfo = await getSelectedAssetInfo();
+                const uuid = assetInfo!.uuid;
+                const path = assetInfo!.path;
+                const script = assetInfo!.name;
+
                 //获取prefab中被指定导出的属性
                 const props = await getProps(uuid);
 
