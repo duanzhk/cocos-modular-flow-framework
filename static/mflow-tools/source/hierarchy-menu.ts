@@ -202,15 +202,13 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 // 等待场景准备就绪
                 await waitForSceneReady();
 
-                //场景中节点的 UUID，而不是资源的 UUID
-                // 通过资源UUID获取场景中节点的UUID
+                // 场景中节点的 UUID，而不是资源的 UUID;通过资源UUID获取场景中节点的UUID
                 const nodeUuids = await Editor.Message.request('scene', 'query-nodes-by-asset-uuid', assetInfo.uuid);
                 if (!nodeUuids || nodeUuids.length === 0) {
                     throw new Error('未找到打开的prefab节点');
                 }
-                console.log('nodeUuids:', nodeUuids);
+                console.log('场景中节点的 UUIDs:', nodeUuids);
                 const rootNodeUuid = nodeUuids[0];
-                console.log('场景中节点的 UUID:', rootNodeUuid);
                 //获取prefab中被指定导出的属性
                 const props = await getProps(rootNodeUuid);
 
@@ -225,9 +223,12 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
 
                 //保存prefab
                 await Editor.Message.request('scene', 'save-scene');
-                // // 等待场景准备就绪
-                // await waitForSceneReady();
-                // await Editor.Message.request('scene', 'close-scene');
+
+                // 等待场景准备就绪
+                await waitForSceneReady();
+
+                await Editor.Message.request('scene', 'close-scene');
+                
                 console.log('全部完成');
             },
         },
