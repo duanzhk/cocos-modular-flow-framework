@@ -197,6 +197,9 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 const path = assetInfo!.path;
                 const script = assetInfo!.name;
 
+                // 设置属性等需要打开prefab
+                await Editor.Message.request('asset-db', 'open-asset', uuid);
+
                 //获取prefab中被指定导出的属性
                 const props = await getProps(uuid);
 
