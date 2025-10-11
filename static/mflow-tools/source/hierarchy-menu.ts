@@ -169,7 +169,7 @@ async function getSelectedAssetInfo() {
 // 等待场景准备就绪
 async function waitForSceneReady(timeoutMs: number = 5000): Promise<boolean> {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeoutMs) {
         try {
             // 使用 query-is-ready 检查场景是否准备好
@@ -180,30 +180,13 @@ async function waitForSceneReady(timeoutMs: number = 5000): Promise<boolean> {
         } catch (error) {
             // 继续等待
         }
-        
+
         // 等待 100ms 后重试
         await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
+
     return false;
 }
-
-// 获取当前打开场景的根节点
-async function getSceneRootNode(): Promise<string> {
-    try {
-        // 调用 query-node-tree 不带参数，返回场景根节点数组
-        const nodeTree: any = await Editor.Message.request('scene', 'query-node-tree');
-        if (!nodeTree) {
-            throw new Error('无法获取场景根节点');
-        }
-        console.log('nodeTree:', nodeTree);
-        return nodeTree.uuid;
-    } catch (error) {
-        console.error('获取场景根节点失败:', error);
-        throw error;
-    }
-}
-
 
 export function onHierarchyMenu(assetInfo: AssetInfo) {
     return [
@@ -220,9 +203,8 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 await waitForSceneReady();
 
                 //场景中节点的 UUID，而不是资源的 UUID
-                // const rootNodeUuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
-                // 用query-node-tree获取场景中节点的 UUID更优雅
-                const rootNodeUuid = await getSceneRootNode();
+                Editor.Selection.select("node", assetInfo.uuid);
+                const rootNodeUuid = Editor.Selection.getSelected("node")[0];
                 console.log('场景中节点的 UUID:', rootNodeUuid);
                 //获取prefab中被指定导出的属性
                 const props = await getProps(rootNodeUuid);
@@ -239,9 +221,9 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 //保存prefab
                 await Editor.Message.request('scene', 'save-scene');
                 // 等待场景准备就绪
-                // await waitForSceneReady();
+                await waitForSceneReady();
                 console.log('全部完成');
-                // await Editor.Message.request('scene', 'close-scene');
+                await Editor.Message.request('scene', 'close-scene');
             },
         },
     ];
