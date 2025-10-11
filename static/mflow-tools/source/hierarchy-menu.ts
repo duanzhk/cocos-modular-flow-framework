@@ -141,6 +141,8 @@ async function getSelectedAssetInfo() {
 
     const assetUuid = selectedUuids[0];
 
+    console.log('selectedUuid:', assetUuid);
+
     // 2. 获取资源详细信息
     const assetInfo = await Editor.Message.request('asset-db', 'query-asset-info', assetUuid);
     if (!assetInfo) {
@@ -185,15 +187,15 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
             label: 'i18n:mflow-tools.export',
             enabled: true,
             async click() {
-                // const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
-                // console.log('uuid:', uuid);
+                const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
+                console.log('uuid:', uuid);
                 // const node = await Editor.Message.request('scene', 'query-node', uuid);
                 // console.log('node:', node);
                 // const script = node.name.value as string
                 // const path = await Editor.Message.request('asset-db', 'query-url', node.__prefab__.uuid);
                 // console.log('path:', path);
                 const assetInfo = await getSelectedAssetInfo();
-                const uuid = assetInfo!.uuid;
+                // const uuid = assetInfo!.uuid;
                 const path = assetInfo!.path;
                 const script = assetInfo!.name;
 
