@@ -204,6 +204,7 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
 
                 //场景中节点的 UUID，而不是资源的 UUID
                 // Editor.Selection.select("node", assetInfo.uuid);
+                console.log(Editor.Selection.getLastSelectedType());
                 const rootNodeUuid = Editor.Selection.getSelected("node")[0];
                 console.log('场景中节点的 UUID:', rootNodeUuid);
                 //获取prefab中被指定导出的属性
