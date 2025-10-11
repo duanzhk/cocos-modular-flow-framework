@@ -149,7 +149,7 @@ async function getSelectedAssetInfo() {
     console.log('assetInfo:', assetInfo);
 
     // 3. 判断是否为prefab类型
-    if (assetInfo.type !== 'prefab') {
+    if (assetInfo.type !== 'cc.Prefab') {
         throw new Error('选中的资源不是prefab类型');
     }
 
