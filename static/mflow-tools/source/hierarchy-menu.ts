@@ -136,30 +136,28 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
             label: 'i18n:mflow-tools.export',
             enabled: true,
             async click() {
-                try {
-                    const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
-                    const node = await Editor.Message.request('scene', 'query-node', uuid);
-                    const script = node.name.value as string
-                    const path = await Editor.Message.request('asset-db', 'query-url', node.__prefab__.uuid);
+                const uuid = Editor.Selection.getSelected(Editor.Selection.getLastSelectedType())[0];
+                console.log('uuid:', uuid);
+                const node = await Editor.Message.request('scene', 'query-node', uuid);
+                console.log('node:', node);
+                const script = node.name.value as string
+                const path = await Editor.Message.request('asset-db', 'query-url', node.__prefab__.uuid);
+                console.log('path:', path);
+                //获取prefab中被指定导出的属性
+                const props = await getProps(uuid);
 
-                    //获取prefab中被指定导出的属性
-                    const props = await getProps(uuid);
+                //创建脚本
+                await createScript({ url: path!, name: script, props: props })
 
-                    //创建脚本
-                    await createScript({ url: path!, name: script, props: props })
+                //挂载脚本
+                await createComponent(uuid, script);
 
-                    //挂载脚本
-                    await createComponent(uuid, script);
+                //设置属性
+                await setProps(uuid, props);
 
-                    //设置属性
-                    await setProps(uuid, props);
-
-                    //保存prefab
-                    await Editor.Message.request('scene', 'save-scene');
-                    console.log('全部完成');
-                } catch (e) {
-                    console.error('请选中一个prefab的节点');
-                }
+                //保存prefab
+                await Editor.Message.request('scene', 'save-scene');
+                console.log('全部完成');
             },
         },
     ];
