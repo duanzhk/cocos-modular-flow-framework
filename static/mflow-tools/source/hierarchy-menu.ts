@@ -203,7 +203,7 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 await waitForSceneReady();
 
                 //场景中节点的 UUID，而不是资源的 UUID
-                Editor.Selection.select("node", assetInfo.uuid);
+                // Editor.Selection.select("node", assetInfo.uuid);
                 const rootNodeUuid = Editor.Selection.getSelected("node")[0];
                 console.log('场景中节点的 UUID:', rootNodeUuid);
                 //获取prefab中被指定导出的属性
@@ -220,10 +220,10 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
 
                 //保存prefab
                 await Editor.Message.request('scene', 'save-scene');
-                // 等待场景准备就绪
-                await waitForSceneReady();
+                // // 等待场景准备就绪
+                // await waitForSceneReady();
+                // await Editor.Message.request('scene', 'close-scene');
                 console.log('全部完成');
-                await Editor.Message.request('scene', 'close-scene');
             },
         },
     ];
