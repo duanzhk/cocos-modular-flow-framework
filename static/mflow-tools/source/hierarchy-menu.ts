@@ -238,6 +238,8 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
 
                 //保存prefab
                 await Editor.Message.request('scene', 'save-scene');
+                // 等待场景准备就绪
+                await waitForSceneReady();
                 console.log('全部完成');
                 await Editor.Message.request('scene', 'close-scene');
             },
