@@ -203,9 +203,13 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 await waitForSceneReady();
 
                 //场景中节点的 UUID，而不是资源的 UUID
-                // Editor.Selection.select("node", assetInfo.uuid);
-                console.log(Editor.Selection.getLastSelectedType());
-                const rootNodeUuid = Editor.Selection.getSelected("node")[0];
+                // 通过资源UUID获取场景中节点的UUID
+                const nodeUuids = await Editor.Message.request('scene', 'query-nodes-by-asset-uuid', assetInfo.uuid);
+                if (!nodeUuids || nodeUuids.length === 0) {
+                    throw new Error('未找到打开的prefab节点');
+                }
+                console.log('nodeUuids:', nodeUuids);
+                const rootNodeUuid = nodeUuids[0];
                 console.log('场景中节点的 UUID:', rootNodeUuid);
                 //获取prefab中被指定导出的属性
                 const props = await getProps(rootNodeUuid);
