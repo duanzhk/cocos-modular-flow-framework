@@ -71,6 +71,10 @@ class AbstractManager {
         }
         return this.eventManager;
     }
+    // HTTP 管理器获取
+    getHttpManager() {
+        return ServiceLocator.getService('HttpManager');
+    }
     releaseEventManager() {
         var _a, _b;
         if (this.eventManager) {

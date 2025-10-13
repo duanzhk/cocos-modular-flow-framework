@@ -12,6 +12,7 @@ Cocos模块化流程框架（Modular Flow Framework）是一个为Cocos Creator�
 - **UI管理系统**：完整的UI界面管理方案
 - **事件系统**：强大的事件广播和监听机制
 - **资源加载系统**：统一的资源加载和释放管理
+- **HTTP网络请求系统**：简洁易用的HTTP客户端
 - **开发工具**：配套的Cocos Creator编辑器插件
 
 ### 1.3 安装说明
@@ -176,7 +177,87 @@ const spineData = await mf.res.loadSpine(spineComponent, 'path/to/spine');
 mf.res.release('path/to/asset');
 ```
 
-## 6. 开发工具
+## 6. HTTP网络请求系统
+
+### 6.1 HttpManager HTTP管理器
+
+HttpManager提供了简洁易用的HTTP客户端功能，支持常见的HTTP方法：
+
+```typescript
+// GET 请求
+const userData = await mf.http.get('/api/users/123', { includeProfile: true });
+
+// POST 请求
+const newUser = await mf.http.post('/api/users', { 
+    name: 'John', 
+    email: 'john@example.com' 
+});
+
+// PUT 请求
+const updatedUser = await mf.http.put('/api/users/123', { 
+    name: 'John Doe' 
+});
+
+// DELETE 请求
+await mf.http.delete('/api/users/123');
+
+// 自定义请求
+const result = await mf.http.request({
+    url: '/api/upload',
+    method: 'POST',
+    data: formData,
+    headers: {
+        'Authorization': 'Bearer token'
+    },
+    timeout: 30000
+});
+```
+
+### 6.2 功能特性
+
+1. **Promise-based API**：所有请求都返回Promise，支持async/await
+2. **超时控制**：默认10秒超时，可自定义
+3. **自动JSON解析**：自动解析JSON响应
+4. **错误处理**：统一的错误处理机制
+5. **请求拦截**：支持自定义请求头
+6. **URL参数处理**：自动处理GET请求的查询参数
+
+### 6.3 使用示例
+
+```typescript
+// 在Manager中使用
+@manager()
+export class UserManager extends AbstractManager {
+    async getUserProfile(userId: string): Promise<any> {
+        try {
+            const profile = await mf.http.get(`/api/users/${userId}/profile`);
+            return profile;
+        } catch (error) {
+            console.error('Failed to fetch user profile:', error);
+            throw error;
+        }
+    }
+    
+    async updateUser(userId: string, data: any): Promise<any> {
+        try {
+            const result = await mf.http.put(`/api/users/${userId}`, data, {
+                'Authorization': `Bearer ${this.getAuthToken()}`
+            });
+            return result;
+        } catch (error) {
+            console.error('Failed to update user:', error);
+            throw error;
+        }
+    }
+    
+    private getAuthToken(): string {
+        // 获取认证令牌的逻辑
+        return 'your-auth-token';
+    }
+}
+```
+
+## 7. 开发工具
 
 框架配套了Cocos Creator编辑器插件`mflow-tools`，可以：
 
@@ -184,7 +265,7 @@ mf.res.release('path/to/asset');
 2. 自动引用Prefab上需要操作的元素
 3. 自动挂载脚本组件
 
-### 6.1 使用方法
+### 7.1 使用方法
 
 1. 在Prefab中，将需要引用的节点重命名为`#属性名#组件类型`格式，例如：
    - `#titleLabel#Label` 表示引用Label组件
@@ -195,9 +276,9 @@ mf.res.release('path/to/asset');
 
 3. 插件会自动生成基础脚本和业务脚本，并自动设置引用关系
 
-## 7. 完整示例
+## 8. 完整示例
 
-### 7.1 创建Manager
+### 8.1 创建Manager
 
 ```typescript
 @manager()
@@ -220,7 +301,7 @@ export class GameManager extends AbstractManager {
 }
 ```
 
-### 7.2 创建Model
+### 8.2 创建Model
 
 ```typescript
 @model()
@@ -241,7 +322,7 @@ export class GameModel implements IModel {
 }
 ```
 
-### 7.3 创建UI界面
+### 8.3 创建UI界面
 
 ```typescript
 // BaseHomeView.ts (由工具自动生成)
@@ -299,7 +380,7 @@ export class HomeView extends BaseHomeView {
 }
 ```
 
-### 7.4 在场景中使用
+### 8.4 在场景中使用
 
 ```typescript
 // 在游戏启动时
@@ -311,18 +392,20 @@ export class GameApp extends Component {
 }
 ```
 
-## 8. 最佳实践
+## 9. 最佳实践
 
 1. **模块化设计**：将相关的业务逻辑封装在对应的Manager中
 2. **数据驱动**：使用Model管理数据状态
 3. **事件解耦**：通过事件系统实现模块间通信
 4. **资源管理**：使用BaseView自动管理资源加载和释放
 5. **依赖注入**：使用装饰器简化依赖管理
-6. **工具辅助**：使用mflow-tools提高开发效率
+6. **网络请求**：使用HttpManager统一管理网络请求
+7. **工具辅助**：使用mflow-tools提高开发效率
 
-## 9. 注意事项
+## 10. 注意事项
 
 1. 确保在使用框架功能前Core已经初始化
 2. 注意资源的正确加载和释放，避免内存泄漏
 3. 合理使用事件系统，避免事件监听过多影响性能
 4. 使用BaseView的子类时，确保正确实现所有抽象方法
+5. 网络请求时注意错误处理和超时设置

@@ -1,4 +1,4 @@
-import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager } from "./core";
+import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager, IHttpManager } from "./core";
 
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式
@@ -14,7 +14,9 @@ export class App {
     static get gui(): IUIManager {
         return ServiceLocator.getService<IUIManager>('UIManager')
     }
-    static readonly http: any = null;
+    static get http(): IHttpManager {
+        return ServiceLocator.getService<IHttpManager>('HttpManager')
+    }
     static readonly socket: any = null;
     static get res(): ICocosResManager {
         return ServiceLocator.getService<ICocosResManager>('ResLoader')

@@ -1,3 +1,4 @@
+import './ArrayExt.js';
 export { ArrayUtil } from './ArrayUtil.js';
 export { CameraUtil } from './CameraUtil.js';
 export { ImageUtil } from './ImageUtil.js';

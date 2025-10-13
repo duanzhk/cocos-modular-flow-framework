@@ -35,6 +35,24 @@ export interface IUIManager {
 
 export interface IResManager { }
 
+// HTTP 管理器接口
+export interface IHttpManager extends IManager {
+    get<T = any>(url: string, params?: Record<string, any>, headers?: Record<string, string>): Promise<T>;
+    post<T = any>(url: string, data?: any, headers?: Record<string, string>): Promise<T>;
+    put<T = any>(url: string, data?: any, headers?: Record<string, string>): Promise<T>;
+    delete<T = any>(url: string, params?: Record<string, any>, headers?: Record<string, string>): Promise<T>;
+    request<T = any>(options: HttpRequestOptions): Promise<T>;
+}
+
+export interface HttpRequestOptions {
+    url: string;
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+    headers?: Record<string, string>;
+    params?: Record<string, any>;
+    data?: any;
+    timeout?: number;
+}
+
 // 基础空类型，由业务层扩展
 export interface IEventMsgKey { }
 interface IMsgValueType { }

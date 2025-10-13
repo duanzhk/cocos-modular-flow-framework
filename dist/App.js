@@ -13,6 +13,9 @@ class App {
     static get gui() {
         return ServiceLocator.getService('UIManager');
     }
+    static get http() {
+        return ServiceLocator.getService('HttpManager');
+    }
     static get res() {
         return ServiceLocator.getService('ResLoader');
     }
@@ -22,7 +25,6 @@ class App {
 }
 App.log = null;
 App.config = null;
-App.http = null;
 App.socket = null;
 App.storage = null;
 App.audio = null;

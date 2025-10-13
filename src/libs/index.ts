@@ -4,3 +4,4 @@ export * from './CocosCore'
 export * from './ResLoader'
 export * from './UIManager'
 export * from './UIRoot'
+export * from './HttpManager';

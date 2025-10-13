@@ -1,4 +1,4 @@
-import { ICore, IEventManager, IManager, IModel } from "./Api";
+import { ICore, IEventManager, IManager, IModel, IHttpManager } from "./Api";
 import { ServiceLocator } from "./ServiceLocator";
 import { getInterface } from "./Decorators";
 
@@ -81,6 +81,11 @@ export abstract class AbstractManager implements IManager {
             this.eventManager = ServiceLocator.getService<IEventManager>('EventManager');
         }
         return this.eventManager;
+    }
+
+    // HTTP 管理器获取
+    protected getHttpManager(): IHttpManager {
+        return ServiceLocator.getService<IHttpManager>('HttpManager');
     }
 
     private releaseEventManager(): void {

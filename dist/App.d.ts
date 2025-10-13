@@ -1,4 +1,4 @@
-import { ICore, IUIManager, IEventManager, ICocosResManager } from "./core";
+import { ICore, IUIManager, IEventManager, ICocosResManager, IHttpManager } from "./core";
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式
  *
@@ -9,7 +9,7 @@ export declare class App {
     static readonly log: any;
     static readonly config: any;
     static get gui(): IUIManager;
-    static readonly http: any;
+    static get http(): IHttpManager;
     static readonly socket: any;
     static get res(): ICocosResManager;
     static get event(): IEventManager;

@@ -3,6 +3,7 @@ import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "../cor
 import { UIManager} from "./UIManager";
 import { ResLoader} from "./ResLoader";
 import { Broadcaster} from "./Broadcaster";
+import { HttpManager } from "./HttpManager";
 import '../App'
 
 class Core extends AbstractCore<Core> {
@@ -12,6 +13,7 @@ class Core extends AbstractCore<Core> {
         ServiceLocator.regService('EventManager', new Broadcaster<IEventMsgKey>());
         ServiceLocator.regService('ResLoader', new ResLoader());
         ServiceLocator.regService('UIManager', new UIManager());
+        ServiceLocator.regService('HttpManager', new HttpManager());
 
         // 注册业务模块（通过装饰器自动注册）
         // 推迟到构造函数执行完毕

@@ -1,3 +1,4 @@
+export * from './ArrayExt';
 export * from './ArrayUtil';
 export * from './CameraUtil';
 export * from './ImageUtil';
