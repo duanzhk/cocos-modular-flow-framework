@@ -75,6 +75,10 @@ class AbstractManager {
     getHttpManager() {
         return ServiceLocator.getService('HttpManager');
     }
+    // WebSocket 管理器获取
+    getWebSocketManager() {
+        return ServiceLocator.getService('WebSocketManager');
+    }
     releaseEventManager() {
         var _a, _b;
         if (this.eventManager) {

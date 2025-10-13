@@ -16,6 +16,9 @@ class App {
     static get http() {
         return ServiceLocator.getService('HttpManager');
     }
+    static get socket() {
+        return ServiceLocator.getService('WebSocketManager');
+    }
     static get res() {
         return ServiceLocator.getService('ResLoader');
     }
@@ -25,7 +28,6 @@ class App {
 }
 App.log = null;
 App.config = null;
-App.socket = null;
 App.storage = null;
 App.audio = null;
 App.timer = null;

@@ -4,6 +4,7 @@ import { UIManager} from "./UIManager";
 import { ResLoader} from "./ResLoader";
 import { Broadcaster} from "./Broadcaster";
 import { HttpManager } from "./HttpManager";
+import { WebSocketManager } from "./WebSocketManager";
 import '../App'
 
 class Core extends AbstractCore<Core> {
@@ -14,6 +15,7 @@ class Core extends AbstractCore<Core> {
         ServiceLocator.regService('ResLoader', new ResLoader());
         ServiceLocator.regService('UIManager', new UIManager());
         ServiceLocator.regService('HttpManager', new HttpManager());
+        ServiceLocator.regService('WebSocketManager', new WebSocketManager());
 
         // 注册业务模块（通过装饰器自动注册）
         // 推迟到构造函数执行完毕

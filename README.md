@@ -13,6 +13,7 @@ Cocos模块化流程框架（Modular Flow Framework）是一个为Cocos Creator�
 - **事件系统**：强大的事件广播和监听机制
 - **资源加载系统**：统一的资源加载和释放管理
 - **HTTP网络请求系统**：简洁易用的HTTP客户端
+- **WebSocket实时通信**：支持自动重连、心跳检测的WebSocket客户端
 - **开发工具**：配套的Cocos Creator编辑器插件
 
 ### 1.3 安装说明
@@ -257,7 +258,361 @@ export class UserManager extends AbstractManager {
 }
 ```
 
-## 7. 开发工具
+## 7. WebSocket 实时通信系统
+
+### 7.1 WebSocketManager WebSocket管理器
+
+WebSocketManager提供了完整的 WebSocket 客户端功能，支持：
+
+```typescript
+// 连接 WebSocket 服务器
+mf.socket.connect('ws://localhost:8080/game');
+
+// 或使用安全连接
+mf.socket.connect('wss://game-server.example.com/ws');
+
+// 配置自动重连和心跳
+mf.socket.configure({
+    reconnect: true,              // 启用自动重连
+    reconnectInterval: 3000,      // 重连间隔 3 秒
+    reconnectAttempts: 5,         // 最多重连 5 次
+    heartbeat: true,              // 启用心跳
+    heartbeatInterval: 30000,     // 心跳间隔 30 秒
+    heartbeatMessage: 'ping'      // 心跳消息
+});
+
+// 监听事件
+mf.socket.on('open', (event) => {
+    console.log('连接成功');
+});
+
+mf.socket.on('message', (event) => {
+    console.log('收到消息:', event.data);
+});
+
+mf.socket.on('error', (event) => {
+    console.error('连接错误:', event);
+});
+
+mf.socket.on('close', (event) => {
+    console.log('连接关闭');
+});
+
+// 发送消息（支持多种数据类型）
+// 1. 发送对象（自动转换为 JSON）
+mf.socket.send({ type: 'move', x: 100, y: 200 });
+
+// 2. 发送字符串
+mf.socket.send('Hello Server');
+
+// 检查连接状态
+if (mf.socket.isConnected()) {
+    // 已连接
+}
+
+// 断开连接
+mf.socket.disconnect();
+```
+
+### 7.2 发送不同类型的数据
+
+WebSocket 支持多种数据类型的发送：
+
+```typescript
+// ==================== 1. 发送 JSON 对象（推荐）====================
+// 自动序列化为 JSON 字符串
+mf.socket.send({
+    type: 'player_move',
+    position: { x: 100, y: 200 },
+    timestamp: Date.now()
+});
+
+// ==================== 2. 发送纯文本 ====================
+mf.socket.send('ping');
+
+// ==================== 3. 发送二进制数据（ArrayBuffer）====================
+// 适用场景：发送游戏状态快照、地图数据等需要高效传输的场景
+function sendBinaryData() {
+    // 创建 ArrayBuffer（8 字节）
+    const buffer = new ArrayBuffer(8);
+    const view = new DataView(buffer);
+    
+    // 写入玩家 ID（4 字节整数）
+    view.setInt32(0, 12345, true);
+    
+    // 写入玩家位置（2 个 2 字节整数）
+    view.setInt16(4, 100, true); // x 坐标
+    view.setInt16(6, 200, true); // y 坐标
+    
+    // 发送二进制数据
+    mf.socket.send(buffer);
+}
+
+// 接收二进制数据示例
+mf.socket.on('message', (event: MessageEvent) => {
+    if (event.data instanceof ArrayBuffer) {
+        const view = new DataView(event.data);
+        const playerId = view.getInt32(0, true);
+        const x = view.getInt16(4, true);
+        const y = view.getInt16(6, true);
+        console.log(`玩家 ${playerId} 移动到 (${x}, ${y})`);
+    }
+});
+
+// ==================== 4. 发送文件（Blob）====================
+// 适用场景：上传截图、录像回放、自定义地图等
+async function sendScreenshot() {
+    // 方式 1：从 Canvas 获取 Blob
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+    canvas.toBlob((blob) => {
+        if (blob) {
+            mf.socket.send(blob);
+        }
+    }, 'image/png');
+    
+    // 方式 2：从文件选择器获取
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = fileInput.files?.[0];
+    if (file) {
+        mf.socket.send(file);
+    }
+    
+    // 方式 3：创建自定义 Blob
+    const data = new Blob(['自定义数据内容'], { type: 'text/plain' });
+    mf.socket.send(data);
+}
+
+// 接收 Blob 数据示例
+mf.socket.on('message', async (event: MessageEvent) => {
+    if (event.data instanceof Blob) {
+        // 读取 Blob 数据
+        const text = await event.data.text();
+        console.log('收到文件数据:', text);
+        
+        // 或者作为 ArrayBuffer 读取
+        const buffer = await event.data.arrayBuffer();
+        console.log('文件大小:', buffer.byteLength, '字节');
+    }
+});
+
+// ==================== 5. 发送 TypedArray（Uint8Array 等）====================
+// 适用场景：发送图像数据、音频流等
+function sendImageData() {
+    // 创建一个 256 字节的数据
+    const imageData = new Uint8Array(256);
+    for (let i = 0; i < imageData.length; i++) {
+        imageData[i] = i;
+    }
+    
+    // 发送 TypedArray（会自动转换为 ArrayBuffer）
+    mf.socket.send(imageData.buffer);
+}
+```
+
+
+### 7.3 功能特性
+
+1. **自动重连**：连接断开后自动尝试重连，可配置重连次数和间隔
+2. **心跳检测**：定期发送心跳消息保持连接
+3. **消息队列**：连接断开时缓存消息，重连后自动发送
+4. **事件管理**：统一的事件监听和触发机制
+5. **连接状态管理**：实时获取连接状态
+6. **自动序列化**：对象类型自动转换为 JSON 字符串
+7. **多数据类型支持**：支持 string、object、ArrayBuffer、Blob 等
+
+### 7.4 实战案例：多人对战游戏
+
+```typescript
+// ==================== 案例 1：实时对战位置同步 ====================
+// 使用二进制数据传输，减少带宽占用
+class BattleNetworkManager {
+    // 发送玩家位置（二进制，只需 12 字节）
+    sendPlayerPosition(playerId: number, x: number, y: number, rotation: number) {
+        const buffer = new ArrayBuffer(12);
+        const view = new DataView(buffer);
+        
+        view.setInt32(0, playerId, true);     // 玩家 ID（4 字节）
+        view.setFloat32(4, x, true);          // X 坐标（4 字节）
+        view.setFloat32(8, y, true);          // Y 坐标（4 字节）
+        
+        mf.socket.send(buffer);
+    }
+    
+    // 接收其他玩家位置
+    setupPositionReceiver() {
+        mf.socket.on('message', (event: MessageEvent) => {
+            if (event.data instanceof ArrayBuffer) {
+                const view = new DataView(event.data);
+                const playerId = view.getInt32(0, true);
+                const x = view.getFloat32(4, true);
+                const y = view.getFloat32(8, true);
+                
+                // 更新其他玩家位置
+                this.updateOtherPlayerPosition(playerId, x, y);
+            }
+        });
+    }
+    
+    private updateOtherPlayerPosition(playerId: number, x: number, y: number) {
+        // 更新游戏中其他玩家的位置
+        console.log(`玩家 ${playerId} 移动到 (${x}, ${y})`);
+    }
+}
+
+// ==================== 案例 2：截图分享功能 ====================
+// 使用 Blob 上传游戏截图
+class ScreenshotManager {
+    async captureAndSend() {
+        // 获取游戏 Canvas
+        const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+        
+        // 转换为 Blob
+        canvas.toBlob((blob) => {
+            if (blob) {
+                // 发送截图到服务器
+                mf.socket.send(blob);
+                console.log(`发送截图，大小: ${blob.size} 字节`);
+            }
+        }, 'image/jpeg', 0.8); // JPEG 格式，80% 质量
+    }
+    
+    // 接收其他玩家的截图
+    setupScreenshotReceiver() {
+        mf.socket.on('message', async (event: MessageEvent) => {
+            if (event.data instanceof Blob) {
+                // 创建图片 URL
+                const imageUrl = URL.createObjectURL(event.data);
+                
+                // 显示图片
+                const img = new Image();
+                img.src = imageUrl;
+                document.body.appendChild(img);
+                
+                console.log('收到截图');
+            }
+        });
+    }
+}
+
+// ==================== 案例 3：混合数据类型 ====================
+// 根据消息类型选择最优传输方式
+class SmartNetworkManager {
+    send(messageType: string, data: any) {
+        switch (messageType) {
+            case 'chat':
+                // 聊天消息：使用 JSON
+                mf.socket.send({
+                    type: 'chat',
+                    message: data.message,
+                    playerId: data.playerId
+                });
+                break;
+                
+            case 'position':
+                // 位置更新：使用二进制（高频更新）
+                this.sendPositionBinary(data);
+                break;
+                
+            case 'screenshot':
+                // 截图：使用 Blob
+                mf.socket.send(data.blob);
+                break;
+                
+            case 'skill':
+                // 技能释放：使用 JSON
+                mf.socket.send({
+                    type: 'skill',
+                    skillId: data.skillId,
+                    targetId: data.targetId,
+                    timestamp: Date.now()
+                });
+                break;
+        }
+    }
+    
+    private sendPositionBinary(data: any) {
+        const buffer = new ArrayBuffer(12);
+        const view = new DataView(buffer);
+        view.setInt32(0, data.playerId, true);
+        view.setFloat32(4, data.x, true);
+        view.setFloat32(8, data.y, true);
+        mf.socket.send(buffer);
+    }
+}
+```
+
+### 7.5 Manager 集成示例
+
+```typescript
+// 在Manager中使用
+@manager()
+export class GameNetworkManager extends AbstractManager {
+    initialize() {
+        // 配置 WebSocket
+        mf.socket.configure({
+            reconnect: true,
+            reconnectInterval: 3000,
+            reconnectAttempts: 10,
+            heartbeat: true,
+            heartbeatInterval: 30000
+        });
+        
+        // 设置事件监听
+        mf.socket.on('open', this.onConnected.bind(this));
+        mf.socket.on('message', this.onMessage.bind(this));
+        mf.socket.on('error', this.onError.bind(this));
+        mf.socket.on('close', this.onClose.bind(this));
+    }
+    
+    connect(token: string) {
+        const wsUrl = `wss://game-server.example.com/ws?token=${token}`;
+        mf.socket.connect(wsUrl);
+    }
+    
+    private onConnected(event: Event) {
+        console.log('连接成功');
+        this.sendLogin();
+    }
+    
+    private onMessage(event: MessageEvent) {
+        const data = JSON.parse(event.data);
+        // 处理服务器消息
+        this.handleServerMessage(data);
+    }
+    
+    private onError(event: Event) {
+        console.error('连接错误');
+    }
+    
+    private onClose(event: CloseEvent) {
+        console.log('连接关闭');
+    }
+    
+    sendPlayerMove(x: number, y: number) {
+        // 直接发送对象，自动序列化为 JSON
+        mf.socket.send({
+            type: 'player_move',
+            position: { x, y },
+            timestamp: Date.now()
+        });
+    }
+    
+    private sendLogin() {
+        // 直接发送对象，自动序列化为 JSON
+        mf.socket.send({
+            type: 'login',
+            userId: this.getUserId()
+        });
+    }
+    
+    private handleServerMessage(data: any) {
+        // 使用事件系统分发消息
+        mf.event.dispatch(`server_${data.type}`, data);
+    }
+}
+```
+
+## 8. 开发工具
 
 框架配套了Cocos Creator编辑器插件`mflow-tools`，可以：
 
@@ -265,7 +620,7 @@ export class UserManager extends AbstractManager {
 2. 自动引用Prefab上需要操作的元素
 3. 自动挂载脚本组件
 
-### 7.1 使用方法
+### 8.1 使用方法
 
 1. 在Prefab中，将需要引用的节点重命名为`#属性名#组件类型`格式，例如：
    - `#titleLabel#Label` 表示引用Label组件
@@ -276,9 +631,9 @@ export class UserManager extends AbstractManager {
 
 3. 插件会自动生成基础脚本和业务脚本，并自动设置引用关系
 
-## 8. 完整示例
+## 9. 完整示例
 
-### 8.1 创建Manager
+### 9.1 创建Manager
 
 ```typescript
 @manager()
@@ -301,7 +656,7 @@ export class GameManager extends AbstractManager {
 }
 ```
 
-### 8.2 创建Model
+### 9.2 创建Model
 
 ```typescript
 @model()
@@ -322,7 +677,7 @@ export class GameModel implements IModel {
 }
 ```
 
-### 8.3 创建UI界面
+### 9.3 创建UI界面
 
 ```typescript
 // BaseHomeView.ts (由工具自动生成)
@@ -380,7 +735,7 @@ export class HomeView extends BaseHomeView {
 }
 ```
 
-### 8.4 在场景中使用
+### 9.4 在场景中使用
 
 ```typescript
 // 在游戏启动时
@@ -392,7 +747,7 @@ export class GameApp extends Component {
 }
 ```
 
-## 9. 最佳实践
+## 10. 最佳实践
 
 1. **模块化设计**：将相关的业务逻辑封装在对应的Manager中
 2. **数据驱动**：使用Model管理数据状态
@@ -400,12 +755,15 @@ export class GameApp extends Component {
 4. **资源管理**：使用BaseView自动管理资源加载和释放
 5. **依赖注入**：使用装饰器简化依赖管理
 6. **网络请求**：使用HttpManager统一管理网络请求
-7. **工具辅助**：使用mflow-tools提高开发效率
+7. **实时通信**：使用WebSocketManager处理实时消息，配合事件系统分发
+8. **工具辅助**：使用mflow-tools提高开发效率
 
-## 10. 注意事项
+## 11. 注意事项
 
 1. 确保在使用框架功能前Core已经初始化
 2. 注意资源的正确加载和释放，避免内存泄漏
 3. 合理使用事件系统，避免事件监听过多影响性能
 4. 使用BaseView的子类时，确保正确实现所有抽象方法
 5. 网络请求时注意错误处理和超时设置
+6. WebSocket 连接时记得在场景切换时断开连接，避免内存泄漏
+7. 合理配置心跳和重连参数，平衡连接稳定性和服务器压力

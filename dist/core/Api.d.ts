@@ -43,6 +43,26 @@ export interface HttpRequestOptions {
     data?: any;
     timeout?: number;
 }
+export interface IWebSocketManager extends IManager {
+    connect(url: string, protocols?: string | string[]): void;
+    disconnect(code?: number, reason?: string): void;
+    send(data: string | ArrayBuffer | Blob | object): void;
+    isConnected(): boolean;
+    on(event: 'open' | 'message' | 'error' | 'close', handler: Function): void;
+    off(event: 'open' | 'message' | 'error' | 'close', handler?: Function): void;
+    getReadyState(): number;
+    configure(config: Partial<WebSocketConfig>): void;
+}
+export interface WebSocketConfig {
+    url: string;
+    protocols?: string | string[];
+    reconnect?: boolean;
+    reconnectInterval?: number;
+    reconnectAttempts?: number;
+    heartbeat?: boolean;
+    heartbeatInterval?: number;
+    heartbeatMessage?: string;
+}
 export interface IEventMsgKey {
 }
 export type ToAnyIndexKey<IndexKey, AnyType> = IndexKey extends keyof AnyType ? IndexKey : keyof AnyType;

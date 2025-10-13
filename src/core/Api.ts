@@ -53,6 +53,29 @@ export interface HttpRequestOptions {
     timeout?: number;
 }
 
+// WebSocket 管理器接口
+export interface IWebSocketManager extends IManager {
+    connect(url: string, protocols?: string | string[]): void;
+    disconnect(code?: number, reason?: string): void;
+    send(data: string | ArrayBuffer | Blob | object): void;
+    isConnected(): boolean;
+    on(event: 'open' | 'message' | 'error' | 'close', handler: Function): void;
+    off(event: 'open' | 'message' | 'error' | 'close', handler?: Function): void;
+    getReadyState(): number;
+    configure(config: Partial<WebSocketConfig>): void;
+}
+
+export interface WebSocketConfig {
+    url: string;
+    protocols?: string | string[];
+    reconnect?: boolean;
+    reconnectInterval?: number;
+    reconnectAttempts?: number;
+    heartbeat?: boolean;
+    heartbeatInterval?: number;
+    heartbeatMessage?: string;
+}
+
 // 基础空类型，由业务层扩展
 export interface IEventMsgKey { }
 interface IMsgValueType { }
