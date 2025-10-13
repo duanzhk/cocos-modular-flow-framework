@@ -4,8 +4,6 @@ import { assetManager, Prefab, Asset, SpriteFrame, sp } from 'cc';
 const DefaultBundle = "resources";
 class ResLoader {
     loadAsset(path, type, nameOrUrl = DefaultBundle) {
-        //TODO: bundle.release和assetManager.releaseAsset的区别?
-        //TODO: prefab是否需要addRef，prefab被克隆出来的节点被销毁时，对应的prefab如何处理?
         if (assetManager.assets.has(path)) {
             const asset = assetManager.assets.get(path);
             asset.addRef();
@@ -31,6 +29,7 @@ class ResLoader {
         });
     }
     loadPrefab(path, nameOrUrl = DefaultBundle) {
+        //refCount 记录的是持有者数量，不是资源份数，所以prefab也需要addRef
         return this.loadAsset(path, Prefab, nameOrUrl);
     }
     loadSpriteFrame(ref, path, nameOrUrl = DefaultBundle) {
@@ -41,7 +40,7 @@ class ResLoader {
                 return Promise.resolve(sf);
             }
             else {
-                // 没有引用到的资源，释放掉
+                // 没有引用对象，释放掉资源
                 this.release(path, SpriteFrame, nameOrUrl);
                 return Promise.reject(new Error("Sprite is not valid"));
             }
@@ -55,26 +54,37 @@ class ResLoader {
                 return Promise.resolve(spine);
             }
             else {
-                // 没有引用到的资源，释放掉
+                // 没有引用对象，释放掉资源
                 this.release(path, sp.SkeletonData, nameOrUrl);
                 return Promise.reject(new Error("Spine is not valid"));
             }
         });
     }
-    release(pathOrAsset, type, nameOrUrl = DefaultBundle) {
+    release(pathOrAsset, typeOrForce, nameOrUrl = DefaultBundle, forceParam = false) {
+        var _a;
+        let asset;
+        let force = false;
         if (typeof pathOrAsset === "string") {
-            const bundle = assetManager.getBundle(nameOrUrl);
-            const asset = bundle === null || bundle === void 0 ? void 0 : bundle.get(pathOrAsset, type);
-            asset === null || asset === void 0 ? void 0 : asset.decRef();
-            if ((asset === null || asset === void 0 ? void 0 : asset.refCount) === 0) {
-                bundle === null || bundle === void 0 ? void 0 : bundle.release(pathOrAsset, type);
+            if (!typeOrForce || typeof typeOrForce === "boolean") {
+                throw new Error('typeOrForce is undefined, or typeOrForce is boolean! typeOrForce must be AssetType<Asset>!');
             }
+            force = forceParam;
+            asset = (_a = assetManager.getBundle(nameOrUrl)) === null || _a === void 0 ? void 0 : _a.get(pathOrAsset, typeOrForce);
         }
         else if (pathOrAsset instanceof Asset) {
-            pathOrAsset.decRef();
-            if (pathOrAsset.refCount === 0) {
-                assetManager.releaseAsset(pathOrAsset);
-            }
+            asset = pathOrAsset;
+            force = typeof typeOrForce === 'boolean' ? typeOrForce : forceParam;
+        }
+        if (!asset) {
+            console.warn(`${pathOrAsset} Release asset failed, asset is null or undefined`);
+            return;
+        }
+        if (force) {
+            assetManager.releaseAsset(asset);
+        }
+        else {
+            // decRef原型：decRef (autoRelease = true)，所以引用数量为 0，则将自动释放该资源。
+            asset.decRef();
         }
     }
 }

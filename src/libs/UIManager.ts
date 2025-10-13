@@ -1,4 +1,4 @@
-import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite } from "cc";
+import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab } from "cc";
 import { ICocosResManager, IUIManager, IView, ServiceLocator } from "../core";
 
 function addWidget(node: Node) {
@@ -157,6 +157,7 @@ export class UIManager extends CcocosUIManager {
             target = instantiate(prefab) as Node
             this._cache.set(viewType.name, target);
         }
+        target.active = true;
         return target.getComponent<T>(viewType)!
     }
 
@@ -175,10 +176,21 @@ export class UIManager extends CcocosUIManager {
         }
         viewortype.onExit();
         viewortype.node.removeFromParent();
+        viewortype.node.active = false;
         if (destroy) {
             let cacheKey = viewortype.constructor.name;
             this._cache.get(cacheKey)?.destroy();
             this._cache.delete(cacheKey);
+            
+            // 销毁被克隆出的UI后Node后，尝试释放 Prefab 资源
+            try {
+                const viewType = viewortype.constructor as new () => T;
+                const prefabPath = this._getPrefabPath(viewType);
+                const ResMgr = ServiceLocator.getService<ICocosResManager>('ResLoader');
+                ResMgr.release(prefabPath, Prefab);
+            } catch (error) {
+                console.error(`Failed to release prefab for ${cacheKey}:`, error);
+            }
         }
     }
 

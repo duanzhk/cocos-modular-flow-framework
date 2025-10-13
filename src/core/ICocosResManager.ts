@@ -7,6 +7,7 @@ export interface ICocosResManager extends IResManager {
     loadPrefab(path: string, nameOrUrl?: string): Promise<Prefab>
     loadSpriteFrame(ref: Sprite, path: string, nameOrUrl?: string): Promise<SpriteFrame>
     loadSpine(ref: sp.Skeleton, path: string, nameOrUrl?: string): Promise<sp.SkeletonData>
-    release(asset: Asset): void
-    release(path: string, type?: AssetType<Asset>, nameOrUrl?: string): void
+
+    release(asset: Asset, force?: boolean): void
+    release(path: string, type?: AssetType<Asset>, nameOrUrl?: string, force?: boolean): void
 }

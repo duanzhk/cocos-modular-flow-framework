@@ -73,8 +73,7 @@ export abstract class BaseView extends Component implements IView {
     protected onDestroy(): void {
         // 自动清理加载的资源
         this._loaderHandlers.forEach(({ path, asset }) => {
-            mf.res.release(path, asset.constructor as any);
-            // mf.res.release(asset);
+            mf.res.release(asset);
         });
         this._loaderHandlers = []
     }

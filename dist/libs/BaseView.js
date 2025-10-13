@@ -65,8 +65,7 @@ class BaseView extends Component {
     onDestroy() {
         // 自动清理加载的资源
         this._loaderHandlers.forEach(({ path, asset }) => {
-            mf.res.release(path, asset.constructor);
-            // mf.res.release(asset);
+            mf.res.release(asset);
         });
         this._loaderHandlers = [];
     }

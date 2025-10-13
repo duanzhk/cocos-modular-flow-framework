@@ -27,8 +27,6 @@ function getProps(uuid: string, result?: Props): Promise<Props> {
 
 async function createScript(info: { url: string, name: string, props: Props }): Promise<any> {
     const basescript = `Base${info.name}`
-    const prefix = "db://assets/resources/";
-    const __path__ = info.url?.startsWith(prefix) ? info.url?.slice(prefix.length, -".prefab".length) : info.url
     const imports = [...new Set(Object.keys(info.props).map(uuid => info.props[uuid].type))].join(',');
     const defprops = Object.keys(info.props).map((uuid) => {
         const propkey = info.props[uuid].key
@@ -44,7 +42,7 @@ const { ccclass, property, disallowMultiple } = _decorator;
 @disallowMultiple()
 export abstract class ${basescript} extends BaseView {
     /** @internal */
-    private static readonly __path__: string = "${__path__}";
+    private static readonly __path__: string = "${info.url}";
     ${defprops}
 }`;
     const basescripturl = `db://assets/src/views/${basescript}.ts`;
@@ -228,7 +226,7 @@ export function onHierarchyMenu(assetInfo: AssetInfo) {
                 await waitForSceneReady();
 
                 await Editor.Message.request('scene', 'close-scene');
-                
+
                 console.log('全部完成');
             },
         },

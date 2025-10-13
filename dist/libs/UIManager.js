@@ -1,5 +1,5 @@
 import { __awaiter } from '../_virtual/_tslib.js';
-import { director, Node, Sprite, Widget, Input, input, instantiate } from 'cc';
+import { director, Node, Sprite, Widget, Input, input, Prefab, instantiate } from 'cc';
 import { ServiceLocator } from '../core/ServiceLocator.js';
 import 'reflect-metadata';
 
@@ -144,6 +144,7 @@ class UIManager extends CcocosUIManager {
                 target = instantiate(prefab);
                 this._cache.set(viewType.name, target);
             }
+            target.active = true;
             return target.getComponent(viewType);
         });
     }
@@ -163,10 +164,21 @@ class UIManager extends CcocosUIManager {
         }
         viewortype.onExit();
         viewortype.node.removeFromParent();
+        viewortype.node.active = false;
         if (destroy) {
             let cacheKey = viewortype.constructor.name;
             (_a = this._cache.get(cacheKey)) === null || _a === void 0 ? void 0 : _a.destroy();
             this._cache.delete(cacheKey);
+            // 销毁被克隆出的UI后Node后，尝试释放 Prefab 资源
+            try {
+                const viewType = viewortype.constructor;
+                const prefabPath = this._getPrefabPath(viewType);
+                const ResMgr = ServiceLocator.getService('ResLoader');
+                ResMgr.release(prefabPath, Prefab);
+            }
+            catch (error) {
+                console.error(`Failed to release prefab for ${cacheKey}:`, error);
+            }
         }
     }
     internalGetTopView() {
