@@ -16,6 +16,6 @@ export declare abstract class BaseView extends Component implements IView {
     abstract onEnter(args?: any): void;
     onExit(): void;
     protected onDestroy(): void;
-    protected getManager<T extends IManager>(ctor: new () => T): T;
-    protected getModel<T extends IModel>(ctor: new () => T): T;
+    protected getManager<T extends IManager>(managerSymbol: symbol): T;
+    protected getModel<T extends IModel>(modelSymbol: symbol): T;
 }

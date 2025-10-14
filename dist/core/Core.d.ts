@@ -3,16 +3,16 @@ export declare abstract class AbstractCore<T extends AbstractCore<T>> implements
     private readonly container;
     constructor();
     protected abstract initialize(): void;
-    regModel<T extends IModel>(model: T): void;
-    getModel<T extends IModel>(ctor: new () => T): T;
-    regManager<T extends IManager>(manager: T): void;
-    getManager<T extends IManager>(indent: (new () => T) | symbol): T;
+    regModel<T extends IModel>(modelSymbol: symbol): void;
+    getModel<T extends IModel>(modelSymbol: symbol): T;
+    regManager<T extends IManager>(managerSymbol: symbol): void;
+    getManager<T extends IManager>(managerSymbol: symbol): T;
 }
 export declare abstract class AbstractManager implements IManager {
     private eventManager?;
     abstract initialize(): void;
     dispose(): void;
-    protected getModel<T extends IModel>(ctor: new () => T): T;
+    protected getModel<T extends IModel>(modelSymbol: symbol): T;
     protected getEventManager(): IEventManager;
     protected getHttpManager(): IHttpManager;
     protected getWebSocketManager(): IWebSocketManager;

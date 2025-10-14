@@ -1,7 +1,7 @@
 import { __awaiter } from '../_virtual/_tslib.js';
 import { director, Node, Sprite, Widget, Input, input, Prefab, instantiate } from 'cc';
 import { ServiceLocator } from '../core/ServiceLocator.js';
-import 'reflect-metadata';
+import { getViewClass } from '../core/Decorators.js';
 
 function addWidget(node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
@@ -60,16 +60,14 @@ class CcocosUIManager {
     getTopView() {
         return this.internalGetTopView();
     }
-    open(viewType, args) {
-        let vt = viewType;
-        return this.internalOpen(vt, args);
+    open(viewSymbol, args) {
+        return this.internalOpen(viewSymbol, args);
     }
-    close(viewortype, destory) {
-        this.internalClose(viewortype, destory);
+    close(viewSymbol, destory) {
+        this.internalClose(viewSymbol, destory);
     }
-    openAndPush(viewType, group, args) {
-        let vt = viewType;
-        return this.internalOpenAndPush(vt, group, args);
+    openAndPush(viewSymbol, group, args) {
+        return this.internalOpenAndPush(viewSymbol, group, args);
     }
     closeAndPop(group, destroy) {
         this.internalCloseAndPop(group, destroy);
@@ -104,7 +102,7 @@ class UIManager extends CcocosUIManager {
             }
             prototype = Object.getPrototypeOf(prototype);
         }
-        throw new Error(`Prefab path not found for ${viewType.constructor.name}`);
+        throw new Error(`Prefab path not found for ${viewType.name}`);
     }
     // 调整Mask层级
     _adjustMaskLayer() {
@@ -131,8 +129,9 @@ class UIManager extends CcocosUIManager {
             }
         }
     }
-    _load(viewType, args) {
+    _load(viewSymbol, args) {
         return __awaiter(this, void 0, void 0, function* () {
+            const viewType = getViewClass(viewSymbol);
             let target;
             if (this._cache.has(viewType.name)) {
                 target = this._cache.get(viewType.name);
@@ -148,30 +147,39 @@ class UIManager extends CcocosUIManager {
             return target.getComponent(viewType);
         });
     }
-    _remove(viewortype, destroy) {
+    _remove(viewSymbolOrInstance, destroy) {
         var _a;
-        if (typeof viewortype == 'function') {
-            const cached = this._cache.get(viewortype.name);
+        // 如果是 symbol，从缓存中获取视图实例
+        if (typeof viewSymbolOrInstance === 'symbol') {
+            const viewType = getViewClass(viewSymbolOrInstance);
+            const cached = this._cache.get(viewType.name);
             if (!cached) {
-                console.warn(`No cached view found for ${viewortype.name}`);
+                console.warn(`No cached view found for ${viewType.name}`);
                 return;
             }
-            this._remove(cached.getComponent(viewortype), destroy);
+            const viewInstance = cached.getComponent(viewType);
+            if (!viewInstance) {
+                console.warn(`No view component found on node ${cached.name}`);
+                return;
+            }
+            this._remove(viewInstance, destroy);
             return;
         }
-        if ('__group__' in viewortype) {
-            viewortype.__group__ = undefined;
+        // 处理视图实例
+        const viewInstance = viewSymbolOrInstance;
+        if ('__group__' in viewInstance) {
+            viewInstance.__group__ = undefined;
         }
-        viewortype.onExit();
-        viewortype.node.removeFromParent();
-        viewortype.node.active = false;
+        viewInstance.onExit();
+        viewInstance.node.removeFromParent();
+        viewInstance.node.active = false;
         if (destroy) {
-            let cacheKey = viewortype.constructor.name;
+            let cacheKey = viewInstance.constructor.name;
             (_a = this._cache.get(cacheKey)) === null || _a === void 0 ? void 0 : _a.destroy();
             this._cache.delete(cacheKey);
             // 销毁被克隆出的UI后Node后，尝试释放 Prefab 资源
             try {
-                const viewType = viewortype.constructor;
+                const viewType = viewInstance.constructor;
                 const prefabPath = this._getPrefabPath(viewType);
                 const ResMgr = ServiceLocator.getService('ResLoader');
                 ResMgr.release(prefabPath, Prefab);
@@ -198,10 +206,10 @@ class UIManager extends CcocosUIManager {
         console.warn(`No view found in ${target.name}`);
         return undefined;
     }
-    internalOpen(viewType, args) {
+    internalOpen(viewSymbol, args) {
         return __awaiter(this, void 0, void 0, function* () {
             this._blockInput(true);
-            let view = yield this._load(viewType, args);
+            let view = yield this._load(viewSymbol, args);
             addChild(view.node);
             this._adjustMaskLayer();
             view.onEnter(args);
@@ -209,14 +217,14 @@ class UIManager extends CcocosUIManager {
             return view;
         });
     }
-    internalClose(viewortype, destroy) {
-        this._remove(viewortype, destroy);
+    internalClose(viewSymbol, destroy) {
+        this._remove(viewSymbol, destroy);
         this._adjustMaskLayer();
     }
-    internalOpenAndPush(viewType, group, args) {
+    internalOpenAndPush(viewSymbol, group, args) {
         return __awaiter(this, void 0, void 0, function* () {
             this._blockInput(true);
-            let view = yield this._load(viewType, args);
+            let view = yield this._load(viewSymbol, args);
             let stack = this._groupStacks.get(group) || [];
             this._groupStacks.set(group, stack);
             let top = stack[stack.length - 1];

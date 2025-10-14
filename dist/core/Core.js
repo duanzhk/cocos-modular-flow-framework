@@ -1,25 +1,14 @@
 import { ServiceLocator } from './ServiceLocator.js';
-import { getInterface } from './Decorators.js';
+import { getModelClass, getManagerClass } from './Decorators.js';
 
 class Container {
     constructor() {
-        this.ctor2ins = new Map(); // 使用构造函数作为键
         this.symbol2ins = new Map();
     }
-    regByCtor(type, ins) {
-        this.ctor2ins.set(type, ins);
-    }
-    getByCtor(type) {
-        const ins = this.ctor2ins.get(type);
-        if (!ins)
-            throw new Error(`${type.name} not registered!`);
-        return ins;
-    }
-    regBySymbol(ctor, ins) {
-        const sym = getInterface(ctor);
+    reg(sym, ins) {
         this.symbol2ins.set(sym, ins);
     }
-    getBySymbol(sym) {
+    get(sym) {
         const ins = this.symbol2ins.get(sym);
         if (!ins)
             throw new Error(`${sym.toString()} not registered!`);
@@ -32,37 +21,34 @@ class AbstractCore {
         this.initialize();
     }
     // 注册与获取模型
-    regModel(model) {
-        this.container.regByCtor(Object.getPrototypeOf(model).constructor, model);
+    regModel(modelSymbol) {
+        const ModelClass = getModelClass(modelSymbol);
+        const model = new ModelClass();
+        this.container.reg(modelSymbol, model);
         model.initialize();
     }
-    getModel(ctor) {
-        return this.container.getByCtor(ctor);
+    getModel(modelSymbol) {
+        return this.container.get(modelSymbol);
     }
     // 注册与获取管理器
-    regManager(manager) {
-        const ctor = Object.getPrototypeOf(manager).constructor;
-        this.container.regByCtor(ctor, manager);
-        this.container.regBySymbol(ctor, manager); // 同时注册Symbol
+    regManager(managerSymbol) {
+        const ManagerClass = getManagerClass(managerSymbol);
+        const manager = new ManagerClass();
+        this.container.reg(managerSymbol, manager);
         manager.initialize();
     }
-    getManager(indent) {
-        if (typeof indent === 'symbol') {
-            return this.container.getBySymbol(indent);
-        }
-        else {
-            return this.container.getByCtor(indent);
-        }
+    getManager(managerSymbol) {
+        return this.container.get(managerSymbol);
     }
 }
 class AbstractManager {
     dispose() {
         this.releaseEventManager();
     }
-    getModel(ctor) {
+    getModel(modelSymbol) {
         // 保持框架独立性，不与具体应用入口(app类)耦合
         // 框架高内聚，使用ServiceLocator获取core
-        return ServiceLocator.getService('core').getModel(ctor);
+        return ServiceLocator.getService('core').getModel(modelSymbol);
     }
     // 事件管理器获取（通过服务定位器解耦）
     getEventManager() {

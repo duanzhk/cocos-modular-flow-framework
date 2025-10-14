@@ -78,14 +78,14 @@ export abstract class BaseView extends Component implements IView {
         this._loaderHandlers = []
     }
 
-    protected getManager<T extends IManager>(ctor: new () => T): T {
+    protected getManager<T extends IManager>(managerSymbol: symbol): T {
         // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return mf.core.getManager<T>(ctor);
+        return mf.core.getManager<T>(managerSymbol);
     }
 
-    protected getModel<T extends IModel>(ctor: new () => T): T {
+    protected getModel<T extends IModel>(modelSymbol: symbol): T {
         // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return mf.core.getModel<T>(ctor);
+        return mf.core.getModel<T>(modelSymbol);
     }
 
 }

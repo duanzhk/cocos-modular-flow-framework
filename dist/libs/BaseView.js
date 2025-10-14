@@ -69,13 +69,13 @@ class BaseView extends Component {
         });
         this._loaderHandlers = [];
     }
-    getManager(ctor) {
+    getManager(managerSymbol) {
         // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return mf.core.getManager(ctor);
+        return mf.core.getManager(managerSymbol);
     }
-    getModel(ctor) {
+    getModel(modelSymbol) {
         // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return mf.core.getModel(ctor);
+        return mf.core.getModel(modelSymbol);
     }
 }
 
