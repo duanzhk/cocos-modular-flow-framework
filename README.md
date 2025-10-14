@@ -508,6 +508,7 @@ mf.gui.close(view);
 ### 5.3 视图栈管理
 
 支持分组的视图栈，适用于关卡、向导等场景。
+使用分组功能，还可以实现诸如游戏启动后，需要优先弹出一堆界面，比如各种活动的展示dialog、各种签到UI等等。把这些UI都归类一个group中，那么就可以做到，关闭一个UI后会再弹出下一个，直到所有的弹窗都关闭。同时在加入group的时候，还可以控制各个UI的先后顺序。
 
 ```typescript
 import { ViewNames } from 'dzkcc-mflow/core';
