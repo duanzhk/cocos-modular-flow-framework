@@ -7,6 +7,7 @@ import { ResLoader } from './ResLoader.js';
 import { Broadcaster } from './Broadcaster.js';
 import { HttpManager } from './HttpManager.js';
 import { WebSocketManager } from './WebSocketManager.js';
+import { RedDotManager } from './indicator/RedDotManager.js';
 import '../App.js';
 
 class Core extends AbstractCore {
@@ -18,6 +19,7 @@ class Core extends AbstractCore {
         ServiceLocator.regService('UIManager', new UIManager());
         ServiceLocator.regService('HttpManager', new HttpManager());
         ServiceLocator.regService('WebSocketManager', new WebSocketManager());
+        ServiceLocator.regService('RedDotManager', new RedDotManager());
         // 注册业务模块（通过装饰器自动注册）
         // 推迟到构造函数执行完毕
         queueMicrotask(() => autoRegister(this));

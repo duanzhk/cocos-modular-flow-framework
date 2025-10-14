@@ -6,3 +6,6 @@ export * from './UIManager';
 export * from './UIRoot';
 export * from './HttpManager';
 export * from './WebSocketManager';
+export * from './indicator/RedDotManager';
+export * from './indicator/UIRedDot';
+export * from './indicator/RedDotNode';

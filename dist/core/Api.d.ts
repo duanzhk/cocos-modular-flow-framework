@@ -86,3 +86,9 @@ export interface IEventManager<MsgKeyType extends IEventMsgKey = IEventMsgKey, V
     getPersistentValue<keyType extends keyof MsgKeyType>(key: keyType): ValueType[ToAnyIndexKey<keyType, ValueType>] | undefined;
     dispose(): void;
 }
+export interface IRedDotManager extends IManager {
+    setCount(nodeId: string, count: number): void;
+    getCount(nodeId: string): number;
+    on(path: string, listener: Function): void;
+    off(path: string, listener: Function): void;
+}

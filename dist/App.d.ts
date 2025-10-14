@@ -1,4 +1,4 @@
-import { ICore, IUIManager, IEventManager, ICocosResManager, IHttpManager, IWebSocketManager } from "./core";
+import { ICore, IUIManager, IEventManager, ICocosResManager, IHttpManager, IWebSocketManager, IRedDotManager } from "./core";
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式
  *
@@ -13,6 +13,7 @@ export declare class App {
     static get socket(): IWebSocketManager;
     static get res(): ICocosResManager;
     static get event(): IEventManager;
+    static get reddot(): IRedDotManager;
     static readonly storage: any;
     static readonly audio: any;
     static readonly timer: any;

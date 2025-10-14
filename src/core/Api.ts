@@ -138,3 +138,16 @@ export interface IEventManager<MsgKeyType extends IEventMsgKey = IEventMsgKey, V
 
     dispose(): void
 }
+
+export interface IRedDotManager extends IManager {
+    // 注册红点节点
+    // registerNode(nodeId: string, parent?: string): void;
+    // 设置红点数量
+    setCount(nodeId: string, count: number): void;
+    // 获取红点数量
+    getCount(nodeId: string): number;
+    // 监听红点变化
+    on(path: string, listener: Function): void
+    // 移除监听
+    off(path: string, listener: Function): void
+}

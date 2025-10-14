@@ -1,4 +1,4 @@
-import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager, IHttpManager, IWebSocketManager } from "./core";
+import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager, IHttpManager, IWebSocketManager, IRedDotManager } from "./core";
 
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式
@@ -25,6 +25,9 @@ export class App {
     }
     static get event(): IEventManager {
         return ServiceLocator.getService<IEventManager>('EventManager')
+    }
+    static get reddot(): IRedDotManager {
+        return ServiceLocator.getService<IRedDotManager>('ReddotManager')
     }
     static readonly storage: any = null;
     static readonly audio: any = null;

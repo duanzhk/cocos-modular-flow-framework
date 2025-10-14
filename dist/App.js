@@ -25,6 +25,9 @@ class App {
     static get event() {
         return ServiceLocator.getService('EventManager');
     }
+    static get reddot() {
+        return ServiceLocator.getService('ReddotManager');
+    }
 }
 App.log = null;
 App.config = null;

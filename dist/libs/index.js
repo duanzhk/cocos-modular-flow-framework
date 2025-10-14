@@ -6,3 +6,6 @@ export { UIManager } from './UIManager.js';
 export { UIRoot } from './UIRoot.js';
 export { HttpManager } from './HttpManager.js';
 export { WebSocketManager } from './WebSocketManager.js';
+export { RedDotManager } from './indicator/RedDotManager.js';
+export { UIRedDot } from './indicator/UIRedDot.js';
+export { RedDotNode } from './indicator/RedDotNode.js';
