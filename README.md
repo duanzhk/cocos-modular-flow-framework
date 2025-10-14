@@ -1,526 +1,847 @@
 # Modular Flow Framework
 
-## 1.1 框架概述
+一个专为 Cocos Creator 引擎开发的模块化设计与流程管理框架。
 
-Cocos模块化流程框架（Modular Flow Framework）是一个为Cocos Creator引擎开发的模块化设计和流程管理框架。该框架旨在提供解耦和依赖注入的能力，帮助开发者构建更加清晰、可维护的游戏项目。
+## 📚 目录
+
+- [1. 框架概述](#1-框架概述)
+- [2. 快速开始](#2-快速开始)
+- [3. 核心概念](#3-核心概念)
+- [4. 装饰器系统](#4-装饰器系统)
+- [5. UI 系统](#5-ui-系统)
+- [6. 事件系统](#6-事件系统)
+- [7. 资源管理](#7-资源管理)
+- [8. 网络通信](#8-网络通信)
+- [9. 红点系统](#9-红点系统)
+- [10. 开发工具](#10-开发工具)
+- [11. 完整示例](#11-完整示例)
+- [12. 最佳实践](#12-最佳实践)
+
+---
+
+## 1. 框架概述
+
+### 1.1 简介
+
+Modular Flow Framework (MF) 是一个为 Cocos Creator 引擎开发的模块化设计和流程管理框架。该框架旨在提供解耦和依赖注入的能力，帮助开发者构建更加清晰、可维护的游戏项目。
 
 ### 1.2 核心特性
 
-- **模块化设计**：通过Manager和Model模式实现业务逻辑的模块化管理
-- **依赖注入**：通过装饰器实现自动依赖注入
-- **服务定位器**：统一的服务管理机制
-- **UI管理系统**：完整的UI界面管理方案
-- **事件系统**：强大的事件广播和监听机制
-- **资源加载系统**：统一的资源加载和释放管理
-- **HTTP网络请求系统**：简洁易用的HTTP客户端
-- **WebSocket实时通信**：支持自动重连、心跳检测的WebSocket客户端
-- **开发工具**：配套的Cocos Creator编辑器插件
+✨ **模块化设计** - 通过 Manager 和 Model 模式实现业务逻辑的模块化管理  
+✨ **依赖注入** - 基于装饰器的自动依赖注入和 Symbol 映射  
+✨ **服务定位器** - 统一的服务管理机制，实现服务解耦  
+✨ **UI 管理系统** - 完整的 UI 界面管理方案，支持视图栈和分组  
+✨ **事件系统** - 强大的事件广播和监听机制，支持粘性事件  
+✨ **资源加载系统** - 统一的资源加载和自动释放管理  
+✨ **HTTP 网络** - 简洁易用的 HTTP 客户端，支持 RESTful API  
+✨ **WebSocket 实时通信** - 支持自动重连、心跳检测的 WebSocket 客户端  
+✨ **红点系统** - 树形结构的红点提示管理系统  
+✨ **开发工具** - 配套的 Cocos Creator 编辑器插件
 
-### 1.3 安装说明
+### 1.3 安装
 
 ```bash
 npm i dzkcc-mflow@beta
 ```
 
-安装完成后，重启Cocos Creator引擎。
+安装完成后，**重启 Cocos Creator 编辑器**，框架会自动安装配套的编辑器插件。
 
-## 2. 核心概念
+---
 
-### 2.1 Core核心
+## 2. 快速开始
 
-Core是框架的核心，负责管理所有的Manager和Model实例。它继承自`AbstractCore`类，提供了注册和获取Manager/Model的接口。
+### 2.1 创建 Core 入口
+
+在项目中创建一个继承自 `CocosCore` 的类：
 
 ```typescript
-// 自定义Core需要继承CocosCore
-export class GameCore extends CocosCore { }
+// GameCore.ts
+import { CocosCore } from 'dzkcc-mflow/libs';
+import { _decorator } from 'cc';
+
+const { ccclass } = _decorator;
+
+@ccclass('GameCore')
+export class GameCore extends CocosCore {
+    // CocosCore 会自动初始化框架
+}
 ```
 
-在场景中挂载GameCore组件即可初始化框架。
+### 2.2 挂载到场景
 
-### 2.2 ServiceLocator服务定位器
+1. 在 Cocos Creator 编辑器中打开主场景
+2. 在 Canvas 节点上添加 `GameCore` 组件
+3. 保存场景
 
-ServiceLocator用于管理跨领域的基础服务，如EventManager、ResLoader、UIManager等。
+
+### 2.3 使用全局对象
+
+框架提供了全局对象 `mf`（Modular Flow 的缩写）用于访问框架功能：
 
 ```typescript
+// 访问 Manager
+const gameManager = mf.core.getManager(ManagerNames.GameManager);
+
+// 访问 Model
+const userModel = mf.core.getModel(ModelNames.UserModel);
+
+// 打开 UI
+await mf.gui.open(ViewNames.HomeView);
+
+// 发送事件
+mf.event.dispatch('gameStart');
+
+// 加载资源
+const prefab = await mf.res.loadPrefab('prefabs/player');
+
+// HTTP 请求
+const data = await mf.http.get('/api/user/profile');
+
+// WebSocket 连接
+mf.socket.connect('wss://game-server.com/ws');
+
+// 红点提示
+mf.reddot.setCount('main/bag', 5);
+```
+
+## 3. 核心概念
+
+### 3.1 架构图
+
+```
+┌─────────────────────────────────────────────────┐
+│                    全局对象 mf                    │
+│  (统一访问入口，暴露所有框架能力)                   │
+└──────────────────┬──────────────────────────────┘
+                   │
+    ┌──────────────┼──────────────┐
+    │              │              │
+    ▼              ▼              ▼
+┌─────────┐  ┌──────────┐  ┌──────────┐
+│  Core   │  │ Services │  │  Views   │
+│(核心容器)│  │(基础服务) │  │ (UI界面)  │
+└─────────┘  └──────────┘  └──────────┘
+    │              │              │
+    ├─ Manager ─┐  ├─ UIManager  ├─ BaseView
+    │           │  ├─ ResLoader  └─ 自动资源管理
+    ├─ Model ───┤  ├─ EventMgr     自动事件清理
+    │           │  ├─ HttpMgr
+    └─ Symbol ──┘  ├─ SocketMgr
+       映射系统    └─ RedDotMgr
+```
+
+### 3.2 Core 核心容器
+
+`Core` 是框架的核心，负责管理所有 Manager 和 Model 实例。
+
+**核心职责：**
+- 注册和实例化 Manager
+- 注册和实例化 Model
+- 提供统一的访问接口
+- 自动调用初始化方法
+
+**使用方式：**
+
+```typescript
+// 获取 Manager
+const gameManager = mf.core.getManager(ManagerNames.GameManager);
+
+// 获取 Model
+const userModel = mf.core.getModel(ModelNames.UserModel);
+```
+
+### 3.3 ServiceLocator 服务定位器
+
+`ServiceLocator` 用于管理跨领域的基础服务，实现解耦。
+
+**内置服务：**
+- `core` - Core 实例
+- `EventManager` - 事件管理器
+- `UIManager` - UI 管理器
+- `ResLoader` - 资源加载器
+- `HttpManager` - HTTP 管理器
+- `WebSocketManager` - WebSocket 管理器
+- `RedDotManager` - 红点管理器
+
+**自定义服务：**
+
+```typescript
+import { ServiceLocator } from 'dzkcc-mflow/core';
+
 // 注册服务
-ServiceLocator.regService('serviceKey', serviceInstance);
+ServiceLocator.regService('MyService', new MyService());
 
 // 获取服务
-const service = ServiceLocator.getService<ServiceType>('serviceKey');
+const myService = ServiceLocator.getService<MyService>('MyService');
+
+// 移除服务
+ServiceLocator.remove('MyService');
 ```
 
-### 2.3 Manager管理器
+### 3.4 Manager 管理器
 
-Manager负责管理业务领域内的具体实现，通常处理业务逻辑。Manager需要实现`IManager`接口。
+Manager 负责处理特定领域的业务逻辑。
+
+**基类：** `AbstractManager`
+
+**生命周期：**
+1. `initialize()` - 在注册时被调用
+2. `dispose()` - 在销毁时被调用
+
+**内置能力：**
+- 获取 Model：`this.getModel(modelSymbol)`
+- 获取事件管理器：`this.getEventManager()`
+- 获取 HTTP 管理器：`this.getHttpManager()`
+- 获取 WebSocket 管理器：`this.getWebSocketManager()`
+
+### 3.5 Model 数据模型
+
+Model 用于数据管理，遵循单一职责原则。
+
+**接口：** `IModel`
+
+**生命周期：**
+- `initialize()` - 在注册时被调用
+
+### 3.6 View 视图
+
+View 是 UI 界面的基类，提供完整的生命周期管理。
+
+**基类：** `BaseView`
+
+**生命周期：**
+1. `onEnter(args?)` - 界面打开时调用
+2. `onPause()` - 界面被覆盖时调用（栈模式）
+3. `onResume()` - 界面恢复显示时调用（栈模式）
+4. `onExit()` - 界面关闭时调用（自动清理事件）
+5. `onDestroy()` - 界面销毁时调用（自动释放资源）
+
+**内置能力：**
+- 自动事件管理：通过 `this.event` 监听的事件会自动清理
+- 自动资源管理：通过 `this.res` 加载的资源会自动释放
+- 获取 Manager：`this.getManager(managerSymbol)`
+- 获取 Model：`this.getModel(modelSymbol)`
+
+### 3.7 Symbol 映射系统
+
+框架使用 Symbol 作为标识符，配合 Names 对象实现类型安全和代码补全。
+
+**三种 Names 对象：**
+- `ModelNames` - Model 的 Symbol 映射
+- `ManagerNames` - Manager 的 Symbol 映射
+- `ViewNames` - View 的 Symbol 映射
+
+**优势：**
+- ✅ IDE 代码补全
+- ✅ 类型安全
+- ✅ 避免字符串拼写错误
+- ✅ 便于重构
+
+## 4. 装饰器系统
+
+框架提供了三个核心装饰器，用于注册 Manager、Model 和 View。
+
+### 4.1 @manager() - Manager 装饰器
+
+用于注册 Manager 到全局注册表。
 
 ```typescript
-export abstract class AbstractManager implements IManager {
-    abstract initialize(): void;
-    dispose(): void;
-}
-```
+import { manager, AbstractManager, ManagerNames } from 'dzkcc-mflow/core';
 
-### 2.4 Model模型
-
-Model用于数据管理，实现`IModel`接口。
-
-```typescript
-export interface IModel {
-    initialize(): void;
-}
-```
-
-### 2.5 装饰器系统
-
-框架提供了装饰器来简化Manager和Model的注册：
-
-```typescript
-// 注册Manager
-@manager()
+@manager('Game')  // 指定名称为 'Game'
 export class GameManager extends AbstractManager {
-    // 实现逻辑
-}
-
-// 注册Model
-@model()
-export class GameModel implements IModel {
+    private score: number = 0;
+    
     initialize(): void {
-        // 初始化逻辑
+        console.log('GameManager 初始化');
+    }
+    
+    dispose(): void {
+        console.log('GameManager 销毁');
+    }
+    
+    addScore(value: number): void {
+        this.score += value;
+        this.getEventManager().dispatch('scoreChanged', this.score);
     }
 }
+
+// 使用
+const gameManager = mf.core.getManager(ManagerNames.Game);
+gameManager.addScore(10);
 ```
 
-## 3. UI系统
+### 4.2 @model() - Model 装饰器
 
-### 3.1 BaseView基础视图
-
-所有UI界面都应该继承`BaseView`类，它提供了以下特性：
-
-- 自动事件监听管理（自动注册和注销）
-- 自动资源加载管理（自动释放）
-- 统一的生命周期方法
+用于注册 Model 到全局注册表。
 
 ```typescript
-export abstract class BaseView extends Component implements IView {
-    abstract onPause(): void;
-    abstract onResume(): void;
-    abstract onEnter(args?: any): void;
-    onExit(): void;
-}
-```
+import { model, IModel, ModelNames } from 'dzkcc-mflow/core';
 
-### 3.2 UIManager界面管理器
-
-UIManager负责管理UI界面的打开、关闭、层级等操作。
-
-```typescript
-// 打开界面
-const view = await mf.gui.open(ViewType, args);
-
-// 关闭界面
-mf.gui.close(viewInstance);
-
-// 带分组的界面管理
-const view = await mf.gui.openAndPush(ViewType, 'group', args);
-mf.gui.closeAndPop('group');
-```
-
-# 视图装饰器使用指南
-
-本指南展示如何使用新的 `@view()` 装饰器系统来简化视图的打开和关闭操作。
-
-## 功能特性
-
-✅ **代码补全支持** - IDE 自动补全 `ViewNames` 的所有属性  
-✅ **类型安全** - 使用 Symbol 避免拼写错误  
-✅ **无需重复导入** - 不需要在每个文件中导入视图类  
-✅ **API 简洁统一** - 直接使用 `open()` / `close()` / `openAndPush()` 方法  
-
-## 基本使用
-
-### 1. 在视图类上添加装饰器
-
-```typescript
-// views/SettingsView.ts
-import { view } from '@/core';
-import { BaseView } from '@/libs';
-
-@view('Settings')  // 注册视图，参数是视图名称
-export class SettingsView extends BaseView {
-    onEnter(args?: any): void {
-        console.log('Settings view opened', args);
+@model('User')  // 指定名称为 'User'
+export class UserModel implements IModel {
+    private _playerName: string = '';
+    private _level: number = 1;
+    
+    initialize(): void {
+        console.log('UserModel 初始化');
     }
-
-    onPause(): void {}
-    onResume(): void {}
-}
-```
-
-```typescript
-// views/HomeView.ts
-import { view } from '@/core';
-import { BaseView } from '@/libs';
-
-@view()  // 不传参数时自动使用类名 'HomeView'
-export class HomeView extends BaseView {
-    onEnter(args?: any): void {
-        console.log('Home view opened');
+    
+    get playerName(): string {
+        return this._playerName;
     }
-
-    onPause(): void {}
-    onResume(): void {}
+    
+    set playerName(name: string) {
+        this._playerName = name;
+    }
+    
+    get level(): number {
+        return this._level;
+    }
+    
+    levelUp(): void {
+        this._level++;
+    }
 }
+
+// 使用
+const userModel = mf.core.getModel(ModelNames.User);
+userModel.playerName = 'Alice';
+userModel.levelUp();
 ```
 
-### 2. 使用 ViewNames 打开视图
+### 4.3 @view() - View 装饰器
+
+用于注册 View 到全局注册表，配合 `ViewNames` 使用。
 
 ```typescript
-// 在任何地方使用，只需导入 ViewNames
-import { ViewNames } from '@/core';
-
-// IDE 会自动补全 ViewNames 的属性：ViewNames.Settings, ViewNames.HomeView 等
-// ✅ 有代码补全，直接使用 open 方法
-await mf.ui.open(ViewNames.Settings, { userId: 123 });
-
-// 关闭视图（传入 Symbol）
-mf.ui.close(ViewNames.Settings, false);
-
-// 销毁视图（释放资源）
-mf.ui.close(ViewNames.Settings, true);
-
-// 也可以传入视图实例关闭
-const view = await mf.ui.open(ViewNames.Settings);
-mf.ui.close(view, false);
-```
-
-## 完整示例
-
-### 示例 1：简单的视图切换
-
-```typescript
-// views/MenuView.ts
-import { view } from '@/core';
-import { BaseView } from '@/libs';
-import { _decorator, Button } from 'cc';
+import { view, ViewNames } from 'dzkcc-mflow/core';
+import { BaseView } from 'dzkcc-mflow/libs';
+import { _decorator, Button, Label } from 'cc';
 
 const { ccclass, property } = _decorator;
 
-@view('Menu')
-@ccclass('MenuView')
-export class MenuView extends BaseView {
+@view('Home')  // 注册为 'Home'
+@ccclass('HomeView')
+export class HomeView extends BaseView {
+    @property(Label)
+    titleLabel: Label = null!;
+    
     @property(Button)
-    settingsButton: Button = null!;
-
-    onEnter(): void {
-        this.settingsButton.node.on('click', this.onSettingsClick, this);
+    startButton: Button = null!;
+    
+    onEnter(args?: any): void {
+        console.log('HomeView 打开', args);
+        this.startButton.node.on('click', this.onStartClick, this);
     }
-
-    async onSettingsClick() {
-        const { ViewNames } = await import('@/core');
-        // 打开设置视图（IDE 会自动补全）
-        await mf.ui.open(ViewNames.Settings);
+    
+    onExit(): void {
+        // 自动清理事件监听
     }
+    
+    onPause(): void {
+        console.log('HomeView 暂停');
+    }
+    
+    onResume(): void {
+        console.log('HomeView 恢复');
+    }
+    
+    private onStartClick(): void {
+        mf.gui.open(ViewNames.Game);
+    }
+}
 
+// 使用 - 通过 Symbol 打开视图
+await mf.gui.open(ViewNames.Home, { userId: 123 });
+
+// 关闭视图
+mf.gui.close(ViewNames.Home);  // 关闭但保留缓存
+mf.gui.close(ViewNames.Home, true);  // 关闭并销毁
+```
+
+### 4.4 装饰器参数
+
+所有装饰器都支持可选的 `name` 参数：
+
+```typescript
+// 指定名称
+@manager('Game')
+@model('User')
+@view('Home')
+
+// 不指定名称时，自动使用类名
+@manager()  // 使用 'GameManager'
+@model()    // 使用 'UserModel'
+@view()     // 使用 'HomeView'
+```
+
+### 4.5 Names 对象代码补全
+
+装饰器注册后，对应的 Names 对象会自动添加属性，IDE 会提供代码补全：
+
+```typescript
+// ManagerNames 自动包含所有注册的 Manager
+ManagerNames.Game
+ManagerNames.Player
+ManagerNames.Audio
+
+// ModelNames 自动包含所有注册的 Model
+ModelNames.User
+ModelNames.Inventory
+ModelNames.Config
+
+// ViewNames 自动包含所有注册的 View
+ViewNames.Home
+ViewNames.Game
+ViewNames.Settings
+```
+
+---
+
+## 5. UI 系统
+
+### 5.1 BaseView 基础视图
+
+所有 UI 界面都应该继承 `BaseView` 类。
+
+**核心特性：**
+- ✅ 自动事件管理 - `this.event` 监听的事件会自动清理
+- ✅ 自动资源管理 - `this.res` 加载的资源会自动释放
+- ✅ 生命周期方法 - 完整的生命周期钩子
+- ✅ 内置访问能力 - 可直接获取 Manager 和 Model
+
+**基本用法：**
+
+```typescript
+import { view, ViewNames, ManagerNames, ModelNames } from 'dzkcc-mflow/core';
+import { BaseView } from 'dzkcc-mflow/libs';
+import { _decorator, Sprite, Label } from 'cc';
+
+const { ccclass, property } = _decorator;
+
+@view('Game')
+@ccclass('GameView')
+export class GameView extends BaseView {
+    @property(Label)
+    scoreLabel: Label = null!;
+    
+    @property(Sprite)
+    playerSprite: Sprite = null!;
+    
+    onEnter(args?: any): void {
+        // 监听事件（自动清理）
+        this.event.on('scoreChanged', this.onScoreChanged, this);
+        
+        // 加载资源（自动释放）
+        this.res.loadSpriteFrame(this.playerSprite, 'textures/player');
+        
+        // 获取 Manager
+        const gameManager = this.getManager(ManagerNames.Game);
+        
+        // 获取 Model
+        const userModel = this.getModel(ModelNames.User);
+    }
+    
+    onExit(): void {
+        // 事件监听会自动清理，无需手动 off
+    }
+    
+    onPause(): void {
+        // 界面被其他界面覆盖时调用
+    }
+    
+    onResume(): void {
+        // 界面从暂停状态恢复时调用
+    }
+    
+    private onScoreChanged(score: number): void {
+        this.scoreLabel.string = `分数: ${score}`;
+    }
+}
+```
+
+### 5.2 UIManager 界面管理器
+
+通过 `mf.gui` 访问 UI 管理功能。
+
+**基本操作：**
+
+```typescript
+import { ViewNames } from 'dzkcc-mflow/core';
+
+// 打开界面
+const view = await mf.gui.open(ViewNames.Home);
+
+// 打开界面并传参
+await mf.gui.open(ViewNames.Game, { level: 1, difficulty: 'hard' });
+
+// 关闭界面（保留缓存）
+mf.gui.close(ViewNames.Home);
+
+// 关闭并销毁界面（释放资源）
+mf.gui.close(ViewNames.Home, true);
+
+// 通过视图实例关闭
+const view = await mf.gui.open(ViewNames.Settings);
+mf.gui.close(view);
+```
+
+### 5.3 视图栈管理
+
+支持分组的视图栈，适用于关卡、向导等场景。
+
+```typescript
+import { ViewNames } from 'dzkcc-mflow/core';
+
+// 打开视图并入栈
+await mf.gui.openAndPush(ViewNames.Level1, 'game', { levelId: 1 });
+await mf.gui.openAndPush(ViewNames.Level2, 'game', { levelId: 2 });
+
+// 关闭栈顶视图并弹出（会自动恢复上一个视图）
+mf.gui.closeAndPop('game');  // Level2 关闭，Level1 恢复
+
+// 清空整个栈
+mf.gui.clearStack('game');  // 所有关卡视图关闭
+
+// 清空栈并销毁
+mf.gui.clearStack('game', true);
+
+// 获取栈顶视图
+const topView = mf.gui.getTopView();
+```
+
+### 5.4 视图生命周期详解
+
+```typescript
+@view('Example')
+@ccclass('ExampleView')
+export class ExampleView extends BaseView {
+    // 1. 界面打开时调用
+    onEnter(args?: any): void {
+        console.log('界面打开', args);
+        // 注册事件监听
+        // 初始化界面数据
+    }
+    
+    // 2. 界面被其他界面覆盖时调用（栈模式）
+    onPause(): void {
+        console.log('界面暂停');
+        // 暂停动画
+        // 暂停计时器
+    }
+    
+    // 3. 界面从暂停状态恢复时调用（栈模式）
+    onResume(): void {
+        console.log('界面恢复');
+        // 恢复动画
+        // 恢复计时器
+    }
+    
+    // 4. 界面关闭时调用
+    onExit(): void {
+        console.log('界面关闭');
+        // 自动清理通过 this.event 注册的事件
+        // 可以在这里做额外的清理工作
+    }
+    
+    // 5. 界面销毁时调用（框架自动调用）
+    protected onDestroy(): void {
+        console.log('界面销毁');
+        // 自动释放通过 this.res 加载的资源
+        // 可以在这里做额外的清理工作
+    }
+}
+```
+
+### 5.5 Prefab 路径配置
+
+视图需要配置 Prefab 路径，框架提供了开发工具自动生成。
+
+**手动配置方式：**
+
+```typescript
+@view('Home')
+@ccclass('HomeView')
+export class HomeView extends BaseView {
+    /** @internal */
+    private static readonly __path__: string = 'ui/home';  // Prefab 路径
+    
+    onEnter(): void {}
     onPause(): void {}
     onResume(): void {}
 }
 ```
 
-### 示例 2：带栈管理的视图
+**推荐：使用开发工具自动生成**（见第 10 章）
+
+---
+
+## 6. 事件系统
+
+框架提供了强大的事件广播和监听机制，基于 `Broadcaster` 实现。
+
+### 6.1 基本用法
 
 ```typescript
-// game/LevelManager.ts
-import { ViewNames } from '@/core';
+// 监听事件
+mf.event.on('gameStart', (data) => {
+    console.log('游戏开始', data);
+});
 
-export class LevelManager {
-    async startLevel(levelId: number) {
-        // 使用栈管理关卡视图
-        await mf.ui.openAndPush(
-            ViewNames[`Level${levelId}`], 
-            'game', 
-            { levelId }
-        );
+// 派发事件
+mf.event.dispatch('gameStart', { level: 1 });
+
+// 一次性监听
+mf.event.once('gameOver', (score) => {
+    console.log('游戏结束，分数:', score);
+});
+
+// 移除监听
+const handler = (data) => console.log(data);
+mf.event.on('test', handler);
+mf.event.off('test', handler);
+
+// 移除所有监听
+mf.event.offAll('test');
+```
+
+### 6.2 粘性事件
+
+粘性事件会保存最后一次派发的数据，新的监听者会立即收到。
+
+```typescript
+// 派发粘性事件
+mf.event.dispatchSticky('userLogin', { userId: 123, name: 'Alice' });
+
+// 即使在派发之后才监听，也能立即收到数据
+setTimeout(() => {
+    mf.event.on('userLogin', (userData) => {
+        console.log('用户登录信息:', userData);  // 立即触发
+    });
+}, 1000);
+
+// 移除粘性事件
+mf.event.removeStickyBroadcast('userLogin');
+```
+
+### 6.3 在 View 中使用事件
+
+`BaseView` 提供了自动清理的事件监听：
+
+```typescript
+@view('Game')
+@ccclass('GameView')
+export class GameView extends BaseView {
+    onEnter(): void {
+        // 使用 this.event 监听，会在 onExit 时自动清理
+        this.event.on('scoreChanged', this.updateScore, this);
+        this.event.on('levelUp', this.onLevelUp, this);
     }
-
-    goBack() {
-        // 返回上一个关卡
-        mf.ui.closeAndPop('game', false);
+    
+    onExit(): void {
+        // 自动清理所有通过 this.event 监听的事件
+        // 无需手动 off
     }
-
-    exitGame() {
-        // 清空所有关卡并返回主菜单
-        mf.ui.clearStack('game', true);
-        mf.ui.open(ViewNames.Menu);
+    
+    private updateScore(score: number): void {
+        console.log('分数更新:', score);
+    }
+    
+    private onLevelUp(level: number): void {
+        console.log('等级提升:', level);
     }
 }
 ```
 
-### 示例 3：对比新旧方式
+### 6.4 在 Manager 中使用事件
 
 ```typescript
-// ❌ 旧方式：需要导入每个视图类
-import { SettingsView } from '@/views/SettingsView';
-import { ShopView } from '@/views/ShopView';
-import { ProfileView } from '@/views/ProfileView';
-
-await mf.ui.open(SettingsView);
-await mf.ui.open(ShopView);
-await mf.ui.open(ProfileView);
-
-// ✅ 新方式：只需导入 ViewNames
-import { ViewNames } from '@/core';
-
-await mf.ui.open(ViewNames.Settings);  // 有代码补全 ✨
-await mf.ui.open(ViewNames.Shop);      // 有代码补全 ✨
-await mf.ui.open(ViewNames.Profile);   // 有代码补全 ✨
+@manager('Game')
+export class GameManager extends AbstractManager {
+    private score: number = 0;
+    
+    initialize(): void {
+        // 在 Manager 中获取事件管理器
+        const eventMgr = this.getEventManager();
+        
+        eventMgr.on('enemyKilled', this.onEnemyKilled, this);
+    }
+    
+    addScore(value: number): void {
+        this.score += value;
+        // 派发事件
+        this.getEventManager().dispatch('scoreChanged', this.score);
+    }
+    
+    private onEnemyKilled(enemyData: any): void {
+        this.addScore(enemyData.reward);
+    }
+    
+    dispose(): void {
+        // Manager 销毁时清理事件监听
+        this.getEventManager().offAll(undefined, this);
+    }
+}
 ```
 
-## API 文档
+### 6.5 带回调的事件
 
-### 装饰器
-
-#### `@view(name?: string)`
-
-注册视图到全局注册表。
-
-**参数：**
-- `name` (可选): 视图名称，不提供则使用类名
-
-**示例：**
-```typescript
-@view('Settings')     // 注册为 'Settings'
-@view()              // 自动使用类名注册
-```
-
-### ViewNames 对象
-
-全局对象，包含所有已注册视图的 Symbol 标识。
-
-**类型：** `Record<string, symbol>`
-
-**示例：**
-```typescript
-ViewNames.Settings   // Symbol(Settings)
-ViewNames.HomeView   // Symbol(HomeView)
-```
-
-### UIManager 方法（已更新）
-
-#### `open<T>(viewSymbol: symbol, args?: any): Promise<T>`
-
-通过 Symbol 打开视图。
-
-**参数：**
-- `viewSymbol`: 从 ViewNames 获取的 Symbol
-- `args`: 传递给视图的参数
-
-**返回：** 视图实例
-
-**示例：**
-```typescript
-const view = await mf.ui.open(ViewNames.Settings, { tab: 'audio' });
-```
-
-#### `close(viewSymbol: symbol | IView, destroy?: boolean): void`
-
-通过 Symbol 或视图实例关闭视图。
-
-**参数：**
-- `viewSymbol`: 从 ViewNames 获取的 Symbol，或视图实例
-- `destroy`: 是否销毁视图（释放缓存和资源），默认 false
-
-**示例：**
-```typescript
-// 使用 Symbol 关闭
-mf.ui.close(ViewNames.Settings);        // 关闭但保留缓存
-mf.ui.close(ViewNames.Settings, true);  // 关闭并销毁
-
-// 使用视图实例关闭
-const view = await mf.ui.open(ViewNames.Settings);
-mf.ui.close(view);
-```
-
-#### `openAndPush<T>(viewSymbol: symbol, group: string, args?: any): Promise<T>`
-
-通过 Symbol 打开视图并推入栈。
-
-**参数：**
-- `viewSymbol`: 从 ViewNames 获取的 Symbol
-- `group`: 视图组名称
-- `args`: 传递给视图的参数
-
-**返回：** 视图实例
-
-**示例：**
-```typescript
-await mf.ui.openAndPush(ViewNames.Level1, 'game', { difficulty: 'hard' });
-```
-
-## 工具函数
-
-### `getViewClass<T>(viewSymbol: symbol): new () => T`
-
-获取视图类构造函数（通常不需要直接使用）。
-
-### `getRegisteredViewNames(): string[]`
-
-获取所有已注册的视图名称。
-
-**示例：**
-```typescript
-import { getRegisteredViewNames } from '@/core';
-
-const names = getRegisteredViewNames();
-console.log('已注册视图:', names);
-// 输出: ['Settings', 'HomeView', 'Menu', ...]
-```
-
-## 注意事项
-
-1. **装饰器顺序**：`@view()` 应该放在其他装饰器（如 `@ccclass`）之前或之后都可以
-   ```typescript
-   @view('MyView')
-   @ccclass('MyView')
-   export class MyView extends BaseView {}
-   ```
-
-2. **视图名称唯一性**：确保每个视图的名称是唯一的，重复名称会覆盖之前的注册
-
-3. **API 变更**：原有的 `open(ViewClass)` 方式已改为 `open(ViewSymbol)`
-   ```typescript
-   // ❌ 旧方式（不再支持）
-   // await mf.ui.open(SettingsView);
-   
-   // ✅ 新方式
-   await mf.ui.open(ViewNames.Settings);
-   ```
-
-4. **TypeScript 支持**：ViewNames 对象会自动获得正确的类型定义，享受完整的 IDE 支持
-
-5. **关闭方式灵活**：`close()` 方法既可以传入 Symbol 也可以传入视图实例
-   ```typescript
-   // 方式1: 使用 Symbol
-   mf.ui.close(ViewNames.Settings);
-   
-   // 方式2: 使用视图实例
-   const view = await mf.ui.open(ViewNames.Settings);
-   mf.ui.close(view);
-   ```
-
-## 迁移指南
-
-如果你有现有的视图代码，迁移步骤：
-
-1. **给每个视图类添加 `@view()` 装饰器**
-   ```typescript
-   // 修改前
-   @ccclass('SettingsView')
-   export class SettingsView extends BaseView { }
-   
-   // 修改后
-   @view('Settings')
-   @ccclass('SettingsView')
-   export class SettingsView extends BaseView { }
-   ```
-
-2. **更新打开视图的代码**
-   ```typescript
-   // 修改前
-   import { SettingsView } from '@/views/SettingsView';
-   await mf.ui.open(SettingsView);
-   
-   // 修改后
-   import { ViewNames } from '@/core';
-   await mf.ui.open(ViewNames.Settings);
-   ```
-
-3. **更新关闭视图的代码**
-   ```typescript
-   // 修改前
-   mf.ui.close(SettingsView);
-   
-   // 修改后
-   mf.ui.close(ViewNames.Settings);
-   // 或者如果有视图实例
-   mf.ui.close(viewInstance);
-   ```
-
-**注意**：必须给所有视图添加 `@view()` 装饰器后才能使用新的 API，因为旧的类传入方式已不再支持。
-
-
-
-## 4. 事件系统
-
-### 4.1 Broadcaster事件广播器
-
-框架提供了基于类型的事件系统，通过Broadcaster实现。
+事件支持回调机制，用于双向通信：
 
 ```typescript
-// 监听事件
-mf.event.on('eventKey', (data) => {
-    // 处理事件
+// 监听事件并提供回调
+mf.event.on('requestData', (params, callback) => {
+    const result = fetchData(params);
+    callback?.(result);  // 回调返回结果
 });
 
-// 广播事件
-mf.event.dispatch('eventKey', data);
-
-// 一次性监听
-mf.event.once('eventKey', (data) => {
-    // 只会触发一次
+// 派发事件并接收回调
+mf.event.dispatch('requestData', { id: 123 }, (result) => {
+    console.log('收到结果:', result);
 });
 ```
 
-### 4.2 粘性事件
+### 6.6 类型安全的事件（可选）
 
-粘性事件可以在没有监听者时暂存，等有监听者时再触发：
-
-```typescript
-// 发送粘性事件
-mf.event.dispatchSticky('stickyEvent', data);
-
-// 移除粘性事件
-mf.event.removeStickyBroadcast('stickyEvent');
-```
-
-## 5. 资源加载系统
-
-### 5.1 ResLoader资源加载器
-
-ResLoader提供了统一的资源加载和释放接口：
+可以扩展 `IEventMsgKey` 接口实现类型安全：
 
 ```typescript
-// 加载预制体
-const prefab = await mf.res.loadPrefab('path/to/prefab');
+// 定义事件消息键类型
+declare module 'dzkcc-mflow/core' {
+    interface IEventMsgKey {
+        'gameStart': { level: number };
+        'scoreChanged': number;
+        'userLogin': { userId: number; name: string };
+    }
+}
 
-// 加载精灵帧
-const spriteFrame = await mf.res.loadSpriteFrame(spriteComponent, 'path/to/sprite');
-
-// 加载Spine动画
-const spineData = await mf.res.loadSpine(spineComponent, 'path/to/spine');
-
-// 释放资源
-mf.res.release('path/to/asset');
+// 现在事件会有类型提示
+mf.event.dispatch('scoreChanged', 100);  // ✅ 正确
+mf.event.dispatch('scoreChanged', 'abc');  // ❌ 类型错误
 ```
 
-## 6. HTTP网络请求系统
+---
 
-### 6.1 HttpManager HTTP管理器
+## 7. 资源管理
 
-HttpManager提供了简洁易用的HTTP客户端功能，支持常见的HTTP方法：
+框架提供了统一的资源加载和释放管理，通过 `mf.res` 访问。
+
+### 7.1 基本用法
+
+```typescript
+import { Prefab, SpriteFrame } from 'cc';
+
+// 加载 Prefab
+const prefab = await mf.res.loadPrefab('prefabs/enemy');
+const node = instantiate(prefab);
+
+// 加载 SpriteFrame（自动设置到 Sprite 组件）
+const sprite = this.node.getComponent(Sprite)!;
+await mf.res.loadSpriteFrame(sprite, 'textures/player');
+
+// 加载 Spine 动画（自动设置到 Skeleton 组件）
+const skeleton = this.node.getComponent(sp.Skeleton)!;
+await mf.res.loadSpine(skeleton, 'spine/hero');
+
+// 加载通用资源
+const asset = await mf.res.loadAsset('path/to/asset', AssetType);
+```
+
+### 7.2 释放资源
+
+```typescript
+// 通过路径释放
+mf.res.release('prefabs/enemy', Prefab);
+
+// 通过资源对象释放
+mf.res.release(asset);
+
+// 强制释放（立即销毁，不管引用计数）
+mf.res.release(asset, true);
+```
+
+### 7.3 在 View 中自动管理资源
+
+`BaseView` 提供了自动资源管理：
+
+```typescript
+@view('Game')
+@ccclass('GameView')
+export class GameView extends BaseView {
+    @property(Sprite)
+    avatarSprite: Sprite = null!;
+    
+    onEnter(): void {
+        // 使用 this.res 加载，会在界面销毁时自动释放
+        this.res.loadSpriteFrame(this.avatarSprite, 'textures/avatar');
+        
+        // 加载多个资源
+        this.res.loadPrefab('prefabs/item1');
+        this.res.loadPrefab('prefabs/item2');
+    }
+    
+    // 界面销毁时，所有通过 this.res 加载的资源会自动释放
+}
+```
+
+### 7.4 Bundle 资源包
+
+支持从不同的 Bundle 加载资源：
+
+```typescript
+// 从 resources Bundle 加载（默认）
+await mf.res.loadPrefab('prefabs/ui');
+
+// 从自定义 Bundle 加载
+await mf.res.loadPrefab('prefabs/level1', 'game-bundle');
+
+// 加载 SpriteFrame 从自定义 Bundle
+await mf.res.loadSpriteFrame(sprite, 'textures/bg', 'ui-bundle');
+```
+
+### 7.5 资源引用计数
+
+框架使用 Cocos Creator 的引用计数系统：
+
+- `loadAsset()` 会自动 `addRef()`
+- `release()` 会自动 `decRef()`
+- 引用计数为 0 时自动销毁资源
+
+```typescript
+// 多次加载同一资源，共享同一实例，引用计数累加
+const asset1 = await mf.res.loadPrefab('prefabs/common');  // refCount = 1
+const asset2 = await mf.res.loadPrefab('prefabs/common');  // refCount = 2
+
+// 释放资源，引用计数递减
+mf.res.release(asset1);  // refCount = 1
+mf.res.release(asset2);  // refCount = 0，资源被销毁
+```
+
+## 8. 网络通信
+
+### 8.1 HTTP 请求
+
+框架提供了简洁易用的 HTTP 客户端，通过 `mf.http` 访问。
+
+**基本用法：**
 
 ```typescript
 // GET 请求
-const userData = await mf.http.get('/api/users/123', { includeProfile: true });
+const userData = await mf.http.get('/api/users/123');
+
+// GET 请求带参数
+const list = await mf.http.get('/api/users', { page: 1, size: 20 });
 
 // POST 请求
-const newUser = await mf.http.post('/api/users', { 
-    name: 'John', 
-    email: 'john@example.com' 
+const newUser = await mf.http.post('/api/users', {
+    name: 'Alice',
+    email: 'alice@example.com'
 });
 
 // PUT 请求
-const updatedUser = await mf.http.put('/api/users/123', { 
-    name: 'John Doe' 
+const updated = await mf.http.put('/api/users/123', {
+    name: 'Alice Updated'
 });
 
 // DELETE 请求
@@ -532,348 +853,131 @@ const result = await mf.http.request({
     method: 'POST',
     data: formData,
     headers: {
-        'Authorization': 'Bearer token'
+        'Authorization': 'Bearer token123'
     },
     timeout: 30000
 });
 ```
 
-### 6.2 功能特性
-
-1. **Promise-based API**：所有请求都返回Promise，支持async/await
-2. **超时控制**：默认10秒超时，可自定义
-3. **自动JSON解析**：自动解析JSON响应
-4. **错误处理**：统一的错误处理机制
-5. **请求拦截**：支持自定义请求头
-6. **URL参数处理**：自动处理GET请求的查询参数
-
-### 6.3 使用示例
+**在 Manager 中使用：**
 
 ```typescript
-// 在Manager中使用
-@manager()
+@manager('User')
 export class UserManager extends AbstractManager {
-    async getUserProfile(userId: string): Promise<any> {
+    initialize(): void {}
+    
+    async login(username: string, password: string): Promise<any> {
         try {
-            const profile = await mf.http.get(`/api/users/${userId}/profile`);
-            return profile;
+            // 通过 getHttpManager() 获取 HTTP 管理器
+            const result = await this.getHttpManager().post('/api/auth/login', {
+                username,
+                password
+            });
+            
+            // 登录成功，派发事件
+            this.getEventManager().dispatch('userLogin', result);
+            return result;
         } catch (error) {
-            console.error('Failed to fetch user profile:', error);
+            console.error('登录失败:', error);
             throw error;
         }
     }
     
-    async updateUser(userId: string, data: any): Promise<any> {
-        try {
-            const result = await mf.http.put(`/api/users/${userId}`, data, {
-                'Authorization': `Bearer ${this.getAuthToken()}`
-            });
-            return result;
-        } catch (error) {
-            console.error('Failed to update user:', error);
-            throw error;
-        }
+    async getUserProfile(userId: number): Promise<any> {
+        const token = this.getAuthToken();
+        return await this.getHttpManager().get(`/api/users/${userId}`, {}, {
+            'Authorization': `Bearer ${token}`
+        });
     }
     
     private getAuthToken(): string {
-        // 获取认证令牌的逻辑
-        return 'your-auth-token';
+        // 从本地存储获取 token
+        return localStorage.getItem('token') || '';
     }
 }
 ```
 
-## 7. WebSocket 实时通信系统
+### 8.2 WebSocket 实时通信
 
-### 7.1 WebSocketManager WebSocket管理器
+框架提供了功能完整的 WebSocket 客户端，支持自动重连、心跳检测等特性。
 
-WebSocketManager提供了完整的 WebSocket 客户端功能，支持：
+**基本用法：**
 
 ```typescript
-// 连接 WebSocket 服务器
-mf.socket.connect('ws://localhost:8080/game');
+// 连接服务器
+mf.socket.connect('wss://game-server.com/ws');
 
-// 或使用安全连接
-mf.socket.connect('wss://game-server.example.com/ws');
-
-// 配置自动重连和心跳
+// 配置连接参数
 mf.socket.configure({
-    reconnect: true,              // 启用自动重连
-    reconnectInterval: 3000,      // 重连间隔 3 秒
-    reconnectAttempts: 5,         // 最多重连 5 次
-    heartbeat: true,              // 启用心跳
-    heartbeatInterval: 30000,     // 心跳间隔 30 秒
-    heartbeatMessage: 'ping'      // 心跳消息
+    reconnect: true,           // 启用自动重连
+    reconnectInterval: 3000,   // 重连间隔 3 秒
+    reconnectAttempts: 5,      // 最多重连 5 次
+    heartbeat: true,           // 启用心跳
+    heartbeatInterval: 30000,  // 心跳间隔 30 秒
+    heartbeatMessage: 'ping'   // 心跳消息
 });
 
 // 监听事件
 mf.socket.on('open', (event) => {
-    console.log('连接成功');
+    console.log('WebSocket 连接成功');
 });
 
 mf.socket.on('message', (event) => {
-    console.log('收到消息:', event.data);
+    const data = JSON.parse(event.data);
+    console.log('收到消息:', data);
 });
 
 mf.socket.on('error', (event) => {
-    console.error('连接错误:', event);
+    console.error('WebSocket 错误:', event);
 });
 
 mf.socket.on('close', (event) => {
-    console.log('连接关闭');
+    console.log('WebSocket 连接关闭');
 });
 
-// 发送消息（支持多种数据类型）
-// 1. 发送对象（自动转换为 JSON）
+// 发送消息
 mf.socket.send({ type: 'move', x: 100, y: 200 });
-
-// 2. 发送字符串
-mf.socket.send('Hello Server');
 
 // 检查连接状态
 if (mf.socket.isConnected()) {
-    // 已连接
+    console.log('已连接');
 }
 
 // 断开连接
 mf.socket.disconnect();
 ```
 
-### 7.2 发送不同类型的数据
-
-WebSocket 支持多种数据类型的发送：
+**支持的数据类型：**
 
 ```typescript
-// ==================== 1. 发送 JSON 对象（推荐）====================
-// 自动序列化为 JSON 字符串
-mf.socket.send({
-    type: 'player_move',
-    position: { x: 100, y: 200 },
-    timestamp: Date.now()
-});
+// 1. JSON 对象（推荐）
+mf.socket.send({ type: 'chat', message: 'Hello' });
 
-// ==================== 2. 发送纯文本 ====================
+// 2. 字符串
 mf.socket.send('ping');
 
-// ==================== 3. 发送二进制数据（ArrayBuffer）====================
-// 适用场景：发送游戏状态快照、地图数据等需要高效传输的场景
-function sendBinaryData() {
-    // 创建 ArrayBuffer（8 字节）
-    const buffer = new ArrayBuffer(8);
-    const view = new DataView(buffer);
-    
-    // 写入玩家 ID（4 字节整数）
-    view.setInt32(0, 12345, true);
-    
-    // 写入玩家位置（2 个 2 字节整数）
-    view.setInt16(4, 100, true); // x 坐标
-    view.setInt16(6, 200, true); // y 坐标
-    
-    // 发送二进制数据
-    mf.socket.send(buffer);
-}
+// 3. 二进制数据（ArrayBuffer）
+const buffer = new ArrayBuffer(8);
+const view = new DataView(buffer);
+view.setInt32(0, 12345);
+mf.socket.send(buffer);
 
-// 接收二进制数据示例
-mf.socket.on('message', (event: MessageEvent) => {
-    if (event.data instanceof ArrayBuffer) {
-        const view = new DataView(event.data);
-        const playerId = view.getInt32(0, true);
-        const x = view.getInt16(4, true);
-        const y = view.getInt16(6, true);
-        console.log(`玩家 ${playerId} 移动到 (${x}, ${y})`);
-    }
-});
-
-// ==================== 4. 发送文件（Blob）====================
-// 适用场景：上传截图、录像回放、自定义地图等
-async function sendScreenshot() {
-    // 方式 1：从 Canvas 获取 Blob
-    const canvas = document.querySelector('canvas') as HTMLCanvasElement;
-    canvas.toBlob((blob) => {
-        if (blob) {
-            mf.socket.send(blob);
-        }
-    }, 'image/png');
-    
-    // 方式 2：从文件选择器获取
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = fileInput.files?.[0];
-    if (file) {
-        mf.socket.send(file);
-    }
-    
-    // 方式 3：创建自定义 Blob
-    const data = new Blob(['自定义数据内容'], { type: 'text/plain' });
-    mf.socket.send(data);
-}
-
-// 接收 Blob 数据示例
-mf.socket.on('message', async (event: MessageEvent) => {
-    if (event.data instanceof Blob) {
-        // 读取 Blob 数据
-        const text = await event.data.text();
-        console.log('收到文件数据:', text);
-        
-        // 或者作为 ArrayBuffer 读取
-        const buffer = await event.data.arrayBuffer();
-        console.log('文件大小:', buffer.byteLength, '字节');
-    }
-});
-
-// ==================== 5. 发送 TypedArray（Uint8Array 等）====================
-// 适用场景：发送图像数据、音频流等
-function sendImageData() {
-    // 创建一个 256 字节的数据
-    const imageData = new Uint8Array(256);
-    for (let i = 0; i < imageData.length; i++) {
-        imageData[i] = i;
-    }
-    
-    // 发送 TypedArray（会自动转换为 ArrayBuffer）
-    mf.socket.send(imageData.buffer);
-}
+// 4. Blob（文件数据）
+const blob = new Blob(['data'], { type: 'text/plain' });
+mf.socket.send(blob);
 ```
 
-
-### 7.3 功能特性
-
-1. **自动重连**：连接断开后自动尝试重连，可配置重连次数和间隔
-2. **心跳检测**：定期发送心跳消息保持连接
-3. **消息队列**：连接断开时缓存消息，重连后自动发送
-4. **事件管理**：统一的事件监听和触发机制
-5. **连接状态管理**：实时获取连接状态
-6. **自动序列化**：对象类型自动转换为 JSON 字符串
-7. **多数据类型支持**：支持 string、object、ArrayBuffer、Blob 等
-
-### 7.4 实战案例：多人对战游戏
+**在 Manager 中使用：**
 
 ```typescript
-// ==================== 案例 1：实时对战位置同步 ====================
-// 使用二进制数据传输，减少带宽占用
-class BattleNetworkManager {
-    // 发送玩家位置（二进制，只需 12 字节）
-    sendPlayerPosition(playerId: number, x: number, y: number, rotation: number) {
-        const buffer = new ArrayBuffer(12);
-        const view = new DataView(buffer);
+@manager('Network')
+export class NetworkManager extends AbstractManager {
+    initialize(): void {
+        // 通过 getWebSocketManager() 获取 WebSocket 管理器
+        const socket = this.getWebSocketManager();
         
-        view.setInt32(0, playerId, true);     // 玩家 ID（4 字节）
-        view.setFloat32(4, x, true);          // X 坐标（4 字节）
-        view.setFloat32(8, y, true);          // Y 坐标（4 字节）
-        
-        mf.socket.send(buffer);
-    }
-    
-    // 接收其他玩家位置
-    setupPositionReceiver() {
-        mf.socket.on('message', (event: MessageEvent) => {
-            if (event.data instanceof ArrayBuffer) {
-                const view = new DataView(event.data);
-                const playerId = view.getInt32(0, true);
-                const x = view.getFloat32(4, true);
-                const y = view.getFloat32(8, true);
-                
-                // 更新其他玩家位置
-                this.updateOtherPlayerPosition(playerId, x, y);
-            }
-        });
-    }
-    
-    private updateOtherPlayerPosition(playerId: number, x: number, y: number) {
-        // 更新游戏中其他玩家的位置
-        console.log(`玩家 ${playerId} 移动到 (${x}, ${y})`);
-    }
-}
-
-// ==================== 案例 2：截图分享功能 ====================
-// 使用 Blob 上传游戏截图
-class ScreenshotManager {
-    async captureAndSend() {
-        // 获取游戏 Canvas
-        const canvas = document.querySelector('canvas') as HTMLCanvasElement;
-        
-        // 转换为 Blob
-        canvas.toBlob((blob) => {
-            if (blob) {
-                // 发送截图到服务器
-                mf.socket.send(blob);
-                console.log(`发送截图，大小: ${blob.size} 字节`);
-            }
-        }, 'image/jpeg', 0.8); // JPEG 格式，80% 质量
-    }
-    
-    // 接收其他玩家的截图
-    setupScreenshotReceiver() {
-        mf.socket.on('message', async (event: MessageEvent) => {
-            if (event.data instanceof Blob) {
-                // 创建图片 URL
-                const imageUrl = URL.createObjectURL(event.data);
-                
-                // 显示图片
-                const img = new Image();
-                img.src = imageUrl;
-                document.body.appendChild(img);
-                
-                console.log('收到截图');
-            }
-        });
-    }
-}
-
-// ==================== 案例 3：混合数据类型 ====================
-// 根据消息类型选择最优传输方式
-class SmartNetworkManager {
-    send(messageType: string, data: any) {
-        switch (messageType) {
-            case 'chat':
-                // 聊天消息：使用 JSON
-                mf.socket.send({
-                    type: 'chat',
-                    message: data.message,
-                    playerId: data.playerId
-                });
-                break;
-                
-            case 'position':
-                // 位置更新：使用二进制（高频更新）
-                this.sendPositionBinary(data);
-                break;
-                
-            case 'screenshot':
-                // 截图：使用 Blob
-                mf.socket.send(data.blob);
-                break;
-                
-            case 'skill':
-                // 技能释放：使用 JSON
-                mf.socket.send({
-                    type: 'skill',
-                    skillId: data.skillId,
-                    targetId: data.targetId,
-                    timestamp: Date.now()
-                });
-                break;
-        }
-    }
-    
-    private sendPositionBinary(data: any) {
-        const buffer = new ArrayBuffer(12);
-        const view = new DataView(buffer);
-        view.setInt32(0, data.playerId, true);
-        view.setFloat32(4, data.x, true);
-        view.setFloat32(8, data.y, true);
-        mf.socket.send(buffer);
-    }
-}
-```
-
-### 7.5 Manager 集成示例
-
-```typescript
-// 在Manager中使用
-@manager()
-export class GameNetworkManager extends AbstractManager {
-    initialize() {
         // 配置 WebSocket
-        mf.socket.configure({
+        socket.configure({
             reconnect: true,
             reconnectInterval: 3000,
             reconnectAttempts: 10,
@@ -881,91 +985,356 @@ export class GameNetworkManager extends AbstractManager {
             heartbeatInterval: 30000
         });
         
-        // 设置事件监听
-        mf.socket.on('open', this.onConnected.bind(this));
-        mf.socket.on('message', this.onMessage.bind(this));
-        mf.socket.on('error', this.onError.bind(this));
-        mf.socket.on('close', this.onClose.bind(this));
+        // 监听事件
+        socket.on('open', this.onConnected.bind(this));
+        socket.on('message', this.onMessage.bind(this));
+        socket.on('error', this.onError.bind(this));
+        socket.on('close', this.onClose.bind(this));
     }
     
-    connect(token: string) {
-        const wsUrl = `wss://game-server.example.com/ws?token=${token}`;
-        mf.socket.connect(wsUrl);
+    connect(token: string): void {
+        const wsUrl = `wss://game-server.com/ws?token=${token}`;
+        this.getWebSocketManager().connect(wsUrl);
     }
     
-    private onConnected(event: Event) {
-        console.log('连接成功');
-        this.sendLogin();
-    }
-    
-    private onMessage(event: MessageEvent) {
-        const data = JSON.parse(event.data);
-        // 处理服务器消息
-        this.handleServerMessage(data);
-    }
-    
-    private onError(event: Event) {
-        console.error('连接错误');
-    }
-    
-    private onClose(event: CloseEvent) {
-        console.log('连接关闭');
-    }
-    
-    sendPlayerMove(x: number, y: number) {
-        // 直接发送对象，自动序列化为 JSON
-        mf.socket.send({
-            type: 'player_move',
-            position: { x, y },
+    sendGameAction(action: string, data: any): void {
+        this.getWebSocketManager().send({
+            type: action,
+            data,
             timestamp: Date.now()
         });
     }
     
-    private sendLogin() {
-        // 直接发送对象，自动序列化为 JSON
-        mf.socket.send({
-            type: 'login',
-            userId: this.getUserId()
-        });
+    private onConnected(event: Event): void {
+        console.log('WebSocket 连接成功');
+        this.getEventManager().dispatch('socketConnected');
     }
     
-    private handleServerMessage(data: any) {
-        // 使用事件系统分发消息
-        mf.event.dispatch(`server_${data.type}`, data);
+    private onMessage(event: MessageEvent): void {
+        try {
+            const data = JSON.parse(event.data);
+            // 通过事件系统分发消息
+            this.getEventManager().dispatch(`socket_${data.type}`, data);
+        } catch (error) {
+            console.error('解析消息失败:', error);
+        }
+    }
+    
+    private onError(event: Event): void {
+        console.error('WebSocket 错误');
+    }
+    
+    private onClose(event: CloseEvent): void {
+        console.log('WebSocket 连接关闭');
+        this.getEventManager().dispatch('socketClosed');
+    }
+    
+    dispose(): void {
+        this.getWebSocketManager().disconnect();
     }
 }
 ```
 
-## 8. 开发工具
+## 9. 红点系统
 
-框架配套了Cocos Creator编辑器插件`mflow-tools`，可以：
+框架提供了树形结构的红点提示管理系统，通过 `mf.reddot` 访问。
 
-1. 自动生成UI脚本
-2. 自动引用Prefab上需要操作的元素
-3. 自动挂载脚本组件
-
-### 8.1 使用方法
-
-1. 在Prefab中，将需要引用的节点重命名为`#属性名#组件类型`格式，例如：
-   - `#titleLabel#Label` 表示引用Label组件
-   - `#closeButton#Button` 表示引用Button组件
-   - `#contentNode` 表示引用Node节点
-
-2. 在Hierarchy面板中右键点击Prefab节点，选择"导出到脚本"
-
-3. 插件会自动生成基础脚本和业务脚本，并自动设置引用关系
-
-## 9. 完整示例
-
-### 9.1 创建Manager
+### 9.1 基本用法
 
 ```typescript
-@manager()
-export class GameManager extends AbstractManager {
+// 设置红点数量
+mf.reddot.setCount('main/bag/weapon', 5);
+mf.reddot.setCount('main/bag/armor', 3);
+mf.reddot.setCount('main/mail', 10);
+
+// 获取红点数量（包含子节点）
+const weaponCount = mf.reddot.getCount('main/bag/weapon');  // 5
+const bagCount = mf.reddot.getCount('main/bag');            // 8 (weapon + armor)
+const mainCount = mf.reddot.getCount('main');                // 18 (bag + mail)
+
+// 增加/减少红点数量
+mf.reddot.addCount('main/bag/weapon', 2);   // 增加 2
+mf.reddot.addCount('main/bag/weapon', -1);  // 减少 1
+
+// 检查是否有红点
+if (mf.reddot.hasRedDot('main/bag')) {
+    console.log('背包有新物品');
+}
+
+// 清空红点
+mf.reddot.clearRedDot('main/mail');
+```
+
+### 9.2 监听红点变化
+
+```typescript
+// 监听红点变化
+mf.reddot.on('main/bag', (totalCount, selfCount) => {
+    console.log(`背包红点: ${totalCount} (自身: ${selfCount})`);
+    // 更新 UI 显示
+});
+
+// 移除监听
+const handler = (total, self) => console.log(total, self);
+mf.reddot.on('main/bag', handler);
+mf.reddot.off('main/bag', handler);
+```
+
+### 9.3 在 View 中使用
+
+```typescript
+import { view, ViewNames } from 'dzkcc-mflow/core';
+import { BaseView } from 'dzkcc-mflow/libs';
+import { _decorator, Label } from 'cc';
+
+const { ccclass, property } = _decorator;
+
+@view('Main')
+@ccclass('MainView')
+export class MainView extends BaseView {
+    @property(Label)
+    bagRedDot: Label = null!;
+    
+    @property(Label)
+    mailRedDot: Label = null!;
+    
+    onEnter(): void {
+        // 监听红点变化
+        mf.reddot.on('main/bag', this.updateBagRedDot.bind(this));
+        mf.reddot.on('main/mail', this.updateMailRedDot.bind(this));
+    }
+    
+    onExit(): void {
+        // 移除监听
+        mf.reddot.off('main/bag', this.updateBagRedDot.bind(this));
+        mf.reddot.off('main/mail', this.updateMailRedDot.bind(this));
+    }
+    
+    private updateBagRedDot(totalCount: number): void {
+        this.bagRedDot.string = totalCount > 0 ? totalCount.toString() : '';
+        this.bagRedDot.node.active = totalCount > 0;
+    }
+    
+    private updateMailRedDot(totalCount: number): void {
+        this.mailRedDot.string = totalCount > 0 ? totalCount.toString() : '';
+        this.mailRedDot.node.active = totalCount > 0;
+    }
+    
+    onPause(): void {}
+    onResume(): void {}
+}
+```
+
+### 9.4 红点路径规则
+
+红点系统使用树形结构，路径使用 `/` 分隔：
+
+```
+main
+├── bag
+│   ├── weapon
+│   ├── armor
+│   └── consumable
+├── mail
+│   ├── system
+│   └── friend
+└── quest
+    ├── main
+    └── daily
+```
+
+**特性：**
+- 子节点的红点会自动累加到父节点
+- 支持任意深度的树形结构
+- 路径大小写敏感
+
+---
+
+## 10. 开发工具
+
+框架配套了 Cocos Creator 编辑器插件 `mflow-tools`，用于提升开发效率。
+
+### 10.1 功能特性
+
+✨ **自动生成 UI 脚本** - 根据 Prefab 自动生成基础视图类  
+✨ **自动引用组件** - 自动设置 `@property` 引用  
+✨ **自动挂载脚本** - 自动将脚本挂载到 Prefab  
+✨ **命名约定识别** - 通过节点命名自动识别组件类型  
+
+### 10.2 命名约定
+
+在 Prefab 中，将需要引用的节点重命名为 `#属性名#组件类型` 格式：
+
+```
+#titleLabel#Label      -> 引用 Label 组件
+#closeButton#Button    -> 引用 Button 组件
+#avatarSprite#Sprite   -> 引用 Sprite 组件
+#contentNode           -> 引用 Node 节点（省略组件类型）
+#listView#ScrollView   -> 引用 ScrollView 组件
+```
+
+### 10.3 使用方法
+
+1. **设置节点命名**
+
+在 Cocos Creator 编辑器中创建 Prefab，将需要引用的节点按照命名约定重命名：
+
+![节点命名示例]
+```
+HomeView (Prefab 根节点)
+├── #titleLabel#Label
+├── #contentNode
+│   ├── #avatarSprite#Sprite
+│   └── #nameLabel#Label
+└── #closeButton#Button
+```
+
+2. **导出脚本**
+
+在 Hierarchy 面板中右键点击 Prefab 根节点，选择 **"MFlow Tools → 导出到脚本"**
+
+3. **自动生成**
+
+插件会自动生成两个文件：
+
+**BaseHomeView.ts**（基础类，由工具生成，不要手动修改）
+```typescript
+import { _decorator, Label, Node, Sprite, Button } from 'cc';
+import { BaseView } from 'dzkcc-mflow/libs';
+
+const { ccclass, property } = _decorator;
+
+@ccclass('BaseHomeView')
+export abstract class BaseHomeView extends BaseView {
+    /** @internal */
+    private static readonly __path__: string = 'ui/home';
+    
+    @property(Label) titleLabel: Label = null!;
+    @property(Node) contentNode: Node = null!;
+    @property(Sprite) avatarSprite: Sprite = null!;
+    @property(Label) nameLabel: Label = null!;
+    @property(Button) closeButton: Button = null!;
+    
+    // 抽象方法由子类实现
+    abstract onEnter(args?: any): void;
+    abstract onExit(): void;
+    abstract onPause(): void;
+    abstract onResume(): void;
+}
+```
+
+**HomeView.ts**（业务类，手动实现业务逻辑）
+```typescript
+import { _decorator } from 'cc';
+import { BaseHomeView } from './BaseHomeView';
+import { view } from 'dzkcc-mflow/core';
+
+const { ccclass } = _decorator;
+
+@view('Home')
+@ccclass('HomeView')
+export class HomeView extends BaseHomeView {
+    onEnter(args?: any): void {
+        // 实现业务逻辑
+    }
+    
+    onExit(): void {}
+    onPause(): void {}
+    onResume(): void {}
+}
+```
+
+4. **脚本自动挂载**
+
+插件会自动将生成的脚本挂载到 Prefab 上，并设置好所有组件引用。
+
+---
+
+## 11. 完整示例
+
+下面是一个简单的塔防游戏示例，展示框架的完整使用流程。
+
+### 11.1 项目结构
+
+```
+assets/
+├── scripts/
+│   ├── GameCore.ts              # 游戏入口
+│   ├── managers/
+│   │   ├── GameManager.ts       # 游戏管理器
+│   │   ├── EnemyManager.ts      # 敌人管理器
+│   │   └── TowerManager.ts      # 塔管理器
+│   ├── models/
+│   │   ├── GameModel.ts         # 游戏数据模型
+│   │   └── PlayerModel.ts       # 玩家数据模型
+│   └── views/
+│       ├── HomeView.ts          # 主界面
+│       ├── GameView.ts          # 游戏界面
+│       └── ResultView.ts        # 结算界面
+└── resources/
+    └── prefabs/
+        ├── ui/
+        │   ├── home.prefab
+        │   ├── game.prefab
+        │   └── result.prefab
+        └── entities/
+            ├── tower.prefab
+            └── enemy.prefab
+```
+
+### 11.2 GameCore.ts - 游戏入口
+
+```typescript
+import { CocosCore } from 'dzkcc-mflow/libs';
+import { _decorator } from 'cc';
+
+// 导入所有模块（使用装饰器后会自动注册）
+import './managers/GameManager';
+import './managers/EnemyManager';
+import './managers/TowerManager';
+import './models/GameModel';
+import './models/PlayerModel';
+import './views/HomeView';
+import './views/GameView';
+import './views/ResultView';
+
+const { ccclass } = _decorator;
+
+@ccclass('GameCore')
+export class GameCore extends CocosCore {
+    protected onLoad(): void {
+        super.onLoad();
+        
+        // 框架初始化完成后，打开主界面
+        this.scheduleOnce(() => {
+            mf.gui.open(ViewNames.Home);
+        }, 0);
+    }
+}
+```
+
+### 11.3 GameModel.ts - 游戏数据模型
+
+```typescript
+import { model, IModel } from 'dzkcc-mflow/core';
+
+@model('Game')
+export class GameModel implements IModel {
+    private _level: number = 1;
     private _score: number = 0;
+    private _gold: number = 500;
+    private _life: number = 10;
     
     initialize(): void {
-        console.log('GameManager initialized');
+        console.log('GameModel 初始化');
+    }
+    
+    get level(): number {
+        return this._level;
+    }
+    
+    set level(value: number) {
+        this._level = value;
     }
     
     get score(): number {
@@ -974,120 +1343,416 @@ export class GameManager extends AbstractManager {
     
     addScore(value: number): void {
         this._score += value;
-        // 广播分数变化事件
-        this.getEventManager().dispatch('scoreChanged', this._score);
+    }
+    
+    get gold(): number {
+        return this._gold;
+    }
+    
+    addGold(value: number): void {
+        this._gold += value;
+    }
+    
+    get life(): number {
+        return this._life;
+    }
+    
+    loseLife(value: number = 1): void {
+        this._life = Math.max(0, this._life - value);
+    }
+    
+    reset(): void {
+        this._level = 1;
+        this._score = 0;
+        this._gold = 500;
+        this._life = 10;
     }
 }
 ```
 
-### 9.2 创建Model
+### 11.4 PlayerModel.ts - 玩家数据模型
 
 ```typescript
-@model()
-export class GameModel implements IModel {
-    private _playerName: string = '';
+import { model, IModel } from 'dzkcc-mflow/core';
+
+@model('Player')
+export class PlayerModel implements IModel {
+    private _name: string = '';
+    private _highScore: number = 0;
     
     initialize(): void {
-        console.log('GameModel initialized');
+        console.log('PlayerModel 初始化');
+        this.loadFromStorage();
     }
     
-    get playerName(): string {
-        return this._playerName;
+    get name(): string {
+        return this._name;
     }
     
-    set playerName(name: string) {
-        this._playerName = name;
+    set name(value: string) {
+        this._name = value;
+        this.saveToStorage();
+    }
+    
+    get highScore(): number {
+        return this._highScore;
+    }
+    
+    updateHighScore(score: number): void {
+        if (score > this._highScore) {
+            this._highScore = score;
+            this.saveToStorage();
+        }
+    }
+    
+    private loadFromStorage(): void {
+        const data = localStorage.getItem('playerData');
+        if (data) {
+            const parsed = JSON.parse(data);
+            this._name = parsed.name || '';
+            this._highScore = parsed.highScore || 0;
+        }
+    }
+    
+    private saveToStorage(): void {
+        localStorage.setItem('playerData', JSON.stringify({
+            name: this._name,
+            highScore: this._highScore
+        }));
     }
 }
 ```
 
-### 9.3 创建UI界面
+### 11.5 GameManager.ts - 游戏管理器
 
 ```typescript
-// BaseHomeView.ts (由工具自动生成)
-import { _decorator, Component, Label, Button } from 'cc';
-import { BaseView } from "dzkcc-mflow/libs";
+import { manager, AbstractManager, ManagerNames, ModelNames } from 'dzkcc-mflow/core';
+import { GameModel } from '../models/GameModel';
+import { PlayerModel } from '../models/PlayerModel';
 
-const { ccclass, property, disallowMultiple } = _decorator;
-
-@disallowMultiple()
-export abstract class BaseHomeView extends BaseView {
-    /** @internal */
-    private static readonly __path__: string = "ui/home";
+@manager('Game')
+export class GameManager extends AbstractManager {
+    private gameModel: GameModel = null!;
+    private playerModel: PlayerModel = null!;
     
-    @property({ type: Label }) titleLabel: Label = null!;
-    @property({ type: Button }) startButton: Button = null!;
+    initialize(): void {
+        console.log('GameManager 初始化');
+        
+        // 获取 Model
+        this.gameModel = this.getModel<GameModel>(ModelNames.Game);
+        this.playerModel = this.getModel<PlayerModel>(ModelNames.Player);
+    }
+    
+    startGame(level: number): void {
+        // 重置游戏数据
+        this.gameModel.reset();
+        this.gameModel.level = level;
+        
+        // 派发游戏开始事件
+        this.getEventManager().dispatch('gameStart', { level });
+    }
+    
+    killEnemy(enemyType: string): void {
+        // 增加分数和金币
+        const reward = this.getEnemyReward(enemyType);
+        this.gameModel.addScore(reward.score);
+        this.gameModel.addGold(reward.gold);
+        
+        // 派发事件
+        this.getEventManager().dispatch('enemyKilled', {
+            enemyType,
+            score: this.gameModel.score,
+            gold: this.gameModel.gold
+        });
+    }
+    
+    enemyEscape(): void {
+        // 减少生命
+        this.gameModel.loseLife(1);
+        
+        // 派发事件
+        this.getEventManager().dispatch('lifeChanged', this.gameModel.life);
+        
+        // 检查游戏是否结束
+        if (this.gameModel.life <= 0) {
+            this.gameOver();
+        }
+    }
+    
+    private gameOver(): void {
+        // 更新最高分
+        this.playerModel.updateHighScore(this.gameModel.score);
+        
+        // 派发游戏结束事件
+        this.getEventManager().dispatch('gameOver', {
+            score: this.gameModel.score,
+            highScore: this.playerModel.highScore
+        });
+    }
+    
+    private getEnemyReward(enemyType: string): { score: number; gold: number } {
+        // 根据敌人类型返回奖励
+        const rewards: Record<string, { score: number; gold: number }> = {
+            'small': { score: 10, gold: 5 },
+            'medium': { score: 20, gold: 10 },
+            'large': { score: 50, gold: 25 }
+        };
+        return rewards[enemyType] || rewards['small'];
+    }
 }
+```
 
-// HomeView.ts (业务实现)
-import { BaseHomeView } from './BaseHomeView';
-import { _decorator } from 'cc';
+### 11.6 HomeView.ts - 主界面
+
+```typescript
+import { view, ViewNames, ModelNames } from 'dzkcc-mflow/core';
+import { BaseView } from 'dzkcc-mflow/libs';
+import { _decorator, Button, Label } from 'cc';
+import { PlayerModel } from '../models/PlayerModel';
 
 const { ccclass, property } = _decorator;
 
+@view('Home')
 @ccclass('HomeView')
-export class HomeView extends BaseHomeView {
+export class HomeView extends BaseView {
+    @property(Label)
+    welcomeLabel: Label = null!;
+    
+    @property(Label)
+    highScoreLabel: Label = null!;
+    
+    @property(Button)
+    startButton: Button = null!;
+    
+    private playerModel: PlayerModel = null!;
+    
     onEnter(args?: any): void {
+        // 获取 Model
+        this.playerModel = this.getModel<PlayerModel>(ModelNames.Player);
+        
+        // 更新 UI
+        this.welcomeLabel.string = `欢迎, ${this.playerModel.name || '玩家'}!`;
+        this.highScoreLabel.string = `最高分: ${this.playerModel.highScore}`;
+        
         // 监听按钮点击
         this.startButton.node.on(Button.EventType.CLICK, this.onStartClick, this);
-        
-        // 监听分数变化
-        this.event.on('scoreChanged', this.onScoreChanged, this);
     }
     
     onExit(): void {
-        // BaseView会自动清理事件监听
+        // BaseView 会自动清理事件监听
     }
     
-    onPause(): void {
-        // 界面暂停时的处理
-    }
+    onPause(): void {}
+    onResume(): void {}
     
-    onResume(): void {
-        // 界面恢复时的处理
-    }
-    
-    private onStartClick(): void {
-        // 获取GameManager并调用方法
-        const gameManager = this.getManager(GameManager);
-        gameManager.addScore(10);
-    }
-    
-    private onScoreChanged(score: number): void {
-        this.titleLabel.string = `分数: ${score}`;
+    private async onStartClick(): Promise<void> {
+        // 关闭主界面
+        mf.gui.close(ViewNames.Home);
+        
+        // 打开游戏界面
+        await mf.gui.open(ViewNames.Game, { level: 1 });
     }
 }
 ```
 
-### 9.4 在场景中使用
+### 11.7 GameView.ts - 游戏界面
 
 ```typescript
-// 在游戏启动时
-export class GameApp extends Component {
-    start(): void {
-        // 打开主界面
-        mf.gui.open(HomeView);
+import { view, ViewNames, ManagerNames, ModelNames } from 'dzkcc-mflow/core';
+import { BaseView } from 'dzkcc-mflow/libs';
+import { _decorator, Label, Node } from 'cc';
+import { GameManager } from '../managers/GameManager';
+import { GameModel } from '../models/GameModel';
+
+const { ccclass, property } = _decorator;
+
+@view('Game')
+@ccclass('GameView')
+export class GameView extends BaseView {
+    @property(Label)
+    scoreLabel: Label = null!;
+    
+    @property(Label)
+    goldLabel: Label = null!;
+    
+    @property(Label)
+    lifeLabel: Label = null!;
+    
+    @property(Node)
+    gameContainer: Node = null!;
+    
+    private gameManager: GameManager = null!;
+    private gameModel: GameModel = null!;
+    
+    onEnter(args?: any): void {
+        // 获取 Manager 和 Model
+        this.gameManager = this.getManager<GameManager>(ManagerNames.Game);
+        this.gameModel = this.getModel<GameModel>(ModelNames.Game);
+        
+        // 监听游戏事件（会自动清理）
+        this.event.on('enemyKilled', this.onEnemyKilled, this);
+        this.event.on('lifeChanged', this.onLifeChanged, this);
+        this.event.on('gameOver', this.onGameOver, this);
+        
+        // 开始游戏
+        const level = args?.level || 1;
+        this.gameManager.startGame(level);
+        
+        // 更新 UI
+        this.updateUI();
+    }
+    
+    onExit(): void {
+        // BaseView 会自动清理事件监听
+    }
+    
+    onPause(): void {}
+    onResume(): void {}
+    
+    private onEnemyKilled(data: any): void {
+        this.updateUI();
+    }
+    
+    private onLifeChanged(life: number): void {
+        this.lifeLabel.string = `生命: ${life}`;
+    }
+    
+    private async onGameOver(data: any): Promise<void> {
+        // 关闭游戏界面
+        mf.gui.close(ViewNames.Game);
+        
+        // 打开结算界面
+        await mf.gui.open(ViewNames.Result, {
+            score: data.score,
+            highScore: data.highScore
+        });
+    }
+    
+    private updateUI(): void {
+        this.scoreLabel.string = `分数: ${this.gameModel.score}`;
+        this.goldLabel.string = `金币: ${this.gameModel.gold}`;
+        this.lifeLabel.string = `生命: ${this.gameModel.life}`;
     }
 }
 ```
 
-## 10. 最佳实践
+### 11.8 ResultView.ts - 结算界面
 
-1. **模块化设计**：将相关的业务逻辑封装在对应的Manager中
-2. **数据驱动**：使用Model管理数据状态
-3. **事件解耦**：通过事件系统实现模块间通信
-4. **资源管理**：使用BaseView自动管理资源加载和释放
-5. **依赖注入**：使用装饰器简化依赖管理
-6. **网络请求**：使用HttpManager统一管理网络请求
-7. **实时通信**：使用WebSocketManager处理实时消息，配合事件系统分发
-8. **工具辅助**：使用mflow-tools提高开发效率
+```typescript
+import { view, ViewNames } from 'dzkcc-mflow/core';
+import { BaseView } from 'dzkcc-mflow/libs';
+import { _decorator, Button, Label } from 'cc';
 
-## 11. 注意事项
+const { ccclass, property } = _decorator;
 
-1. 确保在使用框架功能前Core已经初始化
-2. 注意资源的正确加载和释放，避免内存泄漏
-3. 合理使用事件系统，避免事件监听过多影响性能
-4. 使用BaseView的子类时，确保正确实现所有抽象方法
-5. 网络请求时注意错误处理和超时设置
-6. WebSocket 连接时记得在场景切换时断开连接，避免内存泄漏
-7. 合理配置心跳和重连参数，平衡连接稳定性和服务器压力
+@view('Result')
+@ccclass('ResultView')
+export class ResultView extends BaseView {
+    @property(Label)
+    scoreLabel: Label = null!;
+    
+    @property(Label)
+    highScoreLabel: Label = null!;
+    
+    @property(Button)
+    restartButton: Button = null!;
+    
+    @property(Button)
+    homeButton: Button = null!;
+    
+    onEnter(args?: any): void {
+        // 显示分数
+        this.scoreLabel.string = `本局分数: ${args?.score || 0}`;
+        this.highScoreLabel.string = `最高分: ${args?.highScore || 0}`;
+        
+        // 监听按钮点击
+        this.restartButton.node.on(Button.EventType.CLICK, this.onRestartClick, this);
+        this.homeButton.node.on(Button.EventType.CLICK, this.onHomeClick, this);
+    }
+    
+    onExit(): void {}
+    onPause(): void {}
+    onResume(): void {}
+    
+    private async onRestartClick(): Promise<void> {
+        mf.gui.close(ViewNames.Result);
+        await mf.gui.open(ViewNames.Game, { level: 1 });
+    }
+    
+    private async onHomeClick(): Promise<void> {
+        mf.gui.close(ViewNames.Result);
+        await mf.gui.open(ViewNames.Home);
+    }
+}
+```
+
+---
+
+## 12. 最佳实践
+
+### 12.1 设计原则
+
+✅ **单一职责** - 每个 Manager/Model 只负责一个特定领域  
+✅ **依赖注入** - 使用装饰器自动注入依赖  
+✅ **事件驱动** - 通过事件系统实现模块解耦  
+✅ **资源管理** - 使用 BaseView 自动管理资源生命周期  
+
+### 12.2 命名规范
+
+- **Manager**: 以 `Manager` 结尾，如 `GameManager`、`AudioManager`
+- **Model**: 以 `Model` 结尾，如 `UserModel`、`ConfigModel`
+- **View**: 以 `View` 结尾，如 `HomeView`、`GameView`
+- **装饰器名称**: 简短清晰，如 `@manager('Game')`、`@model('User')`
+
+### 12.3 项目结构
+
+```
+assets/scripts/
+├── GameCore.ts           # 游戏入口
+├── managers/             # 业务管理器
+│   ├── GameManager.ts
+│   ├── AudioManager.ts
+│   └── NetworkManager.ts
+├── models/               # 数据模型
+│   ├── UserModel.ts
+│   ├── ConfigModel.ts
+│   └── InventoryModel.ts
+├── views/                # UI 视图
+│   ├── HomeView.ts
+│   ├── BattleView.ts
+│   └── SettingsView.ts
+├── components/           # 可复用组件
+│   ├── ItemSlot.ts
+│   └── HealthBar.ts
+└── utils/                # 工具函数
+    ├── MathUtil.ts
+    └── StringUtil.ts
+```
+
+### 12.4 注意事项
+
+⚠️ **避免循环依赖** - Manager 不应该相互依赖，通过事件系统通信  
+⚠️ **资源释放** - 使用 `BaseView` 的自动资源管理，避免内存泄漏  
+⚠️ **事件清理** - 在 Manager 的 `dispose()` 中清理事件监听  
+⚠️ **异步处理** - 注意 UI 打开/关闭的异步操作，使用 `await`  
+⚠️ **WebSocket 连接** - 在场景切换时记得断开连接  
+
+---
+
+## 13. License
+
+MIT License
+
+Copyright (c) 2024 duanzhk
+
+---
+
+## 14. 支持与反馈
+
+- **GitHub**: [cocos-modular-flow-framework](https://github.com/duanzhk/cocos-modular-flow-framework)
+- **文档**: [在线文档](https://github.com/duanzhk/cocos-modular-flow-framework/blob/main/README.md)
+- **问题反馈**: [Issues](https://github.com/duanzhk/cocos-modular-flow-framework/issues)
+
+---
+
+Made with ❤️ by duanzhk
