@@ -125,6 +125,330 @@ const view = await mf.gui.openAndPush(ViewType, 'group', args);
 mf.gui.closeAndPop('group');
 ```
 
+# 视图装饰器使用指南
+
+本指南展示如何使用新的 `@view()` 装饰器系统来简化视图的打开和关闭操作。
+
+## 功能特性
+
+✅ **代码补全支持** - IDE 自动补全 `ViewNames` 的所有属性  
+✅ **类型安全** - 使用 Symbol 避免拼写错误  
+✅ **无需重复导入** - 不需要在每个文件中导入视图类  
+✅ **API 简洁统一** - 直接使用 `open()` / `close()` / `openAndPush()` 方法  
+
+## 基本使用
+
+### 1. 在视图类上添加装饰器
+
+```typescript
+// views/SettingsView.ts
+import { view } from '@/core';
+import { BaseView } from '@/libs';
+
+@view('Settings')  // 注册视图，参数是视图名称
+export class SettingsView extends BaseView {
+    onEnter(args?: any): void {
+        console.log('Settings view opened', args);
+    }
+
+    onPause(): void {}
+    onResume(): void {}
+}
+```
+
+```typescript
+// views/HomeView.ts
+import { view } from '@/core';
+import { BaseView } from '@/libs';
+
+@view()  // 不传参数时自动使用类名 'HomeView'
+export class HomeView extends BaseView {
+    onEnter(args?: any): void {
+        console.log('Home view opened');
+    }
+
+    onPause(): void {}
+    onResume(): void {}
+}
+```
+
+### 2. 使用 ViewNames 打开视图
+
+```typescript
+// 在任何地方使用，只需导入 ViewNames
+import { ViewNames } from '@/core';
+
+// IDE 会自动补全 ViewNames 的属性：ViewNames.Settings, ViewNames.HomeView 等
+// ✅ 有代码补全，直接使用 open 方法
+await mf.ui.open(ViewNames.Settings, { userId: 123 });
+
+// 关闭视图（传入 Symbol）
+mf.ui.close(ViewNames.Settings, false);
+
+// 销毁视图（释放资源）
+mf.ui.close(ViewNames.Settings, true);
+
+// 也可以传入视图实例关闭
+const view = await mf.ui.open(ViewNames.Settings);
+mf.ui.close(view, false);
+```
+
+## 完整示例
+
+### 示例 1：简单的视图切换
+
+```typescript
+// views/MenuView.ts
+import { view } from '@/core';
+import { BaseView } from '@/libs';
+import { _decorator, Button } from 'cc';
+
+const { ccclass, property } = _decorator;
+
+@view('Menu')
+@ccclass('MenuView')
+export class MenuView extends BaseView {
+    @property(Button)
+    settingsButton: Button = null!;
+
+    onEnter(): void {
+        this.settingsButton.node.on('click', this.onSettingsClick, this);
+    }
+
+    async onSettingsClick() {
+        const { ViewNames } = await import('@/core');
+        // 打开设置视图（IDE 会自动补全）
+        await mf.ui.open(ViewNames.Settings);
+    }
+
+    onPause(): void {}
+    onResume(): void {}
+}
+```
+
+### 示例 2：带栈管理的视图
+
+```typescript
+// game/LevelManager.ts
+import { ViewNames } from '@/core';
+
+export class LevelManager {
+    async startLevel(levelId: number) {
+        // 使用栈管理关卡视图
+        await mf.ui.openAndPush(
+            ViewNames[`Level${levelId}`], 
+            'game', 
+            { levelId }
+        );
+    }
+
+    goBack() {
+        // 返回上一个关卡
+        mf.ui.closeAndPop('game', false);
+    }
+
+    exitGame() {
+        // 清空所有关卡并返回主菜单
+        mf.ui.clearStack('game', true);
+        mf.ui.open(ViewNames.Menu);
+    }
+}
+```
+
+### 示例 3：对比新旧方式
+
+```typescript
+// ❌ 旧方式：需要导入每个视图类
+import { SettingsView } from '@/views/SettingsView';
+import { ShopView } from '@/views/ShopView';
+import { ProfileView } from '@/views/ProfileView';
+
+await mf.ui.open(SettingsView);
+await mf.ui.open(ShopView);
+await mf.ui.open(ProfileView);
+
+// ✅ 新方式：只需导入 ViewNames
+import { ViewNames } from '@/core';
+
+await mf.ui.open(ViewNames.Settings);  // 有代码补全 ✨
+await mf.ui.open(ViewNames.Shop);      // 有代码补全 ✨
+await mf.ui.open(ViewNames.Profile);   // 有代码补全 ✨
+```
+
+## API 文档
+
+### 装饰器
+
+#### `@view(name?: string)`
+
+注册视图到全局注册表。
+
+**参数：**
+- `name` (可选): 视图名称，不提供则使用类名
+
+**示例：**
+```typescript
+@view('Settings')     // 注册为 'Settings'
+@view()              // 自动使用类名注册
+```
+
+### ViewNames 对象
+
+全局对象，包含所有已注册视图的 Symbol 标识。
+
+**类型：** `Record<string, symbol>`
+
+**示例：**
+```typescript
+ViewNames.Settings   // Symbol(Settings)
+ViewNames.HomeView   // Symbol(HomeView)
+```
+
+### UIManager 方法（已更新）
+
+#### `open<T>(viewSymbol: symbol, args?: any): Promise<T>`
+
+通过 Symbol 打开视图。
+
+**参数：**
+- `viewSymbol`: 从 ViewNames 获取的 Symbol
+- `args`: 传递给视图的参数
+
+**返回：** 视图实例
+
+**示例：**
+```typescript
+const view = await mf.ui.open(ViewNames.Settings, { tab: 'audio' });
+```
+
+#### `close(viewSymbol: symbol | IView, destroy?: boolean): void`
+
+通过 Symbol 或视图实例关闭视图。
+
+**参数：**
+- `viewSymbol`: 从 ViewNames 获取的 Symbol，或视图实例
+- `destroy`: 是否销毁视图（释放缓存和资源），默认 false
+
+**示例：**
+```typescript
+// 使用 Symbol 关闭
+mf.ui.close(ViewNames.Settings);        // 关闭但保留缓存
+mf.ui.close(ViewNames.Settings, true);  // 关闭并销毁
+
+// 使用视图实例关闭
+const view = await mf.ui.open(ViewNames.Settings);
+mf.ui.close(view);
+```
+
+#### `openAndPush<T>(viewSymbol: symbol, group: string, args?: any): Promise<T>`
+
+通过 Symbol 打开视图并推入栈。
+
+**参数：**
+- `viewSymbol`: 从 ViewNames 获取的 Symbol
+- `group`: 视图组名称
+- `args`: 传递给视图的参数
+
+**返回：** 视图实例
+
+**示例：**
+```typescript
+await mf.ui.openAndPush(ViewNames.Level1, 'game', { difficulty: 'hard' });
+```
+
+## 工具函数
+
+### `getViewClass<T>(viewSymbol: symbol): new () => T`
+
+获取视图类构造函数（通常不需要直接使用）。
+
+### `getRegisteredViewNames(): string[]`
+
+获取所有已注册的视图名称。
+
+**示例：**
+```typescript
+import { getRegisteredViewNames } from '@/core';
+
+const names = getRegisteredViewNames();
+console.log('已注册视图:', names);
+// 输出: ['Settings', 'HomeView', 'Menu', ...]
+```
+
+## 注意事项
+
+1. **装饰器顺序**：`@view()` 应该放在其他装饰器（如 `@ccclass`）之前或之后都可以
+   ```typescript
+   @view('MyView')
+   @ccclass('MyView')
+   export class MyView extends BaseView {}
+   ```
+
+2. **视图名称唯一性**：确保每个视图的名称是唯一的，重复名称会覆盖之前的注册
+
+3. **API 变更**：原有的 `open(ViewClass)` 方式已改为 `open(ViewSymbol)`
+   ```typescript
+   // ❌ 旧方式（不再支持）
+   // await mf.ui.open(SettingsView);
+   
+   // ✅ 新方式
+   await mf.ui.open(ViewNames.Settings);
+   ```
+
+4. **TypeScript 支持**：ViewNames 对象会自动获得正确的类型定义，享受完整的 IDE 支持
+
+5. **关闭方式灵活**：`close()` 方法既可以传入 Symbol 也可以传入视图实例
+   ```typescript
+   // 方式1: 使用 Symbol
+   mf.ui.close(ViewNames.Settings);
+   
+   // 方式2: 使用视图实例
+   const view = await mf.ui.open(ViewNames.Settings);
+   mf.ui.close(view);
+   ```
+
+## 迁移指南
+
+如果你有现有的视图代码，迁移步骤：
+
+1. **给每个视图类添加 `@view()` 装饰器**
+   ```typescript
+   // 修改前
+   @ccclass('SettingsView')
+   export class SettingsView extends BaseView { }
+   
+   // 修改后
+   @view('Settings')
+   @ccclass('SettingsView')
+   export class SettingsView extends BaseView { }
+   ```
+
+2. **更新打开视图的代码**
+   ```typescript
+   // 修改前
+   import { SettingsView } from '@/views/SettingsView';
+   await mf.ui.open(SettingsView);
+   
+   // 修改后
+   import { ViewNames } from '@/core';
+   await mf.ui.open(ViewNames.Settings);
+   ```
+
+3. **更新关闭视图的代码**
+   ```typescript
+   // 修改前
+   mf.ui.close(SettingsView);
+   
+   // 修改后
+   mf.ui.close(ViewNames.Settings);
+   // 或者如果有视图实例
+   mf.ui.close(viewInstance);
+   ```
+
+**注意**：必须给所有视图添加 `@view()` 装饰器后才能使用新的 API，因为旧的类传入方式已不再支持。
+
+
+
 ## 4. 事件系统
 
 ### 4.1 Broadcaster事件广播器

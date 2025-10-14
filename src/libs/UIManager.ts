@@ -1,5 +1,5 @@
 import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab } from "cc";
-import { ICocosResManager, IUIManager, IView, ServiceLocator } from "../core";
+import { ICocosResManager, IUIManager, IView, ServiceLocator, getViewClass } from "../core";
 
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
@@ -64,16 +64,14 @@ abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
         return this.internalGetTopView();
     }
-    open<T extends IView>(viewType: new () => T, args?: any): Promise<T> {
-        let vt = viewType as unknown as new () => ICocosView;
-        return this.internalOpen(vt, args) as unknown as Promise<T>;
+    open<T extends IView>(viewSymbol: symbol, args?: any): Promise<T> {
+        return this.internalOpen(viewSymbol, args) as unknown as Promise<T>;
     }
-    close<T extends IView>(viewortype: T | (new () => T), destory?: boolean): void {
-        this.internalClose(viewortype as any, destory);
+    close(viewSymbol: symbol | IView, destory?: boolean): void {
+        this.internalClose(viewSymbol, destory);
     }
-    openAndPush<T extends IView>(viewType: new () => T, group: string, args?: any): Promise<T> {
-        let vt = viewType as unknown as new () => ICocosView;
-        return this.internalOpenAndPush(vt, group, args) as unknown as Promise<T>;
+    openAndPush<T extends IView>(viewSymbol: symbol, group: string, args?: any): Promise<T> {
+        return this.internalOpenAndPush(viewSymbol, group, args) as unknown as Promise<T>;
     }
     closeAndPop(group: string, destroy?: boolean): void {
         this.internalCloseAndPop(group, destroy);
@@ -82,9 +80,9 @@ abstract class CcocosUIManager implements IUIManager {
         this.internalClearStack(group, destroy);
     }
 
-    protected abstract internalOpen<T extends ICocosView>(viewType: new () => T, args?: any): Promise<T>
-    protected abstract internalClose<T extends ICocosView>(viewortype: T | (new () => T), destory?: boolean): void
-    protected abstract internalOpenAndPush<T extends ICocosView>(viewType: new () => T, group: string, args?: any): Promise<T>
+    protected abstract internalOpen<T extends ICocosView>(viewSymbol: symbol, args?: any): Promise<T>
+    protected abstract internalClose(viewSymbol: symbol | IView, destory?: boolean): void
+    protected abstract internalOpenAndPush<T extends ICocosView>(viewSymbol: symbol, group: string, args?: any): Promise<T>
     protected abstract internalCloseAndPop(group: string, destroy?: boolean): void;
     protected abstract internalClearStack(group: string, destroy?: boolean): void
     protected abstract internalGetTopView(): ICocosView | undefined
@@ -117,7 +115,7 @@ export class UIManager extends CcocosUIManager {
             }
             prototype = Object.getPrototypeOf(prototype);
         }
-        throw new Error(`Prefab path not found for ${viewType.constructor.name}`);
+        throw new Error(`Prefab path not found for ${viewType.name}`);
     }
 
     // 调整Mask层级
@@ -146,7 +144,8 @@ export class UIManager extends CcocosUIManager {
         }
     }
 
-    private async _load<T extends ICocosView>(viewType: new () => T, args?: any): Promise<T> {
+    private async _load<T extends ICocosView>(viewSymbol: symbol, args?: any): Promise<T> {
+        const viewType = getViewClass<T>(viewSymbol);
         let target: Node
         if (this._cache.has(viewType.name)) {
             target = this._cache.get(viewType.name)!;
@@ -161,30 +160,41 @@ export class UIManager extends CcocosUIManager {
         return target.getComponent<T>(viewType)!
     }
 
-    private _remove<T extends ICocosView>(viewortype: T | (new () => T), destroy?: boolean): void {
-        if (typeof viewortype == 'function') {
-            const cached = this._cache.get(viewortype.name);
+    private _remove(viewSymbolOrInstance: symbol | IView, destroy?: boolean): void {
+        // 如果是 symbol，从缓存中获取视图实例
+        if (typeof viewSymbolOrInstance === 'symbol') {
+            const viewType = getViewClass<ICocosView>(viewSymbolOrInstance);
+            const cached = this._cache.get(viewType.name);
             if (!cached) {
-                console.warn(`No cached view found for ${viewortype.name}`);
+                console.warn(`No cached view found for ${viewType.name}`);
                 return;
             }
-            this._remove(cached.getComponent(viewortype)!, destroy);
+            const viewInstance = cached.getComponent(viewType as any) as ICocosView;
+            if (!viewInstance) {
+                console.warn(`No view component found on node ${cached.name}`);
+                return;
+            }
+            this._remove(viewInstance as IView, destroy);
             return;
         }
-        if ('__group__' in viewortype) {
-            viewortype.__group__ = undefined
+
+        // 处理视图实例
+        const viewInstance = viewSymbolOrInstance as ICocosView;
+        if ('__group__' in viewInstance) {
+            viewInstance.__group__ = undefined
         }
-        viewortype.onExit();
-        viewortype.node.removeFromParent();
-        viewortype.node.active = false;
+        viewInstance.onExit();
+        viewInstance.node.removeFromParent();
+        viewInstance.node.active = false;
+
         if (destroy) {
-            let cacheKey = viewortype.constructor.name;
+            let cacheKey = viewInstance.constructor.name;
             this._cache.get(cacheKey)?.destroy();
             this._cache.delete(cacheKey);
-            
+
             // 销毁被克隆出的UI后Node后，尝试释放 Prefab 资源
             try {
-                const viewType = viewortype.constructor as new () => T;
+                const viewType = viewInstance.constructor as new () => ICocosView;
                 const prefabPath = this._getPrefabPath(viewType);
                 const ResMgr = ServiceLocator.getService<ICocosResManager>('ResLoader');
                 ResMgr.release(prefabPath, Prefab);
@@ -212,9 +222,9 @@ export class UIManager extends CcocosUIManager {
         return undefined;
     }
 
-    protected async internalOpen<T extends ICocosView>(viewType: new () => T, args?: any): Promise<T> {
+    protected async internalOpen<T extends ICocosView>(viewSymbol: symbol, args?: any): Promise<T> {
         this._blockInput(true);
-        let view = await this._load(viewType, args);
+        let view = await this._load<T>(viewSymbol, args);
         addChild(view.node)
         this._adjustMaskLayer();
         view.onEnter(args);
@@ -222,14 +232,14 @@ export class UIManager extends CcocosUIManager {
         return view;
     }
 
-    protected internalClose<T extends ICocosView>(viewortype: T | (new () => T), destroy?: boolean): void {
-        this._remove(viewortype, destroy);
+    protected internalClose(viewSymbol: symbol | IView, destroy?: boolean): void {
+        this._remove(viewSymbol, destroy);
         this._adjustMaskLayer();
     }
 
-    protected async internalOpenAndPush<T extends ICocosView>(viewType: new () => T, group: string, args?: any): Promise<T> {
+    protected async internalOpenAndPush<T extends ICocosView>(viewSymbol: symbol, group: string, args?: any): Promise<T> {
         this._blockInput(true);
-        let view = await this._load(viewType, args);
+        let view = await this._load<T>(viewSymbol, args);
         let stack = this._groupStacks.get(group) || []
         this._groupStacks.set(group, stack);
         let top = stack[stack.length - 1]

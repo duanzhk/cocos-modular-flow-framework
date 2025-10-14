@@ -7,6 +7,9 @@ const interfaceSymbols = new Map<Function, symbol>();
 // 装饰器，方便自动注册manager和model
 const modelRegistry: Function[] = [];
 const managerRegistry: Function[] = [];
+// 视图注册系统
+const viewRegistry = new Map<symbol, Function>();
+export const ViewNames = {} as Record<string, symbol>;
 export function getInterface<T extends Function>(ctor: T): symbol {
     let sym = interfaceSymbols.get(ctor);
     if (!sym) throw new Error(`Manager ${ctor.name} not registered! Please use @manager() decorator to register it.`);
@@ -111,4 +114,57 @@ export function injectManager(sym: symbol) {
             target.constructor
         );
     };
+}
+
+// 视图注册装饰器
+// ------------------------------------------------------------------------------------
+/**
+ * 视图装饰器，用于注册视图到全局注册表
+ * @param name 可选的视图名称，如果不提供则使用类名
+ * @example
+ * ```typescript
+ * @view('Settings')
+ * export class SettingsView extends BaseView {
+ *   // ...
+ * }
+ * 
+ * // 使用
+ * await uiManager.openByName(ViewNames.Settings);
+ * ```
+ */
+export function view(name?: string) {
+    return function (ctor: Function) {
+        const viewName = name || ctor.name;
+        const viewSymbol = Symbol(viewName);
+        
+        // 注册到 Map
+        viewRegistry.set(viewSymbol, ctor);
+        
+        // 自动添加到 ViewNames 对象，提供代码补全
+        (ViewNames as any)[viewName] = viewSymbol;
+        
+        console.log(`View registered: ${viewName}`);
+    };
+}
+
+/**
+ * 通过 symbol 获取视图类
+ * @param viewSymbol 视图的 symbol 标识
+ * @returns 视图类构造函数
+ * @throws 如果视图未注册则抛出错误
+ */
+export function getViewClass<T>(viewSymbol: symbol): new () => T {
+    const viewClass = viewRegistry.get(viewSymbol);
+    if (!viewClass) {
+        throw new Error(`View not registered! Symbol: ${viewSymbol.toString()}`);
+    }
+    return viewClass as new () => T;
+}
+
+/**
+ * 获取所有已注册的视图名称
+ * @returns 视图名称数组
+ */
+export function getRegisteredViewNames(): string[] {
+    return Object.keys(ViewNames);
 }
