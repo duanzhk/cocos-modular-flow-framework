@@ -1,4 +1,4 @@
-import { ICore, IEventManager, IManager, IModel, IHttpManager, IWebSocketManager } from "./Api";
+import { ICore, IManager, IModel } from "./Api";
 export declare abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     private readonly container;
     constructor();
@@ -9,12 +9,8 @@ export declare abstract class AbstractCore<T extends AbstractCore<T>> implements
     getManager<T extends IManager>(managerSymbol: symbol): T;
 }
 export declare abstract class AbstractManager implements IManager {
-    private eventManager?;
     abstract initialize(): void;
     dispose(): void;
     protected getModel<T extends IModel>(modelSymbol: symbol): T;
-    protected getEventManager(): IEventManager;
-    protected getHttpManager(): IHttpManager;
-    protected getWebSocketManager(): IWebSocketManager;
-    private releaseEventManager;
+    protected getManager<T extends IManager>(managerSymbol: symbol): T;
 }

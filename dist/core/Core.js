@@ -43,35 +43,15 @@ class AbstractCore {
 }
 class AbstractManager {
     dispose() {
-        this.releaseEventManager();
     }
     getModel(modelSymbol) {
         // 保持框架独立性，不与具体应用入口(app类)耦合
         // 框架高内聚，使用ServiceLocator获取core
         return ServiceLocator.getService('core').getModel(modelSymbol);
     }
-    // 事件管理器获取（通过服务定位器解耦）
-    getEventManager() {
-        if (!this.eventManager) {
-            this.eventManager = ServiceLocator.getService('EventManager');
-        }
-        return this.eventManager;
-    }
-    // HTTP 管理器获取
-    getHttpManager() {
-        return ServiceLocator.getService('HttpManager');
-    }
-    // WebSocket 管理器获取
-    getWebSocketManager() {
-        return ServiceLocator.getService('WebSocketManager');
-    }
-    releaseEventManager() {
-        var _a, _b;
-        if (this.eventManager) {
-            // 假设 IEventManager 有销毁逻辑（如第三方库）
-            (_b = (_a = this.eventManager) === null || _a === void 0 ? void 0 : _a.dispose) === null || _b === void 0 ? void 0 : _b.call(_a);
-            this.eventManager = undefined;
-        }
+    // 业务模块的事件管理器获取（通过服务定位器解耦）
+    getManager(managerSymbol) {
+        return ServiceLocator.getService('core').getManager(managerSymbol);
     }
 }
 

@@ -1,4 +1,4 @@
-import { ICore, IEventManager, IManager, IModel, IHttpManager, IWebSocketManager } from "./Api";
+import { ICore, IManager, IModel } from "./Api";
 import { ServiceLocator } from "./ServiceLocator";
 import { getModelClass, getManagerClass } from "./Decorators";
 
@@ -50,12 +50,9 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
 }
 
 export abstract class AbstractManager implements IManager {
-    private eventManager?: IEventManager;
-
     abstract initialize(): void
 
     dispose(): void {
-        this.releaseEventManager();
     }
 
     protected getModel<T extends IModel>(modelSymbol: symbol): T {
@@ -64,29 +61,8 @@ export abstract class AbstractManager implements IManager {
         return ServiceLocator.getService<ICore>('core').getModel<T>(modelSymbol);
     }
 
-    // 事件管理器获取（通过服务定位器解耦）
-    protected getEventManager(): IEventManager {
-        if (!this.eventManager) {
-            this.eventManager = ServiceLocator.getService<IEventManager>('EventManager');
-        }
-        return this.eventManager;
-    }
-
-    // HTTP 管理器获取
-    protected getHttpManager(): IHttpManager {
-        return ServiceLocator.getService<IHttpManager>('HttpManager');
-    }
-
-    // WebSocket 管理器获取
-    protected getWebSocketManager(): IWebSocketManager {
-        return ServiceLocator.getService<IWebSocketManager>('WebSocketManager');
-    }
-
-    private releaseEventManager(): void {
-        if (this.eventManager) {
-            // 假设 IEventManager 有销毁逻辑（如第三方库）
-            (this.eventManager as any)?.dispose?.();
-            this.eventManager = undefined;
-        }
+    // 业务模块的事件管理器获取（通过服务定位器解耦）
+    protected getManager<T extends IManager>(managerSymbol: symbol): T {
+        return ServiceLocator.getService<ICore>('core').getManager<T>(managerSymbol);
     }
 }
