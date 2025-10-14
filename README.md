@@ -1,6 +1,7 @@
 # Modular Flow Framework
 
 一个专为 Cocos Creator 引擎开发的模块化设计与流程管理框架。
+- github地址：https://github.com/duanzhk/cocos-modular-flow-framework
 
 ## 📚 目录
 
@@ -40,11 +41,28 @@ Modular Flow Framework (MF) 是一个为 Cocos Creator 引擎开发的模块化�
 
 ### 1.3 安装
 
+创建自己的cocos项目，在项目根目录执行如下命令：
+
 ```bash
 npm i dzkcc-mflow@beta
 ```
+安装完成后，修改自己项目的tsconfig.json，关键添加内容 **"dzkcc-mflow/*": ["./node_modules/dzkcc-mflow/dist/*"]**
+```
+{
+  /* Base configuration. Do not edit this field. */
+  "extends": "./temp/tsconfig.cocos.json",
 
-安装完成后，**重启 Cocos Creator 编辑器**，框架会自动安装配套的编辑器插件。
+  /* Add your custom configuration here. */
+  "compilerOptions": {
+    "strict": false,
+    "paths": {
+      "dzkcc-mflow/*": ["./node_modules/dzkcc-mflow/dist/*"] //cocos不解析，仅为了vscode提示
+    }
+  }
+}
+```
+
+之后，**重启 Cocos Creator 编辑器**，框架会自动安装配套的编辑器插件。
 
 ---
 
