@@ -115,7 +115,7 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
                 path.dirname(config.outputFile),
                 model.filePath
             ).replace(/\\/g, '/').replace('.ts', '');
-            lines.push(`import { ${model.className} } from '${relativePath}';`);
+            lines.push(`import type { ${model.className} } from '${relativePath}';`);
         }
         lines.push('');
     }
@@ -128,55 +128,65 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
                 path.dirname(config.outputFile),
                 manager.filePath
             ).replace(/\\/g, '/').replace('.ts', '');
-            lines.push(`import { ${manager.className} } from '${relativePath}';`);
+            lines.push(`import type { ${manager.className} } from '${relativePath}';`);
         }
         lines.push('');
     }
 
-    // 导入 Names
-    lines.push('// Names 导入');
-    lines.push(`import { ModelNames, ManagerNames } from '${config.moduleImportPath}';`);
-    lines.push('');
+    // 导入 Names（用于函数重载）
+    const needModelNames = models.length > 0;
+    const needManagerNames = managers.length > 0;
+    if (needModelNames || needManagerNames) {
+        const imports: string[] = [];
+        if (needModelNames) imports.push('ModelNames');
+        if (needManagerNames) imports.push('ManagerNames');
+        lines.push(`import { ${imports.join(', ')} } from '${config.moduleImportPath}';`);
+        lines.push('');
+    }
 
     // 声明模块
     lines.push(`declare module '${config.moduleImportPath}' {`);
 
-    // Model Names 类型映射
+    // 扩展 NamesType 接口，将每个属性定义为 unique symbol
     if (models.length > 0) {
+        lines.push('    // 扩展 ModelNamesType，将每个属性定义为 unique symbol');
         lines.push('    interface ModelNamesType {');
         for (const model of models) {
-            lines.push(`        ${model.decoratorName}: symbol;`);
+            lines.push(`        readonly ${model.decoratorName}: unique symbol;`);
         }
         lines.push('    }');
         lines.push('');
     }
 
-    // Manager Names 类型映射
     if (managers.length > 0) {
+        lines.push('    // 扩展 ManagerNamesType，将每个属性定义为 unique symbol');
         lines.push('    interface ManagerNamesType {');
         for (const manager of managers) {
-            lines.push(`        ${manager.decoratorName}: symbol;`);
+            lines.push(`        readonly ${manager.decoratorName}: unique symbol;`);
         }
         lines.push('    }');
         lines.push('');
     }
 
-    // Model 类型映射
-    if (models.length > 0) {
-        lines.push('    interface ModelTypeMap {');
-        for (const model of models) {
-            lines.push(`        '${model.decoratorName}': ${model.className};`);
+    // ICore 接口扩展（使用函数重载提供精确的类型推断）
+    if (models.length > 0 || managers.length > 0) {
+        lines.push('    // 扩展 ICore 接口，添加精确的类型重载');
+        lines.push('    interface ICore {');
+        
+        // 为每个 Model 添加 getModel 重载
+        if (models.length > 0) {
+            for (const model of models) {
+                lines.push(`        getModel(modelSymbol: typeof ModelNames.${model.decoratorName}): ${model.className};`);
+            }
         }
-        lines.push('    }');
-        lines.push('');
-    }
-
-    // Manager 类型映射
-    if (managers.length > 0) {
-        lines.push('    interface ManagerTypeMap {');
-        for (const manager of managers) {
-            lines.push(`        '${manager.decoratorName}': ${manager.className};`);
+        
+        // 为每个 Manager 添加 getManager 重载
+        if (managers.length > 0) {
+            for (const manager of managers) {
+                lines.push(`        getManager(managerSymbol: typeof ManagerNames.${manager.decoratorName}): ${manager.className};`);
+            }
         }
+        
         lines.push('    }');
     }
 
