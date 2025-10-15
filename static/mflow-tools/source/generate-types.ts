@@ -103,7 +103,7 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
     lines.push('/**');
     lines.push(' * 自动生成的类型映射文件');
     lines.push(' * ⚠️ 请勿手动修改此文件！');
-    lines.push(' * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> generate-types');
+    lines.push(' * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> Generate decorator mapping/生成装饰器映射');
     lines.push(' */');
     lines.push('');
 
@@ -141,11 +141,31 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
     // 声明模块
     lines.push(`declare module '${config.moduleImportPath}' {`);
 
+    // Model Names 类型映射
+    if (models.length > 0) {
+        lines.push('    interface ModelNamesType {');
+        for (const model of models) {
+            lines.push(`        ${model.decoratorName}: symbol;`);
+        }
+        lines.push('    }');
+        lines.push('');
+    }
+
+    // Manager Names 类型映射
+    if (managers.length > 0) {
+        lines.push('    interface ManagerNamesType {');
+        for (const manager of managers) {
+            lines.push(`        ${manager.decoratorName}: symbol;`);
+        }
+        lines.push('    }');
+        lines.push('');
+    }
+
     // Model 类型映射
     if (models.length > 0) {
         lines.push('    interface ModelTypeMap {');
         for (const model of models) {
-            lines.push(`        [ModelNames.${model.decoratorName}]: ${model.className};`);
+            lines.push(`        '${model.decoratorName}': ${model.className};`);
         }
         lines.push('    }');
         lines.push('');
@@ -155,7 +175,7 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
     if (managers.length > 0) {
         lines.push('    interface ManagerTypeMap {');
         for (const manager of managers) {
-            lines.push(`        [ManagerNames.${manager.decoratorName}]: ${manager.className};`);
+            lines.push(`        '${manager.decoratorName}': ${manager.className};`);
         }
         lines.push('    }');
     }
@@ -240,7 +260,7 @@ function loadConfigFromProject(projectPath: string): TypeGenConfig | null {
                 return {
                     modelDir: path.resolve(projectPath, config.modelDir || 'assets/src/models'),
                     managerDir: path.resolve(projectPath, config.managerDir || 'assets/src/managers'),
-                    outputFile: path.resolve(projectPath, config.outputFile || 'assets/types/core-types.d.ts'),
+                    outputFile: path.resolve(projectPath, config.outputFile || 'assets/types/manager-model-mapping.d.ts'),
                     moduleImportPath: config.moduleImportPath || 'dzkcc-mflow/core'
                 };
             }

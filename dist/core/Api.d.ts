@@ -1,23 +1,36 @@
 /**
  * 核心接口 - 管理 Model 和 Manager 的生命周期
+ *
+ * 注意：返回类型由具体实现类（AbstractCore）决定，
+ * 实现类会使用类型推断将 symbol 映射到具体的 Model/Manager 类型
  */
 export interface ICore {
     /** 注册 Model - 通过 Symbol 自动实例化 */
     regModel(modelSymbol: symbol): void;
     /**
      * 获取 Model（支持类型自动推断）
-     * @param modelSymbol Model 的 Symbol
-     * @returns Model 实例，类型会根据 ModelTypeMap 自动推断
+     * @param modelSymbol Model 的 Symbol。返回 any，由实现类提供具体类型
+     * @returns Model 实例，类型会根据 symbol 自动推断为具体的 Model 类型
+     * @example
+     * ```typescript
+     * // 自动推断为 UserModel 类型
+     * const userModel = core.getModel(ModelNames.User);
+     * ```
      */
-    getModel<S extends symbol = symbol>(modelSymbol: S): IModel;
+    getModel<S extends symbol>(modelSymbol: S): any;
     /** 注册 Manager - 通过 Symbol 自动实例化 */
     regManager(managerSymbol: symbol): void;
     /**
      * 获取 Manager（支持类型自动推断）
-     * @param managerSymbol Manager 的 Symbol
-     * @returns Manager 实例，类型会根据 ManagerTypeMap 自动推断
+     * @param managerSymbol Manager 的 Symbol。返回 any，由实现类提供具体类型
+     * @returns Manager 实例，类型会根据 symbol 自动推断为具体的 Manager 类型
+     * @example
+     * ```typescript
+     * // 自动推断为 GameManager 类型
+     * const gameManager = core.getManager(ManagerNames.Game);
+     * ```
      */
-    getManager<S extends symbol = symbol>(managerSymbol: S): IManager;
+    getManager<S extends symbol>(managerSymbol: S): any;
 }
 /**
  * Model 基接口 - 数据模型
