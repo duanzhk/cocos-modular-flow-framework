@@ -1,4 +1,4 @@
-import { ICore, ModelNamesType, ManagerNamesType,ViewNamesType, ModelTypeMap, ManagerTypeMap } from "./Api";
+import { ICore, ModelNamesType, ManagerNamesType, ViewNamesType } from "./Api";
 import 'reflect-metadata'
 
 // ============================================================================

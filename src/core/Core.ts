@@ -1,4 +1,4 @@
-import { ICore, IManager, InferModelType, InferManagerType} from "./Api";
+import { ICore, IManager } from "./Api";
 import { ServiceLocator } from "./ServiceLocator";
 import { getModelClass, getManagerClass } from "./Decorators";
 
@@ -33,16 +33,16 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     }
 
     /**
-     * 获取 Model 实例（支持类型自动推断）
+     * 获取 Model 实例
      * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
-     * @returns Model 实例，类型会根据 symbol 自动推断
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 UserModel 类型，无需手动指定泛型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel<S extends symbol>(modelSymbol: S): InferModelType<S> {
+    getModel(modelSymbol: symbol): any {
         return this.container.get(modelSymbol);
     }
 
@@ -55,16 +55,16 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     }
 
     /**
-     * 获取 Manager 实例（支持类型自动推断）
+     * 获取 Manager 实例
      * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
-     * @returns Manager 实例，类型会根据 symbol 自动推断
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 GameManager 类型，无需手动指定泛型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager<S extends symbol>(managerSymbol: S): InferManagerType<S> {
+    getManager(managerSymbol: symbol): any {
         return this.container.get(managerSymbol);
     }
 }
@@ -76,22 +76,22 @@ export abstract class AbstractManager implements IManager {
     }
 
     /**
-     * 获取 Model 实例（支持类型自动推断）
+     * 获取 Model 实例
      * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
-     * @returns Model 实例，类型会根据 symbol 自动推断
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getModel<S extends symbol>(modelSymbol: S): InferModelType<S> {
+    protected getModel(modelSymbol: symbol): any {
         // 保持框架独立性，不与具体应用入口(app类)耦合
         // 框架高内聚，使用ServiceLocator获取core
-        return ServiceLocator.getService<ICore>('core').getModel(modelSymbol) as any;
+        return ServiceLocator.getService<ICore>('core').getModel(modelSymbol);
     }
 
     /**
-     * 获取 Manager 实例（支持类型自动推断）
+     * 获取 Manager 实例
      * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
-     * @returns Manager 实例，类型会根据 symbol 自动推断
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getManager<S extends symbol>(managerSymbol: S): InferManagerType<S> {
-        return ServiceLocator.getService<ICore>('core').getManager(managerSymbol) as any;
+    protected getManager(managerSymbol: symbol): any {
+        return ServiceLocator.getService<ICore>('core').getManager(managerSymbol);
     }
 }

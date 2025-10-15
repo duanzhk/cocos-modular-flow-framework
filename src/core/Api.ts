@@ -1,59 +1,35 @@
 // ============================================================================
-// 类型推断辅助
+// 类型定义（由业务层通过 .d.ts 扩展）
 // ============================================================================
 
 /**
- * Model 类型映射接口（由业务层扩展）
- */
-export interface ModelTypeMap extends Record<string, any> {}
-
-/**
- * Manager 类型映射接口（由业务层扩展）
- */
-export interface ManagerTypeMap extends Record<string, any> {}
-
-/**
- * View 类型映射接口（由业务层扩展）
- */
-export interface ViewTypeMap extends Record<string, any> {}
-
-/**
- * ModelNames 接口（由业务层扩展）
+ * ModelNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ModelNamesType {
+ *     readonly User: unique symbol;
+ * }
+ * ```
  */
 export interface ModelNamesType extends Record<string, symbol> {}
 
 /**
- * ManagerNames 接口（由业务层扩展）
+ * ManagerNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ManagerNamesType {
+ *     readonly Home: unique symbol;
+ * }
+ * ```
  */
 export interface ManagerNamesType extends Record<string, symbol> {}
 
 /** 
- * View 名称接口（用于类型推断，通过生成的 d.ts 文件扩展） 
- * */
+ * ViewNames 接口（由业务层扩展以提供代码补全和类型推断）
+ */
 export interface ViewNamesType extends Record<string, symbol> {}
-
-/**
- * 从 symbol 推断对应的字符串 key
- */
-type GetKeyFromSymbol<S extends symbol, Names extends Record<string, symbol>> = {
-    [K in keyof Names]: Names[K] extends S ? K : never
-}[keyof Names];
-
-/**
- * 从 Model Symbol 推断类型
- */
-export type InferModelType<S extends symbol> = 
-    GetKeyFromSymbol<S, ModelNamesType> extends keyof ModelTypeMap 
-        ? ModelTypeMap[GetKeyFromSymbol<S, ModelNamesType>]
-        : IModel;
-
-/**
- * 从 Manager Symbol 推断类型
- */
-export type InferManagerType<S extends symbol> = 
-    GetKeyFromSymbol<S, ManagerNamesType> extends keyof ManagerTypeMap 
-        ? ManagerTypeMap[GetKeyFromSymbol<S, ManagerNamesType>]
-        : IManager;
 
 
 
@@ -64,37 +40,38 @@ export type InferManagerType<S extends symbol> =
 /**
  * 核心接口 - 管理 Model 和 Manager 的生命周期
  * 
- * 支持通过 Symbol 自动推断返回类型
+ * 类型推断由业务层的 .d.ts 文件通过函数重载提供
  */
 export interface ICore {
     /** 注册 Model - 通过 Symbol 自动实例化 */
     regModel(modelSymbol: symbol): void;
+    
     /** 
-     * 获取 Model（支持类型自动推断）
+     * 获取 Model 实例
      * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
-     * @returns Model 实例，类型会根据 symbol 自动推断为具体的 Model 类型
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 UserModel 类型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel<S extends symbol>(modelSymbol: S): InferModelType<S>;
+    getModel(modelSymbol: symbol): any;
 
-    
     /** 注册 Manager - 通过 Symbol 自动实例化 */
     regManager(managerSymbol: symbol): void;
+    
     /** 
-     * 获取 Manager（支持类型自动推断）
+     * 获取 Manager 实例
      * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
-     * @returns Manager 实例，类型会根据 symbol 自动推断为具体的 Manager 类型
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 GameManager 类型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager<S extends symbol>(managerSymbol: S): InferManagerType<S>;
+    getManager(managerSymbol: symbol): any;
 }
 
 /**

@@ -28,12 +28,12 @@ class AbstractCore {
         model.initialize();
     }
     /**
-     * 获取 Model 实例（支持类型自动推断）
+     * 获取 Model 实例
      * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
-     * @returns Model 实例，类型会根据 symbol 自动推断
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 UserModel 类型，无需手动指定泛型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
@@ -48,12 +48,12 @@ class AbstractCore {
         manager.initialize();
     }
     /**
-     * 获取 Manager 实例（支持类型自动推断）
+     * 获取 Manager 实例
      * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
-     * @returns Manager 实例，类型会根据 symbol 自动推断
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 GameManager 类型，无需手动指定泛型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
@@ -65,9 +65,9 @@ class AbstractManager {
     dispose() {
     }
     /**
-     * 获取 Model 实例（支持类型自动推断）
+     * 获取 Model 实例
      * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
-     * @returns Model 实例，类型会根据 symbol 自动推断
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
     getModel(modelSymbol) {
         // 保持框架独立性，不与具体应用入口(app类)耦合
@@ -75,9 +75,9 @@ class AbstractManager {
         return ServiceLocator.getService('core').getModel(modelSymbol);
     }
     /**
-     * 获取 Manager 实例（支持类型自动推断）
+     * 获取 Manager 实例
      * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
-     * @returns Manager 实例，类型会根据 symbol 自动推断
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
     getManager(managerSymbol) {
         return ServiceLocator.getService('core').getManager(managerSymbol);

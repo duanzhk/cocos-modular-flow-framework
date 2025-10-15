@@ -1,46 +1,46 @@
-import { ICore, IManager, InferModelType, InferManagerType } from "./Api";
+import { ICore, IManager } from "./Api";
 export declare abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     private readonly container;
     constructor();
     protected abstract initialize(): void;
     regModel(modelSymbol: symbol): void;
     /**
-     * 获取 Model 实例（支持类型自动推断）
+     * 获取 Model 实例
      * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
-     * @returns Model 实例，类型会根据 symbol 自动推断
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 UserModel 类型，无需手动指定泛型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel<S extends symbol>(modelSymbol: S): InferModelType<S>;
+    getModel(modelSymbol: symbol): any;
     regManager(managerSymbol: symbol): void;
     /**
-     * 获取 Manager 实例（支持类型自动推断）
+     * 获取 Manager 实例
      * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
-     * @returns Manager 实例，类型会根据 symbol 自动推断
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
-     * // 自动推断为 GameManager 类型，无需手动指定泛型
+     * // 类型由 .d.ts 文件的重载自动推断
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager<S extends symbol>(managerSymbol: S): InferManagerType<S>;
+    getManager(managerSymbol: symbol): any;
 }
 export declare abstract class AbstractManager implements IManager {
     abstract initialize(): void;
     dispose(): void;
     /**
-     * 获取 Model 实例（支持类型自动推断）
+     * 获取 Model 实例
      * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
-     * @returns Model 实例，类型会根据 symbol 自动推断
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getModel<S extends symbol>(modelSymbol: S): InferModelType<S>;
+    protected getModel(modelSymbol: symbol): any;
     /**
-     * 获取 Manager 实例（支持类型自动推断）
+     * 获取 Manager 实例
      * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
-     * @returns Manager 实例，类型会根据 symbol 自动推断
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getManager<S extends symbol>(managerSymbol: S): InferManagerType<S>;
+    protected getManager(managerSymbol: symbol): any;
 }
