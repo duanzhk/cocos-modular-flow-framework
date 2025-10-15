@@ -3,13 +3,21 @@
  */
 export interface ICore {
     /** 注册 Model - 通过 Symbol 自动实例化 */
-    regModel<T extends IModel>(modelSymbol: symbol): void;
-    /** 获取 Model */
-    getModel<T extends IModel>(modelSymbol: symbol): T;
+    regModel(modelSymbol: symbol): void;
+    /**
+     * 获取 Model（支持类型自动推断）
+     * @param modelSymbol Model 的 Symbol
+     * @returns Model 实例，类型会根据 ModelTypeMap 自动推断
+     */
+    getModel<S extends symbol = symbol>(modelSymbol: S): IModel;
     /** 注册 Manager - 通过 Symbol 自动实例化 */
-    regManager<T extends IManager>(managerSymbol: symbol): void;
-    /** 获取 Manager */
-    getManager<T extends IManager>(managerSymbol: symbol): T;
+    regManager(managerSymbol: symbol): void;
+    /**
+     * 获取 Manager（支持类型自动推断）
+     * @param managerSymbol Manager 的 Symbol
+     * @returns Manager 实例，类型会根据 ManagerTypeMap 自动推断
+     */
+    getManager<S extends symbol = symbol>(managerSymbol: S): IManager;
 }
 /**
  * Model 基接口 - 数据模型

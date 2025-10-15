@@ -29,7 +29,8 @@
         "watch": "tsc -w",
         "build": "rm -rf dist && rollup -c && node ./scripts/build-tools.js",
         "pub-beta": "npm version patch && npm publish --tag beta",
-        "postinstall": "node ./scripts/postinstall.js"
+        "postinstall": "node ./scripts/postinstall.js",
+        "generate:types": "node ./scripts/generate-type-map.js"
     },
     "devDependencies": {
         "@cocos/creator-types": "^3.8.3",

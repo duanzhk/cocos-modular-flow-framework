@@ -1,11 +1,37 @@
 import { ICore } from "./Api";
 import 'reflect-metadata';
-/** Model 名称到 Symbol 的映射，用于代码补全 */
+/** Model 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export declare const ModelNames: Record<string, symbol>;
-/** Manager 名称到 Symbol 的映射，用于代码补全 */
+/** Manager 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export declare const ManagerNames: Record<string, symbol>;
-/** View 名称到 Symbol 的映射，用于代码补全 */
+/** View 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export declare const ViewNames: Record<string, symbol>;
+/**
+ * Symbol 到类型的映射接口，用于类型推断
+ * 业务层通过 declare module 扩展此接口来注册类型
+ * @example
+ * ```typescript
+ * declare module '@/core/Decorators' {
+ *   interface ModelTypeMap {
+ *     [ModelNames.User]: UserModel;
+ *   }
+ * }
+ * ```
+ */
+export interface ModelTypeMap {
+}
+/**
+ * Symbol 到类型的映射接口，用于类型推断
+ * 业务层通过 declare module 扩展此接口来注册类型
+ */
+export interface ManagerTypeMap {
+}
+/**
+ * Symbol 到类型的映射接口，用于类型推断
+ * 业务层通过 declare module 扩展此接口来注册类型
+ */
+export interface ViewTypeMap {
+}
 /**
  * Model 装饰器，用于注册 Model 到全局注册表
  * @param name 可选的 Model 名称，如果不提供则使用类名

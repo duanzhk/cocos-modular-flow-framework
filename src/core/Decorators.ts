@@ -3,17 +3,47 @@ import { ServiceLocator } from "./ServiceLocator";
 import 'reflect-metadata'
 
 // ============================================================================
-// Symbol 注册系统 - Names 对象（提供代码补全）
+// Symbol 注册系统 - Names 对象（提供代码补全和类型推断）
 // ============================================================================
 
-/** Model 名称到 Symbol 的映射，用于代码补全 */
+/** Model 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export const ModelNames = {} as Record<string, symbol>;
 
-/** Manager 名称到 Symbol 的映射，用于代码补全 */
+/** Manager 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export const ManagerNames = {} as Record<string, symbol>;
 
-/** View 名称到 Symbol 的映射，用于代码补全 */
+/** View 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export const ViewNames = {} as Record<string, symbol>;
+
+// ============================================================================
+// 类型推断辅助（通过 Symbol 自动推断类型）
+// ============================================================================
+
+/** 
+ * Symbol 到类型的映射接口，用于类型推断
+ * 业务层通过 declare module 扩展此接口来注册类型
+ * @example
+ * ```typescript
+ * declare module '@/core/Decorators' {
+ *   interface ModelTypeMap {
+ *     [ModelNames.User]: UserModel;
+ *   }
+ * }
+ * ```
+ */
+export interface ModelTypeMap {}
+
+/** 
+ * Symbol 到类型的映射接口，用于类型推断
+ * 业务层通过 declare module 扩展此接口来注册类型
+ */
+export interface ManagerTypeMap {}
+
+/** 
+ * Symbol 到类型的映射接口，用于类型推断
+ * 业务层通过 declare module 扩展此接口来注册类型
+ */
+export interface ViewTypeMap {}
 
 // ============================================================================
 // 内部注册表

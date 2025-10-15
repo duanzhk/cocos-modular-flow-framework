@@ -1,6 +1,6 @@
 import { ICore, IManager, IModel } from "./Api";
 import { ServiceLocator } from "./ServiceLocator";
-import { getModelClass, getManagerClass } from "./Decorators";
+import { getModelClass, getManagerClass, ModelTypeMap, ManagerTypeMap } from "./Decorators";
 
 class Container {
     private symbol2ins = new Map<symbol, any>();
@@ -25,26 +25,46 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     protected abstract initialize(): void;
 
     // 注册与获取模型
-    regModel<T extends IModel>(modelSymbol: symbol): void {
+    regModel(modelSymbol: symbol): void {
         const ModelClass = getModelClass<T>(modelSymbol);
         const model = new ModelClass();
         this.container.reg(modelSymbol, model);
         model.initialize();
     }
 
-    getModel<T extends IModel>(modelSymbol: symbol): T {
+    /**
+     * 获取 Model 实例（支持类型自动推断）
+     * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
+     * @returns Model 实例，类型会根据 symbol 自动推断
+     * @example
+     * ```typescript
+     * // 自动推断为 UserModel 类型，无需手动指定泛型
+     * const userModel = core.getModel(ModelNames.User);
+     * ```
+     */
+    getModel<S extends symbol>(modelSymbol: S): S extends keyof ModelTypeMap ? ModelTypeMap[S] : IModel {
         return this.container.get(modelSymbol);
     }
 
     // 注册与获取管理器
-    regManager<T extends IManager>(managerSymbol: symbol): void {
+    regManager(managerSymbol: symbol): void {
         const ManagerClass = getManagerClass<T>(managerSymbol);
         const manager = new ManagerClass();
         this.container.reg(managerSymbol, manager);
         manager.initialize();
     }
 
-    getManager<T extends IManager>(managerSymbol: symbol): T {
+    /**
+     * 获取 Manager 实例（支持类型自动推断）
+     * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
+     * @returns Manager 实例，类型会根据 symbol 自动推断
+     * @example
+     * ```typescript
+     * // 自动推断为 GameManager 类型，无需手动指定泛型
+     * const gameManager = core.getManager(ManagerNames.Game);
+     * ```
+     */
+    getManager<S extends symbol>(managerSymbol: S): S extends keyof ManagerTypeMap ? ManagerTypeMap[S] : IManager {
         return this.container.get(managerSymbol);
     }
 }
@@ -55,14 +75,23 @@ export abstract class AbstractManager implements IManager {
     dispose(): void {
     }
 
-    protected getModel<T extends IModel>(modelSymbol: symbol): T {
+    /**
+     * 获取 Model 实例（支持类型自动推断）
+     * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
+     * @returns Model 实例，类型会根据 symbol 自动推断
+     */
+    protected getModel<S extends symbol>(modelSymbol: S): S extends keyof ModelTypeMap ? ModelTypeMap[S] : IModel {
         // 保持框架独立性，不与具体应用入口(app类)耦合
         // 框架高内聚，使用ServiceLocator获取core
-        return ServiceLocator.getService<ICore>('core').getModel<T>(modelSymbol);
+        return ServiceLocator.getService<ICore>('core').getModel(modelSymbol) as any;
     }
 
-    // 业务模块的事件管理器获取（通过服务定位器解耦）
-    protected getManager<T extends IManager>(managerSymbol: symbol): T {
-        return ServiceLocator.getService<ICore>('core').getManager<T>(managerSymbol);
+    /**
+     * 获取 Manager 实例（支持类型自动推断）
+     * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
+     * @returns Manager 实例，类型会根据 symbol 自动推断
+     */
+    protected getManager<S extends symbol>(managerSymbol: S): S extends keyof ManagerTypeMap ? ManagerTypeMap[S] : IManager {
+        return ServiceLocator.getService<ICore>('core').getManager(managerSymbol) as any;
     }
 }
