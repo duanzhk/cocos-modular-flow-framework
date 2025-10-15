@@ -182,11 +182,12 @@ userModel.name;  // ✅ 有完整的代码补全
 
 **维护类型映射**：
 
-```bash
-npm run generate:types  # 自动生成类型映射
-```
+框架提供了自动类型生成工具，支持两种使用方式：
 
-📖 **查看文档**: [类型自动推断](./docs/TYPE_INFERENCE.md)
+1. **在 Cocos Creator 编辑器中（推荐）**：**项目菜单 -> 生成类型映射**
+2. **命令行方式**：`node node_modules/dzkcc-mflow/scripts/generate-type-map.js`
+
+📖 **查看文档**: [类型自动推断](./docs/TYPE_INFERENCE.md) | [类型生成工具](./docs/TYPE_GENERATION.md)
 
 ### 9. 开发工具
 
@@ -278,6 +279,7 @@ mf.reddot.setCount('main/bag', 5);
 | [网络通信](./docs/NETWORK.md) | HTTP 和 WebSocket |
 | [红点系统](./docs/REDDOT_SYSTEM.md) | 红点提示管理 |
 | [类型自动推断](./docs/TYPE_INFERENCE.md) | 类型映射和自动推断 |
+| [类型生成工具](./docs/TYPE_GENERATION.md) | 自动生成类型映射文件 |
 | [开发工具](./docs/DEV_TOOLS.md) | 编辑器插件使用 |
 | [完整示例](./docs/COMPLETE_EXAMPLE.md) | 塔防游戏示例 |
 | [最佳实践](./docs/BEST_PRACTICES.md) | 设计原则和规范 |

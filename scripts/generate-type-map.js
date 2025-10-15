@@ -1,21 +1,79 @@
 /**
  * 自动生成类型映射文件
- * 使用方法: node scripts/generate-type-map.js
+ * 使用方法: 
+ *   1. 在框架开发中: node scripts/generate-type-map.js
+ *   2. 在用户项目中: node node_modules/dzkcc-mflow/scripts/generate-type-map.js
+ *   3. 在用户项目中（推荐）: npx dzkcc-mflow-typegen
  */
 
 const fs = require('fs');
 const path = require('path');
 
+// 从配置文件加载配置
+function loadConfig(projectPath) {
+    // 尝试从 package.json 读取配置
+    const packageJsonPath = path.join(projectPath, 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+        try {
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+            if (packageJson.mflowTypeGen) {
+                const config = packageJson.mflowTypeGen;
+                return {
+                    modelDir: path.resolve(projectPath, config.modelDir || 'assets/src/models'),
+                    managerDir: path.resolve(projectPath, config.managerDir || 'assets/src/managers'),
+                    outputFile: path.resolve(projectPath, config.outputFile || 'assets/types/core-types.d.ts'),
+                    moduleImportPath: config.moduleImportPath || 'dzkcc-mflow/core'
+                };
+            }
+        } catch (error) {
+            console.warn('⚠️  无法读取 package.json 配置');
+        }
+    }
+
+    // 尝试从单独的配置文件读取
+    const configPath = path.join(projectPath, 'mflow.config.json');
+    if (fs.existsSync(configPath)) {
+        try {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            return {
+                modelDir: path.resolve(projectPath, config.modelDir || 'assets/src/models'),
+                managerDir: path.resolve(projectPath, config.managerDir || 'assets/src/managers'),
+                outputFile: path.resolve(projectPath, config.outputFile || 'assets/types/core-types.d.ts'),
+                moduleImportPath: config.moduleImportPath || 'dzkcc-mflow/core'
+            };
+        } catch (error) {
+            console.warn('⚠️  无法读取 mflow.config.json 配置');
+        }
+    }
+
+    // 检测是否在框架开发目录中
+    const srcModelsPath = path.join(projectPath, 'src/models');
+    const srcManagersPath = path.join(projectPath, 'src/managers');
+    if (fs.existsSync(srcModelsPath) || fs.existsSync(srcManagersPath)) {
+        // 框架开发模式
+        return {
+            modelDir: srcModelsPath,
+            managerDir: srcManagersPath,
+            outputFile: path.join(projectPath, 'types/core-types.d.ts'),
+            moduleImportPath: 'dzkcc-mflow/core'
+        };
+    }
+
+    // 使用默认配置（用户项目）
+    return {
+        modelDir: path.resolve(projectPath, 'assets/src/models'),
+        managerDir: path.resolve(projectPath, 'assets/src/managers'),
+        outputFile: path.resolve(projectPath, 'assets/types/core-types.d.ts'),
+        moduleImportPath: 'dzkcc-mflow/core'
+    };
+}
+
+// 确定项目路径
+const projectPath = process.cwd();
+console.log(`📁 项目路径: ${projectPath}\n`);
+
 // 配置
-const config = {
-    // 需要扫描的目录
-    modelDir: path.join(__dirname, '../src/models'),
-    managerDir: path.join(__dirname, '../src/managers'),
-    // 输出文件路径
-    outputFile: path.join(__dirname, '../types/core-types.d.ts'),
-    // 模块路径（根据你的项目调整）
-    moduleImportPath: 'dzkcc-mflow/core'
-};
+const config = loadConfig(projectPath);
 
 // 扫描目录获取所有 .ts 文件
 function scanDirectory(dir) {
@@ -98,7 +156,9 @@ function generateTypeMap(models, managers, outputFile) {
     lines.push('/**');
     lines.push(' * 自动生成的类型映射文件');
     lines.push(' * ⚠️ 请勿手动修改此文件！');
-    lines.push(' * 运行 npm run generate:types 重新生成');
+    lines.push(' * 重新生成方法：');
+    lines.push(' *   - 在 Cocos Creator 编辑器中：项目菜单 -> 生成类型映射');
+    lines.push(' *   - 命令行：node node_modules/dzkcc-mflow/scripts/generate-type-map.js');
     lines.push(' */');
     lines.push('');
     
@@ -165,6 +225,13 @@ function generateTypeMap(models, managers, outputFile) {
 function main() {
     console.log('🚀 开始生成类型映射文件...\n');
     
+    // 输出配置信息
+    console.log('⚙️  使用配置:');
+    console.log(`   Model 目录: ${config.modelDir}`);
+    console.log(`   Manager 目录: ${config.managerDir}`);
+    console.log(`   输出文件: ${config.outputFile}`);
+    console.log(`   模块路径: ${config.moduleImportPath}\n`);
+    
     // 扫描 Model 目录
     console.log(`📂 扫描 Model 目录: ${config.modelDir}`);
     const modelFiles = scanDirectory(config.modelDir);
@@ -183,6 +250,17 @@ function main() {
     
     if (models.length === 0 && managers.length === 0) {
         console.log('⚠️  未找到任何 Model 或 Manager，跳过生成');
+        console.log('\n💡 提示：');
+        console.log('   1. 确保在 Model/Manager 类上使用了 @model() 或 @manager() 装饰器');
+        console.log('   2. 确保目录路径配置正确');
+        console.log('   3. 可以在 package.json 中添加 mflowTypeGen 配置或创建 mflow.config.json 文件');
+        console.log('\n配置示例 (package.json):');
+        console.log('   "mflowTypeGen": {');
+        console.log('     "modelDir": "assets/src/models",');
+        console.log('     "managerDir": "assets/src/managers",');
+        console.log('     "outputFile": "assets/types/core-types.d.ts",');
+        console.log('     "moduleImportPath": "dzkcc-mflow/core"');
+        console.log('   }');
         return;
     }
     

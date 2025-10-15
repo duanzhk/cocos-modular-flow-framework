@@ -1,3 +1,5 @@
+import { onProjectMenu } from './generate-types';
+
 /**
  * @en Registration method for the main process of Extension
  * @zh 为扩展的主进程的注册方法
@@ -10,6 +12,11 @@ export const methods: { [key: string]: (...any: any) => any } = {
     showLog() {
         console.log('Hello World');
     },
+    /**
+     * @en Project menu
+     * @zh 项目菜单
+     */
+    onProjectMenu,
 };
 
 /**

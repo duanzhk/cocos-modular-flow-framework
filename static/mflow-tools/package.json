@@ -23,6 +23,13 @@
                 "methods": "./dist/hierarchy-menu.js",
                 "assetMenu": "onHierarchyMenu"
             }
-        }
+        },
+        "menu": [
+            {
+                "path": "项目",
+                "label": "i18n:mflow-tools.generate-types",
+                "message": "onProjectMenu"
+            }
+        ]
     }
 }

@@ -23,7 +23,8 @@
     },
     "files": [
         "dist",
-        "scripts/postinstall.js"
+        "scripts/postinstall.js",
+        "scripts/generate-type-map.js"
     ],
     "scripts": {
         "watch": "tsc -w",
