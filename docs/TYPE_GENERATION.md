@@ -10,7 +10,7 @@
 
 1. 确保已安装 `mflow-tools` 编辑器扩展（安装 `dzkcc-mflow` 后会自动安装）
 2. 在 Cocos Creator 编辑器顶部菜单栏，点击 **mflow-tools** 菜单
-3. 选择 **generate-types** (生成类型映射)
+3. 选择 **Generate decorator mapping/生成装饰器映射** (生成类型映射)
 4. 等待生成完成，会弹出成功或失败的提示
 
 **优点**：
@@ -111,27 +111,37 @@ export class GameManager {
  * 自动生成的类型映射文件
  * ⚠️ 请勿手动修改此文件！
  * 重新生成方法：
- *   - 在 Cocos Creator 编辑器中：mflow-tools 菜单 -> generate-types
+ *   - 在 Cocos Creator 编辑器中：mflow-tools 菜单 -> Generate decorator mapping/生成装饰器映射
  */
 
-// Model 导入
 import { UserModel } from '../src/models/UserModel';
 
-// Manager 导入
-import { GameManager } from '../src/managers/GameManager';
+import type { HomeMgr } from '../src/managers/HomeMgr';
+import type { RankMgr } from '../src/managers/RankMgr';
 
-// Names 导入
-import { ModelNames, ManagerNames } from 'dzkcc-mflow/core';
+import { ManagerNames, ModelNames } from 'dzkcc-mflow/core';
 
 declare module 'dzkcc-mflow/core' {
-    interface ModelTypeMap {
-        [ModelNames.User]: UserModel;
+    // 扩展 ManagerNamesType
+    interface ManagerNamesType {
+        readonly HomeMgr: unique symbol;
+        readonly RankMgr: unique symbol;
     }
 
-    interface ManagerTypeMap {
-        [ManagerNames.Game]: GameManager;
+    // 扩展 ModelNamesType
+    interface ModelNamesType {
+        readonly UserModel: unique symbol;
+    }
+
+    // 扩展 ICore 接口，添加精确的类型重载
+    interface ICore {
+        getManager(managerSymbol: typeof ManagerNames.HomeMgr): HomeMgr;
+        getManager(managerSymbol: typeof ManagerNames.RankMgr): RankMgr;
+
+        getModel(managerSymbol: typeof ModelNames.UserModel): UserModel;
     }
 }
+
 ```
 
 ### 使用类型推断
@@ -146,9 +156,9 @@ const userModel = Core.getModel(ModelNames.User);
 userModel.userName = 'Player1';  // ✅ 类型安全
 userModel.level = 10;            // ✅ 类型安全
 
-// 自动推断为 GameManager 类型
-const gameManager = Core.getManager(ManagerNames.Game);
-gameManager.start();  // ✅ 类型安全
+// 自动推断为 HomeMgr 类型
+const homeMgr = Core.getManager(ManagerNames.HomeMgr);
+homeMgr.start();  // ✅ 类型安全
 ```
 
 ## 常见问题
@@ -172,7 +182,7 @@ gameManager.start();  // ✅ 类型安全
 
 **A:** 当前版本仅支持单个 Model 目录和单个 Manager 目录，但可以在这些目录下创建子目录，工具会递归扫描
 
-### Q: 扩展菜单中找不到 generate-types 选项
+### Q: 扩展菜单中找不到 Generate decorator mapping/生成装饰器映射 选项
 
 **A:** 确保已正确安装 mflow-tools 扩展：
 1. 检查项目 node_modules 中是否有 dzkcc-mflow
