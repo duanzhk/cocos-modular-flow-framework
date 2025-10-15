@@ -1,10 +1,38 @@
-import { ICore, ModelNamesType, ManagerNamesType, ViewNamesType } from "./Api";
-import 'reflect-metadata';
-/** Model 名称到 Symbol 的映射，用于代码补全和类型推断 */
+import { ICore } from "./Api";
+/**
+ * ModelNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ModelNamesType {
+ *     readonly User: 'User';
+ * }
+ * ```
+ */
+export interface ModelNamesType extends Record<string, string> {
+}
+/**
+ * ManagerNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ManagerNamesType {
+ *     readonly Home: 'Home';
+ * }
+ * ```
+ */
+export interface ManagerNamesType extends Record<string, string> {
+}
+/**
+ * ViewNames 接口（由业务层扩展以提供代码补全和类型推断）
+ */
+export interface ViewNamesType extends Record<string, string> {
+}
+/** Model 名称常量对象，用于代码补全和类型推断 */
 export declare const ModelNames: ModelNamesType;
-/** Manager 名称到 Symbol 的映射，用于代码补全和类型推断 */
+/** Manager 名称常量对象，用于代码补全和类型推断 */
 export declare const ManagerNames: ManagerNamesType;
-/** View 名称到 Symbol 的映射，用于代码补全和类型推断 */
+/** View 名称常量对象，用于代码补全和类型推断 */
 export declare const ViewNames: ViewNamesType;
 /**
  * Model 装饰器，用于注册 Model 到全局注册表
@@ -27,19 +55,19 @@ export declare function model(name?: string): (ctor: Function) => void;
  */
 export declare function getRegisteredModelNames(): string[];
 /**
- * 通过 Symbol 获取 Model 类构造函数
- * @param modelSymbol Model 的 Symbol 标识
+ * 通过 Key 获取 Model 类构造函数
+ * @param modelKey Model 的 Key 标识
  * @returns Model 类构造函数
  * @throws 如果 Model 未注册则抛出错误
  */
-export declare function getModelClass<T>(modelSymbol: symbol): new () => T;
+export declare function getModelClass<T>(modelKey: string): new () => T;
 /**
- * 通过类构造函数获取 Model 的 Symbol
+ * 通过类构造函数获取 Model 的 Key
  * @param ctor Model 类构造函数
- * @returns Model 的 Symbol
+ * @returns Model 的 Key
  * @internal 内部使用
  */
-export declare function getModelSymbol(ctor: Function): symbol | undefined;
+export declare function getModelKey(ctor: Function): string | undefined;
 /**
  * Manager 装饰器，用于注册 Manager 到全局注册表
  * @param name 可选的 Manager 名称，如果不提供则使用类名
@@ -58,19 +86,19 @@ export declare function manager(name?: string): (ctor: Function) => void;
  */
 export declare function getRegisteredManagerNames(): string[];
 /**
- * 通过 Symbol 获取 Manager 类构造函数
- * @param managerSymbol Manager 的 Symbol 标识
+ * 通过 Key 获取 Manager 类构造函数
+ * @param managerKey Manager 的 Key 标识
  * @returns Manager 类构造函数
  * @throws 如果 Manager 未注册则抛出错误
  */
-export declare function getManagerClass<T>(managerSymbol: symbol): new () => T;
+export declare function getManagerClass<T>(managerKey: string): new () => T;
 /**
- * 通过类构造函数获取 Manager 的 Symbol
+ * 通过类构造函数获取 Manager 的 Key
  * @param ctor Manager 类构造函数
- * @returns Manager 的 Symbol
+ * @returns Manager 的 Key
  * @internal 内部使用
  */
-export declare function getManagerSymbol(ctor: Function): symbol | undefined;
+export declare function getManagerKey(ctor: Function): string | undefined;
 /**
  * View 装饰器，用于注册 View 到全局注册表
  * @param name 可选的 View 名称，如果不提供则使用类名
@@ -95,12 +123,12 @@ export declare function view(name?: string): (ctor: Function) => void;
  */
 export declare function getRegisteredViewNames(): string[];
 /**
- * 通过 Symbol 获取 View 类构造函数
- * @param viewSymbol View 的 Symbol 标识
+ * 通过 Key 获取 View 类构造函数
+ * @param viewKey View 的 Key 标识
  * @returns View 类构造函数
  * @throws 如果 View 未注册则抛出错误
  */
-export declare function getViewClass<T>(viewSymbol: symbol): new () => T;
+export declare function getViewClass<T>(viewKey: string): new () => T;
 /**
  * 自动注册所有使用装饰器标记的 Model 和 Manager
  * @param core Core 实例

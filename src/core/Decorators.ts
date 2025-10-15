@@ -1,17 +1,50 @@
-import { ICore, ModelNamesType, ManagerNamesType, ViewNamesType } from "./Api";
-import 'reflect-metadata'
+import { ICore } from "./Api";
 
 // ============================================================================
-// Symbol 注册系统 - Names 对象（提供代码补全和类型推断）
+// 类型定义（由业务层通过 .d.ts 扩展）
 // ============================================================================
 
-/** Model 名称到 Symbol 的映射，用于代码补全和类型推断 */
+/**
+ * ModelNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ModelNamesType {
+ *     readonly User: 'User';
+ * }
+ * ```
+ */
+export interface ModelNamesType extends Record<string, string> {}
+
+/**
+ * ManagerNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ManagerNamesType {
+ *     readonly Home: 'Home';
+ * }
+ * ```
+ */
+export interface ManagerNamesType extends Record<string, string> {}
+
+/** 
+ * ViewNames 接口（由业务层扩展以提供代码补全和类型推断）
+ */
+export interface ViewNamesType extends Record<string, string> {}
+
+
+// ============================================================================
+// Key 注册系统 - Names 对象（提供代码补全和类型推断）
+// ============================================================================
+
+/** Model 名称常量对象，用于代码补全和类型推断 */
 export const ModelNames = {} as ModelNamesType;
 
-/** Manager 名称到 Symbol 的映射，用于代码补全和类型推断 */
+/** Manager 名称常量对象，用于代码补全和类型推断 */
 export const ManagerNames = {} as ManagerNamesType;
 
-/** View 名称到 Symbol 的映射，用于代码补全和类型推断 */
+/** View 名称常量对象，用于代码补全和类型推断 */
 export const ViewNames = {} as ViewNamesType;
 
 // ============================================================================
@@ -19,15 +52,15 @@ export const ViewNames = {} as ViewNamesType;
 // ============================================================================
 
 // Model 注册表
-const modelSymbolRegistry = new Map<symbol, Function>();    // Symbol → 类
-const ctorToModelSymbol = new Map<Function, symbol>();      // 类 → Symbol
+const modelRegistry = new Map<string, Function>();    // Key → 类
+const ctorToModelKey = new Map<Function, string>();   // 类 → Key
 
 // Manager 注册表
-const managerSymbolRegistry = new Map<symbol, Function>();  // Symbol → 类
-const ctorToManagerSymbol = new Map<Function, symbol>();    // 类 → Symbol
+const managerRegistry = new Map<string, Function>();  // Key → 类
+const ctorToManagerKey = new Map<Function, string>(); // 类 → Key
 
 // View 注册表
-const viewRegistry = new Map<symbol, Function>();           // Symbol → 类
+const viewRegistry = new Map<string, Function>();     // Key → 类
 
 // ============================================================================
 // Model 装饰器
@@ -50,12 +83,11 @@ const viewRegistry = new Map<symbol, Function>();           // Symbol → 类
 export function model(name?: string) {
     return function (ctor: Function) {
         const modelName = name || ctor.name;
-        const modelSymbol = Symbol(modelName);
         
         // 注册到映射表
-        modelSymbolRegistry.set(modelSymbol, ctor);
-        ctorToModelSymbol.set(ctor, modelSymbol);
-        (ModelNames as any)[modelName] = modelSymbol;
+        modelRegistry.set(modelName, ctor);
+        ctorToModelKey.set(ctor, modelName);
+        (ModelNames as any)[modelName] = modelName;
         
         console.log(`Model registered: ${modelName}`);
     };
@@ -70,27 +102,27 @@ export function getRegisteredModelNames(): string[] {
 }
 
 /**
- * 通过 Symbol 获取 Model 类构造函数
- * @param modelSymbol Model 的 Symbol 标识
+ * 通过 Key 获取 Model 类构造函数
+ * @param modelKey Model 的 Key 标识
  * @returns Model 类构造函数
  * @throws 如果 Model 未注册则抛出错误
  */
-export function getModelClass<T>(modelSymbol: symbol): new () => T {
-    const modelClass = modelSymbolRegistry.get(modelSymbol);
+export function getModelClass<T>(modelKey: string): new () => T {
+    const modelClass = modelRegistry.get(modelKey);
     if (!modelClass) {
-        throw new Error(`Model not registered! Symbol: ${modelSymbol.toString()}`);
+        throw new Error(`Model not registered: ${modelKey}`);
     }
     return modelClass as new () => T;
 }
 
 /**
- * 通过类构造函数获取 Model 的 Symbol
+ * 通过类构造函数获取 Model 的 Key
  * @param ctor Model 类构造函数
- * @returns Model 的 Symbol
+ * @returns Model 的 Key
  * @internal 内部使用
  */
-export function getModelSymbol(ctor: Function): symbol | undefined {
-    return ctorToModelSymbol.get(ctor);
+export function getModelKey(ctor: Function): string | undefined {
+    return ctorToModelKey.get(ctor);
 }
 
 // ============================================================================
@@ -111,12 +143,11 @@ export function getModelSymbol(ctor: Function): symbol | undefined {
 export function manager(name?: string) {
     return function (ctor: Function) {
         const managerName = name || ctor.name;
-        const managerSymbol = Symbol(managerName);
         
         // 注册到映射表
-        managerSymbolRegistry.set(managerSymbol, ctor);
-        ctorToManagerSymbol.set(ctor, managerSymbol);
-        (ManagerNames as any)[managerName] = managerSymbol;
+        managerRegistry.set(managerName, ctor);
+        ctorToManagerKey.set(ctor, managerName);
+        (ManagerNames as any)[managerName] = managerName;
         
         console.log(`Manager registered: ${managerName}`);
     };
@@ -131,27 +162,27 @@ export function getRegisteredManagerNames(): string[] {
 }
 
 /**
- * 通过 Symbol 获取 Manager 类构造函数
- * @param managerSymbol Manager 的 Symbol 标识
+ * 通过 Key 获取 Manager 类构造函数
+ * @param managerKey Manager 的 Key 标识
  * @returns Manager 类构造函数
  * @throws 如果 Manager 未注册则抛出错误
  */
-export function getManagerClass<T>(managerSymbol: symbol): new () => T {
-    const managerClass = managerSymbolRegistry.get(managerSymbol);
+export function getManagerClass<T>(managerKey: string): new () => T {
+    const managerClass = managerRegistry.get(managerKey);
     if (!managerClass) {
-        throw new Error(`Manager not registered! Symbol: ${managerSymbol.toString()}`);
+        throw new Error(`Manager not registered: ${managerKey}`);
     }
     return managerClass as new () => T;
 }
 
 /**
- * 通过类构造函数获取 Manager 的 Symbol
+ * 通过类构造函数获取 Manager 的 Key
  * @param ctor Manager 类构造函数
- * @returns Manager 的 Symbol
+ * @returns Manager 的 Key
  * @internal 内部使用
  */
-export function getManagerSymbol(ctor: Function): symbol | undefined {
-    return ctorToManagerSymbol.get(ctor);
+export function getManagerKey(ctor: Function): string | undefined {
+    return ctorToManagerKey.get(ctor);
 }
 
 // ============================================================================
@@ -178,11 +209,10 @@ export function getManagerSymbol(ctor: Function): symbol | undefined {
 export function view(name?: string) {
     return function (ctor: Function) {
         const viewName = name || ctor.name;
-        const viewSymbol = Symbol(viewName);
         
         // 注册到映射表
-        viewRegistry.set(viewSymbol, ctor);
-        (ViewNames as any)[viewName] = viewSymbol;
+        viewRegistry.set(viewName, ctor);
+        (ViewNames as any)[viewName] = viewName;
         
         console.log(`View registered: ${viewName}`);
     };
@@ -197,15 +227,15 @@ export function getRegisteredViewNames(): string[] {
 }
 
 /**
- * 通过 Symbol 获取 View 类构造函数
- * @param viewSymbol View 的 Symbol 标识
+ * 通过 Key 获取 View 类构造函数
+ * @param viewKey View 的 Key 标识
  * @returns View 类构造函数
  * @throws 如果 View 未注册则抛出错误
  */
-export function getViewClass<T>(viewSymbol: symbol): new () => T {
-    const viewClass = viewRegistry.get(viewSymbol);
+export function getViewClass<T>(viewKey: string): new () => T {
+    const viewClass = viewRegistry.get(viewKey);
     if (!viewClass) {
-        throw new Error(`View not registered! Symbol: ${viewSymbol.toString()}`);
+        throw new Error(`View not registered: ${viewKey}`);
     }
     return viewClass as new () => T;
 }
@@ -229,14 +259,14 @@ export function getViewClass<T>(viewSymbol: symbol): new () => T {
  */
 export function autoRegister(core: ICore) {
     // 注册所有 Model
-    ctorToModelSymbol.forEach((modelSymbol, ctor) => {
+    ctorToModelKey.forEach((modelKey, ctor) => {
         console.log(`${ctor.name} initialize`);
-        core.regModel(modelSymbol);
+        core.regModel(modelKey);
     });
     
     // 注册所有 Manager
-    ctorToManagerSymbol.forEach((managerSymbol, ctor) => {
+    ctorToManagerKey.forEach((managerKey, ctor) => {
         console.log(`${ctor.name} initialize`);
-        core.regManager(managerSymbol);
+        core.regManager(managerKey);
     });
 }

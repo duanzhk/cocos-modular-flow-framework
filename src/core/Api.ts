@@ -1,39 +1,4 @@
 // ============================================================================
-// 类型定义（由业务层通过 .d.ts 扩展）
-// ============================================================================
-
-/**
- * ModelNames 接口（由业务层扩展以提供代码补全和类型推断）
- * @example
- * ```typescript
- * // 在 .d.ts 文件中扩展
- * interface ModelNamesType {
- *     readonly User: unique symbol;
- * }
- * ```
- */
-export interface ModelNamesType extends Record<string, symbol> {}
-
-/**
- * ManagerNames 接口（由业务层扩展以提供代码补全和类型推断）
- * @example
- * ```typescript
- * // 在 .d.ts 文件中扩展
- * interface ManagerNamesType {
- *     readonly Home: unique symbol;
- * }
- * ```
- */
-export interface ManagerNamesType extends Record<string, symbol> {}
-
-/** 
- * ViewNames 接口（由业务层扩展以提供代码补全和类型推断）
- */
-export interface ViewNamesType extends Record<string, symbol> {}
-
-
-
-// ============================================================================
 // 核心接口定义
 // ============================================================================
 
@@ -43,12 +8,12 @@ export interface ViewNamesType extends Record<string, symbol> {}
  * 类型推断由业务层的 .d.ts 文件通过函数重载提供
  */
 export interface ICore {
-    /** 注册 Model - 通过 Symbol 自动实例化 */
-    regModel(modelSymbol: symbol): void;
+    /** 注册 Model - 通过 Key 自动实例化 */
+    regModel(modelKey: string): void;
     
     /** 
      * 获取 Model 实例
-     * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
+     * @param modelKey Model 的 Key，使用 ModelNames.XXX
      * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
@@ -56,14 +21,14 @@ export interface ICore {
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel(modelSymbol: symbol): any;
+    getModel(modelKey: string): any;
 
-    /** 注册 Manager - 通过 Symbol 自动实例化 */
-    regManager(managerSymbol: symbol): void;
+    /** 注册 Manager - 通过 Key 自动实例化 */
+    regManager(managerKey: string): void;
     
     /** 
      * 获取 Manager 实例
-     * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
+     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
      * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      * @example
      * ```typescript
@@ -71,7 +36,7 @@ export interface ICore {
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager(managerSymbol: symbol): any;
+    getManager(managerKey: string): any;
 }
 
 /**
@@ -115,11 +80,11 @@ export interface IView {
  */
 export interface IUIManager {
     /** 打开视图 */
-    open<T extends IView>(viewSymbol: symbol, args?: any): Promise<T>;
+    open<T extends IView>(viewKey: string, args?: any): Promise<T>;
     /** 关闭视图 */
-    close(viewSymbol: symbol | IView, destory?: boolean): void;
+    close(viewKey: string | IView, destory?: boolean): void;
     /** 打开视图并入栈 */
-    openAndPush<T extends IView>(viewSymbol: symbol, group: string, args?: any): Promise<T>;
+    openAndPush<T extends IView>(viewKey: string, group: string, args?: any): Promise<T>;
     /** 关闭栈顶视图并弹出 */
     closeAndPop(group: string, destroy?: boolean): void;
     /** 获取栈顶视图 */

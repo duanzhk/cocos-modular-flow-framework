@@ -147,22 +147,22 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
     // 声明模块
     lines.push(`declare module '${config.moduleImportPath}' {`);
 
-    // 扩展 NamesType 接口，将每个属性定义为 unique symbol
+    // 扩展 NamesType 接口，将每个属性定义为字符串字面量类型
     if (models.length > 0) {
-        lines.push('    // 扩展 ModelNamesType，将每个属性定义为 unique symbol');
+        lines.push('    // 扩展 ModelNamesType，将每个属性定义为字符串字面量');
         lines.push('    interface ModelNamesType {');
         for (const model of models) {
-            lines.push(`        readonly ${model.decoratorName}: unique symbol;`);
+            lines.push(`        readonly ${model.decoratorName}: '${model.decoratorName}';`);
         }
         lines.push('    }');
         lines.push('');
     }
 
     if (managers.length > 0) {
-        lines.push('    // 扩展 ManagerNamesType，将每个属性定义为 unique symbol');
+        lines.push('    // 扩展 ManagerNamesType，将每个属性定义为字符串字面量');
         lines.push('    interface ManagerNamesType {');
         for (const manager of managers) {
-            lines.push(`        readonly ${manager.decoratorName}: unique symbol;`);
+            lines.push(`        readonly ${manager.decoratorName}: '${manager.decoratorName}';`);
         }
         lines.push('    }');
         lines.push('');
@@ -176,14 +176,14 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
         // 为每个 Model 添加 getModel 重载
         if (models.length > 0) {
             for (const model of models) {
-                lines.push(`        getModel(modelSymbol: typeof ModelNames.${model.decoratorName}): ${model.className};`);
+                lines.push(`        getModel(modelKey: '${model.decoratorName}'): ${model.className};`);
             }
         }
         
         // 为每个 Manager 添加 getManager 重载
         if (managers.length > 0) {
             for (const manager of managers) {
-                lines.push(`        getManager(managerSymbol: typeof ManagerNames.${manager.decoratorName}): ${manager.className};`);
+                lines.push(`        getManager(managerKey: '${manager.decoratorName}'): ${manager.className};`);
             }
         }
         

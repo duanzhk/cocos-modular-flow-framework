@@ -60,14 +60,14 @@ class CcocosUIManager {
     getTopView() {
         return this.internalGetTopView();
     }
-    open(viewSymbol, args) {
-        return this.internalOpen(viewSymbol, args);
+    open(viewKey, args) {
+        return this.internalOpen(viewKey, args);
     }
-    close(viewSymbol, destory) {
-        this.internalClose(viewSymbol, destory);
+    close(viewKey, destory) {
+        this.internalClose(viewKey, destory);
     }
-    openAndPush(viewSymbol, group, args) {
-        return this.internalOpenAndPush(viewSymbol, group, args);
+    openAndPush(viewKey, group, args) {
+        return this.internalOpenAndPush(viewKey, group, args);
     }
     closeAndPop(group, destroy) {
         this.internalCloseAndPop(group, destroy);
@@ -129,9 +129,9 @@ class UIManager extends CcocosUIManager {
             }
         }
     }
-    _load(viewSymbol, args) {
+    _load(viewKey, args) {
         return __awaiter(this, void 0, void 0, function* () {
-            const viewType = getViewClass(viewSymbol);
+            const viewType = getViewClass(viewKey);
             let target;
             if (this._cache.has(viewType.name)) {
                 target = this._cache.get(viewType.name);
@@ -147,11 +147,11 @@ class UIManager extends CcocosUIManager {
             return target.getComponent(viewType);
         });
     }
-    _remove(viewSymbolOrInstance, destroy) {
+    _remove(viewKeyOrInstance, destroy) {
         var _a;
-        // 如果是 symbol，从缓存中获取视图实例
-        if (typeof viewSymbolOrInstance === 'symbol') {
-            const viewType = getViewClass(viewSymbolOrInstance);
+        // 如果是 string，从缓存中获取视图实例
+        if (typeof viewKeyOrInstance === 'string') {
+            const viewType = getViewClass(viewKeyOrInstance);
             const cached = this._cache.get(viewType.name);
             if (!cached) {
                 console.warn(`No cached view found for ${viewType.name}`);
@@ -166,7 +166,7 @@ class UIManager extends CcocosUIManager {
             return;
         }
         // 处理视图实例
-        const viewInstance = viewSymbolOrInstance;
+        const viewInstance = viewKeyOrInstance;
         if ('__group__' in viewInstance) {
             viewInstance.__group__ = undefined;
         }
@@ -206,10 +206,10 @@ class UIManager extends CcocosUIManager {
         console.warn(`No view found in ${target.name}`);
         return undefined;
     }
-    internalOpen(viewSymbol, args) {
+    internalOpen(viewKey, args) {
         return __awaiter(this, void 0, void 0, function* () {
             this._blockInput(true);
-            let view = yield this._load(viewSymbol, args);
+            let view = yield this._load(viewKey, args);
             addChild(view.node);
             this._adjustMaskLayer();
             view.onEnter(args);
@@ -217,14 +217,14 @@ class UIManager extends CcocosUIManager {
             return view;
         });
     }
-    internalClose(viewSymbol, destroy) {
-        this._remove(viewSymbol, destroy);
+    internalClose(viewKey, destroy) {
+        this._remove(viewKey, destroy);
         this._adjustMaskLayer();
     }
-    internalOpenAndPush(viewSymbol, group, args) {
+    internalOpenAndPush(viewKey, group, args) {
         return __awaiter(this, void 0, void 0, function* () {
             this._blockInput(true);
-            let view = yield this._load(viewSymbol, args);
+            let view = yield this._load(viewKey, args);
             let stack = this._groupStacks.get(group) || [];
             this._groupStacks.set(group, stack);
             let top = stack[stack.length - 1];
