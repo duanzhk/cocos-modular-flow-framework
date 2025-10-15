@@ -1,34 +1,6 @@
-import { ICore, IManager, IModel } from "./Api";
+import { ICore, IManager, InferModelType, InferManagerType} from "./Api";
 import { ServiceLocator } from "./ServiceLocator";
-import { getModelClass, getManagerClass, ModelTypeMap, ManagerTypeMap, ModelNames, ManagerNames } from "./Decorators";
-
-// ============================================================================
-// 类型推断辅助
-// ============================================================================
-
-/**
- * 从 symbol 推断对应的字符串 key
- * @example ModelNames.User -> 'User'
- */
-type GetKeyFromSymbol<S extends symbol, Names extends Record<string, symbol>> = {
-    [K in keyof Names]: Names[K] extends S ? K : never
-}[keyof Names];
-
-/**
- * 从 Model Symbol 推断类型
- */
-type InferModelType<S extends symbol> = 
-    GetKeyFromSymbol<S, typeof ModelNames> extends keyof ModelTypeMap 
-        ? ModelTypeMap[GetKeyFromSymbol<S, typeof ModelNames>]
-        : IModel;
-
-/**
- * 从 Manager Symbol 推断类型
- */
-type InferManagerType<S extends symbol> = 
-    GetKeyFromSymbol<S, typeof ManagerNames> extends keyof ManagerTypeMap 
-        ? ManagerTypeMap[GetKeyFromSymbol<S, typeof ManagerNames>]
-        : IManager;
+import { getModelClass, getManagerClass } from "./Decorators";
 
 class Container {
     private symbol2ins = new Map<symbol, any>();

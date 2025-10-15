@@ -1,20 +1,4 @@
-import { ICore, IManager, IModel } from "./Api";
-import { ModelTypeMap, ManagerTypeMap, ModelNames, ManagerNames } from "./Decorators";
-/**
- * 从 symbol 推断对应的字符串 key
- * @example ModelNames.User -> 'User'
- */
-type GetKeyFromSymbol<S extends symbol, Names extends Record<string, symbol>> = {
-    [K in keyof Names]: Names[K] extends S ? K : never;
-}[keyof Names];
-/**
- * 从 Model Symbol 推断类型
- */
-type InferModelType<S extends symbol> = GetKeyFromSymbol<S, typeof ModelNames> extends keyof ModelTypeMap ? ModelTypeMap[GetKeyFromSymbol<S, typeof ModelNames>] : IModel;
-/**
- * 从 Manager Symbol 推断类型
- */
-type InferManagerType<S extends symbol> = GetKeyFromSymbol<S, typeof ManagerNames> extends keyof ManagerTypeMap ? ManagerTypeMap[GetKeyFromSymbol<S, typeof ManagerNames>] : IManager;
+import { ICore, IManager, InferModelType, InferManagerType } from "./Api";
 export declare abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     private readonly container;
     constructor();
@@ -60,4 +44,3 @@ export declare abstract class AbstractManager implements IManager {
      */
     protected getManager<S extends symbol>(managerSymbol: S): InferManagerType<S>;
 }
-export {};

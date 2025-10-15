@@ -1,19 +1,9 @@
-import { ICore, IModel, IManager } from "./Api";
-import { ServiceLocator } from "./ServiceLocator";
+import { ICore, ModelNamesType, ManagerNamesType,ViewNamesType, ModelTypeMap, ManagerTypeMap } from "./Api";
 import 'reflect-metadata'
 
 // ============================================================================
 // Symbol 注册系统 - Names 对象（提供代码补全和类型推断）
 // ============================================================================
-
-/** Model 名称接口（用于类型推断，通过生成的 d.ts 文件扩展） */
-export interface ModelNamesType extends Record<string, symbol> {}
-
-/** Manager 名称接口（用于类型推断，通过生成的 d.ts 文件扩展） */
-export interface ManagerNamesType extends Record<string, symbol> {}
-
-/** View 名称接口（用于类型推断，通过生成的 d.ts 文件扩展） */
-export interface ViewNamesType extends Record<string, symbol> {}
 
 /** Model 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export const ModelNames = {} as ModelNamesType;
@@ -23,36 +13,6 @@ export const ManagerNames = {} as ManagerNamesType;
 
 /** View 名称到 Symbol 的映射，用于代码补全和类型推断 */
 export const ViewNames = {} as ViewNamesType;
-
-// ============================================================================
-// 类型推断辅助（通过 Symbol 自动推断类型）
-// ============================================================================
-
-/** 
- * Symbol 到类型的映射接口，用于类型推断
- * 业务层通过 declare module 扩展此接口来注册类型
- * @example
- * ```typescript
- * declare module 'dzkcc-mflow/core' {
- *   interface ModelTypeMap {
- *     'User': UserModel;  // 使用字符串字面量作为 key
- *   }
- * }
- * ```
- */
-export interface ModelTypeMap extends Record<string, any> {}
-
-/** 
- * Symbol 到类型的映射接口，用于类型推断
- * 业务层通过 declare module 扩展此接口来注册类型
- */
-export interface ManagerTypeMap extends Record<string, any> {}
-
-/** 
- * Symbol 到类型的映射接口，用于类型推断
- * 业务层通过 declare module 扩展此接口来注册类型
- */
-export interface ViewTypeMap extends Record<string, any> {}
 
 // ============================================================================
 // 内部注册表

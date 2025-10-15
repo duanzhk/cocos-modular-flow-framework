@@ -1,19 +1,77 @@
 // ============================================================================
+// 类型推断辅助
+// ============================================================================
+
+/**
+ * Model 类型映射接口（由业务层扩展）
+ */
+export interface ModelTypeMap extends Record<string, any> {}
+
+/**
+ * Manager 类型映射接口（由业务层扩展）
+ */
+export interface ManagerTypeMap extends Record<string, any> {}
+
+/**
+ * View 类型映射接口（由业务层扩展）
+ */
+export interface ViewTypeMap extends Record<string, any> {}
+
+/**
+ * ModelNames 接口（由业务层扩展）
+ */
+export interface ModelNamesType extends Record<string, symbol> {}
+
+/**
+ * ManagerNames 接口（由业务层扩展）
+ */
+export interface ManagerNamesType extends Record<string, symbol> {}
+
+/** 
+ * View 名称接口（用于类型推断，通过生成的 d.ts 文件扩展） 
+ * */
+export interface ViewNamesType extends Record<string, symbol> {}
+
+/**
+ * 从 symbol 推断对应的字符串 key
+ */
+type GetKeyFromSymbol<S extends symbol, Names extends Record<string, symbol>> = {
+    [K in keyof Names]: Names[K] extends S ? K : never
+}[keyof Names];
+
+/**
+ * 从 Model Symbol 推断类型
+ */
+export type InferModelType<S extends symbol> = 
+    GetKeyFromSymbol<S, ModelNamesType> extends keyof ModelTypeMap 
+        ? ModelTypeMap[GetKeyFromSymbol<S, ModelNamesType>]
+        : IModel;
+
+/**
+ * 从 Manager Symbol 推断类型
+ */
+export type InferManagerType<S extends symbol> = 
+    GetKeyFromSymbol<S, ManagerNamesType> extends keyof ManagerTypeMap 
+        ? ManagerTypeMap[GetKeyFromSymbol<S, ManagerNamesType>]
+        : IManager;
+
+
+
+// ============================================================================
 // 核心接口定义
 // ============================================================================
 
 /**
  * 核心接口 - 管理 Model 和 Manager 的生命周期
  * 
- * 注意：返回类型由具体实现类（AbstractCore）决定，
- * 实现类会使用类型推断将 symbol 映射到具体的 Model/Manager 类型
+ * 支持通过 Symbol 自动推断返回类型
  */
 export interface ICore {
     /** 注册 Model - 通过 Symbol 自动实例化 */
     regModel(modelSymbol: symbol): void;
     /** 
      * 获取 Model（支持类型自动推断）
-     * @param modelSymbol Model 的 Symbol。返回 any，由实现类提供具体类型
+     * @param modelSymbol Model 的 Symbol，使用 ModelNames.XXX
      * @returns Model 实例，类型会根据 symbol 自动推断为具体的 Model 类型
      * @example
      * ```typescript
@@ -21,14 +79,14 @@ export interface ICore {
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel<S extends symbol>(modelSymbol: S): any;
+    getModel<S extends symbol>(modelSymbol: S): InferModelType<S>;
 
     
     /** 注册 Manager - 通过 Symbol 自动实例化 */
     regManager(managerSymbol: symbol): void;
     /** 
      * 获取 Manager（支持类型自动推断）
-     * @param managerSymbol Manager 的 Symbol。返回 any，由实现类提供具体类型
+     * @param managerSymbol Manager 的 Symbol，使用 ManagerNames.XXX
      * @returns Manager 实例，类型会根据 symbol 自动推断为具体的 Manager 类型
      * @example
      * ```typescript
@@ -36,7 +94,7 @@ export interface ICore {
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager<S extends symbol>(managerSymbol: S): any;
+    getManager<S extends symbol>(managerSymbol: S): InferManagerType<S>;
 }
 
 /**

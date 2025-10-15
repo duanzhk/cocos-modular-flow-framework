@@ -186,7 +186,12 @@ userModel.name;  // ✅ 有完整的代码补全
 
 **编辑器菜单**：**mflow-tools -> generate-types**
 
-📖 **查看文档**: [类型自动推断](./docs/TYPE_INFERENCE.md) | [类型生成工具](./docs/TYPE_GENERATION.md)
+> ⚠️ **如果 getManager/getModel 没有类型提示**？
+> 
+> 需要创建类型映射文件，使用编辑器的 **mflow-tools -> Generate decorator mapping/生成装饰器映射** 自动生成，
+> 或查看 [类型提示问题解决方案](./docs/TYPE_INFERENCE_FIX.md)
+
+📖 **查看文档**: [类型自动推断](./docs/TYPE_INFERENCE.md) | [类型生成工具](./docs/TYPE_GENERATION.md) | [类型提示问题解决](./docs/TYPE_INFERENCE_FIX.md)
 
 ### 9. 开发工具
 
@@ -279,6 +284,7 @@ mf.reddot.setCount('main/bag', 5);
 | [红点系统](./docs/REDDOT_SYSTEM.md) | 红点提示管理 |
 | [类型自动推断](./docs/TYPE_INFERENCE.md) | 类型映射和自动推断 |
 | [类型生成工具](./docs/TYPE_GENERATION.md) | 自动生成类型映射文件 |
+| [类型提示问题解决](./docs/TYPE_INFERENCE_FIX.md) | 解决无类型提示问题 ⭐ |
 | [开发工具](./docs/DEV_TOOLS.md) | 编辑器插件使用 |
 | [完整示例](./docs/COMPLETE_EXAMPLE.md) | 塔防游戏示例 |
 | [最佳实践](./docs/BEST_PRACTICES.md) | 设计原则和规范 |
