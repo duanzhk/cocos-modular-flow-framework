@@ -26,10 +26,15 @@
         },
         "menu": [
             {
-                "path": "mflow-tools/generate-types",
-                "label": "i18n:mflow-tools.generate-types",
-                "message": "onGenerateTypes"
+                "path": "mflow-tools",
+                "label": "i18n:mflow-tools.generate-mapping",
+                "message": "generate-manager-model-mapping"
             }
-        ]
+        ],
+        "messages": {
+            "generate-manager-model-mapping": {
+                "methods": ["onGenerateTypesMapping"]
+            }
+        }
     }
 }

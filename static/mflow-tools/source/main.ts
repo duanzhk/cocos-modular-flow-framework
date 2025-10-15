@@ -1,4 +1,4 @@
-import { onGenerateTypes } from './generate-types';
+import { onGenerateTypes as onGenerateTypesMapping } from './generate-types';
 
 /**
  * @en Registration method for the main process of Extension
@@ -16,7 +16,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
      * @en Generate types menu
      * @zh 生成类型映射菜单
      */
-    onGenerateTypes,
+    onGenerateTypesMapping,
 };
 
 /**

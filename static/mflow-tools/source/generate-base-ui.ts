@@ -1,3 +1,8 @@
+/**
+ * @en Generate base ui script, and automatically reference the elements that need to be operated on the prefab.
+ * @zh 生成预置体脚本，并自动引用prefab上需要操作的元素。
+ */
+
 import { AssetInfo } from "@cocos/creator-types/editor/packages/asset-db/@types/public";
 
 
@@ -189,7 +194,7 @@ async function waitForSceneReady(timeoutMs: number = 5000): Promise<boolean> {
 export function onGenerateBaseUI(assetInfo: AssetInfo) {
     return [
         {
-            label: 'i18n:mflow-tools.export',
+            label: 'i18n:mflow-tools.generate-base-ui',
             enabled: true,
             async click() {
                 const assetInfo = await getSelectedAssetInfo();
