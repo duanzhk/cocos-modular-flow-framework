@@ -23,15 +23,13 @@
     },
     "files": [
         "dist",
-        "scripts/postinstall.js",
-        "scripts/generate-type-map.js"
+        "scripts/postinstall.js"
     ],
     "scripts": {
         "watch": "tsc -w",
         "build": "rm -rf dist && rollup -c && node ./scripts/build-tools.js",
         "pub-beta": "npm version patch && npm publish --tag beta",
-        "postinstall": "node ./scripts/postinstall.js",
-        "generate:types": "node ./scripts/generate-type-map.js"
+        "postinstall": "node ./scripts/postinstall.js"
     },
     "devDependencies": {
         "@cocos/creator-types": "^3.8.3",

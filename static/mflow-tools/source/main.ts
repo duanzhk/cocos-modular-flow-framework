@@ -1,4 +1,4 @@
-import { onProjectMenu } from './generate-types';
+import { onGenerateTypes } from './generate-types';
 
 /**
  * @en Registration method for the main process of Extension
@@ -13,10 +13,10 @@ export const methods: { [key: string]: (...any: any) => any } = {
         console.log('Hello World');
     },
     /**
-     * @en Project menu
-     * @zh 项目菜单
+     * @en Generate types menu
+     * @zh 生成类型映射菜单
      */
-    onProjectMenu,
+    onGenerateTypes,
 };
 
 /**

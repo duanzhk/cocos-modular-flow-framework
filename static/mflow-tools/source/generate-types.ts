@@ -1,3 +1,8 @@
+/**
+ * @en Generate type map file for the classes decorated with @model() or @manager()
+ * @zh 为被装饰器装饰(@model()或@manager())的类生成类型映射文件，实现完整的类型推断支持。
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -98,7 +103,7 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
     lines.push('/**');
     lines.push(' * 自动生成的类型映射文件');
     lines.push(' * ⚠️ 请勿手动修改此文件！');
-    lines.push(' * 通过 mflow-tools 工具重新生成，或运行 npm run generate:types');
+    lines.push(' * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> generate-types');
     lines.push(' */');
     lines.push('');
 
@@ -270,48 +275,40 @@ function loadConfigFromProject(projectPath: string): TypeGenConfig | null {
 }
 
 // 编辑器扩展入口
-export function onProjectMenu() {
-    return [
-        {
-            label: 'i18n:mflow-tools.generate-types',
-            enabled: true,
-            async click() {
-                try {
-                    // 获取项目路径
-                    const projectPath = Editor.Project.path;
-                    console.log('项目路径:', projectPath);
+export async function onGenerateTypes() {
+    try {
+        // 获取项目路径
+        const projectPath = Editor.Project.path;
+        console.log('项目路径:', projectPath);
 
-                    // 加载配置
-                    const config = loadConfigFromProject(projectPath);
-                    if (!config) {
-                        throw new Error('无法加载配置');
-                    }
-
-                    console.log('使用配置:', config);
-
-                    // 生成类型映射
-                    const result = generateTypes(config);
-
-                    if (result.success) {
-                        await Editor.Dialog.info('类型映射生成成功！', {
-                            detail: result.message,
-                            buttons: ['确定']
-                        });
-                    } else {
-                        await Editor.Dialog.warn('类型映射生成失败', {
-                            detail: result.message,
-                            buttons: ['确定']
-                        });
-                    }
-                } catch (error) {
-                    console.error('生成类型映射失败:', error);
-                    await Editor.Dialog.error('生成类型映射失败', {
-                        detail: error instanceof Error ? error.message : String(error),
-                        buttons: ['确定']
-                    });
-                }
-            }
+        // 加载配置
+        const config = loadConfigFromProject(projectPath);
+        if (!config) {
+            throw new Error('无法加载配置');
         }
-    ];
+
+        console.log('使用配置:', config);
+
+        // 生成类型映射
+        const result = generateTypes(config);
+
+        if (result.success) {
+            await Editor.Dialog.info('类型映射生成成功！', {
+                detail: result.message,
+                buttons: ['确定']
+            });
+        } else {
+            await Editor.Dialog.warn('类型映射生成失败', {
+                detail: result.message,
+                buttons: ['确定']
+            });
+        }
+    } catch (error) {
+        console.error('生成类型映射失败:', error);
+        await Editor.Dialog.error('生成类型映射失败', {
+            detail: error instanceof Error ? error.message : String(error),
+            buttons: ['确定']
+        });
+    }
 }
 

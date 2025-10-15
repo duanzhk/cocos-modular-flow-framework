@@ -20,15 +20,15 @@
     "contributions": {
         "assets": {
             "menu": {
-                "methods": "./dist/hierarchy-menu.js",
-                "assetMenu": "onHierarchyMenu"
+                "methods": "./dist/generate-base-ui.js",
+                "assetMenu": "onGenerateBaseUI"
             }
         },
         "menu": [
             {
-                "path": "项目",
+                "path": "mflow-tools/generate-types",
                 "label": "i18n:mflow-tools.generate-types",
-                "message": "onProjectMenu"
+                "message": "onGenerateTypes"
             }
         ]
     }

@@ -182,10 +182,9 @@ userModel.name;  // ✅ 有完整的代码补全
 
 **维护类型映射**：
 
-框架提供了自动类型生成工具，支持两种使用方式：
+框架提供了自动类型生成工具，在 Cocos Creator 编辑器中使用：
 
-1. **在 Cocos Creator 编辑器中（推荐）**：**项目菜单 -> 生成类型映射**
-2. **命令行方式**：`node node_modules/dzkcc-mflow/scripts/generate-type-map.js`
+**编辑器菜单**：**mflow-tools -> generate-types**
 
 📖 **查看文档**: [类型自动推断](./docs/TYPE_INFERENCE.md) | [类型生成工具](./docs/TYPE_GENERATION.md)
 

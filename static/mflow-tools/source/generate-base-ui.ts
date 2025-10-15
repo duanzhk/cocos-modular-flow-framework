@@ -186,7 +186,7 @@ async function waitForSceneReady(timeoutMs: number = 5000): Promise<boolean> {
     return false;
 }
 
-export function onHierarchyMenu(assetInfo: AssetInfo) {
+export function onGenerateBaseUI(assetInfo: AssetInfo) {
     return [
         {
             label: 'i18n:mflow-tools.export',

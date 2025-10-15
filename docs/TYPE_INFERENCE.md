@@ -100,14 +100,12 @@ gameManager.score;  // ✅ 有完整的代码补全
 
 ### 方式 1：自动生成（推荐）⭐
 
-框架提供了自动生成脚本，每次新增 Model/Manager 后运行：
+框架提供了自动生成工具，每次新增 Model/Manager 后在编辑器中运行：
 
-```bash
-npm run generate:types
-```
+**编辑器菜单：mflow-tools -> generate-types**
 
-脚本会自动：
-- ✅ 扫描 `src/models/` 和 `src/managers/` 目录
+工具会自动：
+- ✅ 扫描 `assets/src/models/` 和 `assets/src/managers/` 目录
 - ✅ 识别所有使用了 `@model()` 和 `@manager()` 的类
 - ✅ 自动生成完整的类型映射文件
 - ✅ 不会遗漏任何类
@@ -130,25 +128,13 @@ declare module 'dzkcc-mflow/core' {
 
 ### 集成到工作流
 
-可以在构建前自动生成：
+在以下情况下重新生成类型映射：
 
-```json
-// package.json
-{
-  "scripts": {
-    "prebuild": "npm run generate:types",
-    "build": "rollup -c"
-  }
-}
-```
+- 新增或删除 Model/Manager 类时
+- 修改装饰器名称时
+- 重构项目结构时
 
-或使用 Git 钩子：
-
-```bash
-# .husky/pre-commit
-npm run generate:types
-git add types/core-types.d.ts
-```
+在编辑器中使用 **mflow-tools -> generate-types** 重新生成，确保类型映射始终是最新的。
 
 ## 常见问题
 
@@ -176,16 +162,14 @@ const model = mf.core.getModel(ModelNames.New);
 // model 类型是 IModel（基础接口），没有具体类的代码补全
 ```
 
-**解决方案：** 运行 `npm run generate:types` 补充映射。
+**解决方案：** 在编辑器中运行 **mflow-tools -> generate-types** 补充映射。
 
 ### Q: 为什么没有代码补全？
 
 **检查清单：**
 
 1. **是否创建了类型映射文件？**
-   ```bash
-   npm run generate:types
-   ```
+   在编辑器中运行 **mflow-tools -> generate-types** 生成类型映射文件
 
 2. **是否重启了 TS 语言服务？**
    - VS Code: `Cmd+Shift+P` → "Restart TS Server"
@@ -282,28 +266,18 @@ export class GameView extends BaseView {
 ### 对于新项目
 
 1. **初始化时运行一次**
-   ```bash
-   npm run generate:types
-   ```
+   在编辑器中运行 **mflow-tools -> generate-types**
 
 2. **每次新增 Model/Manager 后运行**
-   ```bash
-   npm run generate:types
-   ```
+   在编辑器中运行 **mflow-tools -> generate-types**
 
-3. **可选：添加到构建流程**
-   ```json
-   {
-     "prebuild": "npm run generate:types"
-   }
-   ```
+3. **保持更新**
+   确保在新增或修改 Model/Manager 后及时重新生成类型映射
 
 ### 对于现有项目
 
 1. **运行一次生成全部**
-   ```bash
-   npm run generate:types
-   ```
+   在编辑器中运行 **mflow-tools -> generate-types** 自动扫描并生成所有映射
 
 2. **提交到 Git**
    ```bash
