@@ -250,48 +250,34 @@ export function generateTypes(config: TypeGenConfig): { success: boolean; messag
 
 // 从项目配置文件读取配置
 function loadConfigFromProject(projectPath: string): TypeGenConfig | null {
-    // 尝试从 package.json 读取配置
-    const packageJsonPath = path.join(projectPath, 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-        try {
-            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-            if (packageJson.mflowTypeGen) {
-                const config = packageJson.mflowTypeGen;
-                return {
-                    modelDir: path.resolve(projectPath, config.modelDir || 'assets/src/models'),
-                    managerDir: path.resolve(projectPath, config.managerDir || 'assets/src/managers'),
-                    outputFile: path.resolve(projectPath, config.outputFile || 'assets/types/manager-model-mapping.d.ts'),
-                    moduleImportPath: config.moduleImportPath || 'dzkcc-mflow/core'
-                };
-            }
-        } catch (error) {
-            console.warn('无法读取 package.json 配置');
-        }
-    }
+    const defaultConfig = {
+        modelDir: 'assets/src/models',
+        managerDir: 'assets/src/managers',
+        outputFile: 'assets/types/manager-model-mapping.d.ts',
+        moduleImportPath: 'dzkcc-mflow/core'
+    };
 
-    // 尝试从单独的配置文件读取
+    // 规范化配置：将相对路径转换为绝对路径
+    const normalizeConfig = (config: Partial<TypeGenConfig>): TypeGenConfig => ({
+        modelDir: path.resolve(projectPath, config.modelDir || defaultConfig.modelDir),
+        managerDir: path.resolve(projectPath, config.managerDir || defaultConfig.managerDir),
+        outputFile: path.resolve(projectPath, config.outputFile || defaultConfig.outputFile),
+        moduleImportPath: config.moduleImportPath || defaultConfig.moduleImportPath
+    });
+
+    // 从单独的配置文件读取
     const configPath = path.join(projectPath, 'mflow.config.json');
     if (fs.existsSync(configPath)) {
         try {
             const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-            return {
-                modelDir: path.resolve(projectPath, config.modelDir || 'assets/src/models'),
-                managerDir: path.resolve(projectPath, config.managerDir || 'assets/src/managers'),
-                outputFile: path.resolve(projectPath, config.outputFile || 'assets/types/core-types.d.ts'),
-                moduleImportPath: config.moduleImportPath || 'dzkcc-mflow/core'
-            };
+            return normalizeConfig(config);
         } catch (error) {
             console.warn('无法读取 mflow.config.json 配置');
         }
     }
 
     // 使用默认配置
-    return {
-        modelDir: path.resolve(projectPath, 'assets/src/models'),
-        managerDir: path.resolve(projectPath, 'assets/src/managers'),
-        outputFile: path.resolve(projectPath, 'assets/types/core-types.d.ts'),
-        moduleImportPath: 'dzkcc-mflow/core'
-    };
+    return normalizeConfig({});
 }
 
 // 编辑器扩展入口

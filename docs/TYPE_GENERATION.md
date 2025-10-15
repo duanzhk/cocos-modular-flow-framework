@@ -26,7 +26,7 @@
 
 - **Model 目录**: `assets/src/models`
 - **Manager 目录**: `assets/src/managers`
-- **输出文件**: `assets/types/core-types.d.ts`
+- **输出文件**: `assets/types/manager-model-mapping.d.ts`
 - **模块路径**: `dzkcc-mflow/core`
 
 ### 自定义配置
@@ -41,7 +41,7 @@
   "mflowTypeGen": {
     "modelDir": "assets/scripts/models",
     "managerDir": "assets/scripts/managers",
-    "outputFile": "assets/scripts/types/core-types.d.ts",
+    "outputFile": "assets/scripts/types/manager-model-mapping.d.ts",
     "moduleImportPath": "dzkcc-mflow/core"
   }
 }
@@ -55,7 +55,7 @@
 {
   "modelDir": "assets/scripts/models",
   "managerDir": "assets/scripts/managers",
-  "outputFile": "assets/scripts/types/core-types.d.ts",
+  "outputFile": "assets/scripts/types/manager-model-mapping.d.ts",
   "moduleImportPath": "dzkcc-mflow/core"
 }
 ```
@@ -106,7 +106,7 @@ export class GameManager {
 ### 生成的类型文件
 
 ```typescript
-// assets/types/core-types.d.ts
+// assets/types/manager-model-mapping.d.ts
 /**
  * 自动生成的类型映射文件
  * ⚠️ 请勿手动修改此文件！
