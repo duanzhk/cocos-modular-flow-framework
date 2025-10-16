@@ -1,5 +1,5 @@
 import { _decorator, Asset, Component } from 'cc';
-import { IView, IManager, IModel, IEventManager, ICocosResManager } from '../core';
+import { IView, IEventManager, ICocosResManager } from '../core';
 const { ccclass, property } = _decorator;
 
 export abstract class BaseView extends Component implements IView {
@@ -78,14 +78,32 @@ export abstract class BaseView extends Component implements IView {
         this._loaderHandlers = []
     }
 
-    protected getManager<T extends IManager>(managerSymbol: symbol): T {
-        // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return mf.core.getManager<T>(managerSymbol);
+    /**
+     * 获取 Model 实例
+     * @param modelKey Model 的 Key，使用 ModelNames.XXX
+     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @example
+     * ```typescript
+     * // 类型由 .d.ts 文件的重载自动推断
+     * const userModel = this.getModel(ModelNames.User);
+     * ```
+     */
+    protected getModel(modelKey: string): any {
+        return mf.core.getModel(modelKey);
     }
 
-    protected getModel<T extends IModel>(modelSymbol: symbol): T {
-        // 业务组件避免直接依赖底层服务定位器，所以使用app.core统一对外接口，方便后续架构演进
-        return mf.core.getModel<T>(modelSymbol);
+    /**
+     * 获取 Manager 实例
+     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
+     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @example
+     * ```typescript
+     * // 类型由 .d.ts 文件的重载自动推断
+     * const gameManager = this.getManager(ManagerNames.Game);
+     * ```
+     */
+    protected getManager(managerKey: string): any {
+        return mf.core.getManager(managerKey);
     }
 
 }
