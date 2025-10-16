@@ -38,7 +38,7 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
      * ```
      */
     getModel<T extends keyof ModelRegistry>(modelClass: T): InstanceType<ModelRegistry[T]> {
-        const className = (modelClass as any).name;
+        const className = modelClass;
         
         // 如果已存在实例，直接返回
         if (this.container.has(className)) {
@@ -64,7 +64,7 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
      * ```
      */
     getManager<T extends keyof ManagerRegistry>(managerClass: T): InstanceType<ManagerRegistry[T]> {
-        const className = (managerClass as any).name;
+        const className = managerClass;
         
         // 如果已存在实例，直接返回
         if (this.container.has(className)) {

@@ -61,16 +61,13 @@ class CcocosUIManager {
         return this.internalGetTopView();
     }
     open(viewClass, args) {
-        const className = viewClass.name;
-        return this.internalOpen(className, args);
+        return this.internalOpen(viewClass, args);
     }
     close(viewClass) {
-        const className = viewClass.name;
-        this.internalClose(className);
+        this.internalClose(viewClass);
     }
     openAndPush(viewClass, group, args) {
-        const className = viewClass.name;
-        return this.internalOpenAndPush(className, group, args);
+        return this.internalOpenAndPush(viewClass, group, args);
     }
     closeAndPop(group, destroy) {
         this.internalCloseAndPop(group, destroy);

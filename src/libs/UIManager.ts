@@ -65,16 +65,13 @@ abstract class CcocosUIManager implements IUIManager {
         return this.internalGetTopView();
     }
     open<T extends keyof UIRegistry>(viewClass: T, args?: any): Promise<InstanceType<UIRegistry[T]>> {
-        const className = (viewClass as any).name;
-        return this.internalOpen(className, args) as Promise<InstanceType<UIRegistry[T]>>;
+        return this.internalOpen(viewClass, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
     close<T extends keyof UIRegistry>(viewClass: T): void {
-        const className = (viewClass as any).name;
-        this.internalClose(className);
+        this.internalClose(viewClass);
     }
     openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: any): Promise<InstanceType<UIRegistry[T]>> {
-        const className = (viewClass as any).name;
-        return this.internalOpenAndPush(className, group, args) as Promise<InstanceType<UIRegistry[T]>>;
+        return this.internalOpenAndPush(viewClass, group, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
     closeAndPop(group: string, destroy?: boolean): void {
         this.internalCloseAndPop(group, destroy);

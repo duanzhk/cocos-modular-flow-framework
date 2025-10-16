@@ -33,7 +33,7 @@ class AbstractCore {
      * ```
      */
     getModel(modelClass) {
-        const className = modelClass.name;
+        const className = modelClass;
         // 如果已存在实例，直接返回
         if (this.container.has(className)) {
             return this.container.get(className);
@@ -55,7 +55,7 @@ class AbstractCore {
      * ```
      */
     getManager(managerClass) {
-        const className = managerClass.name;
+        const className = managerClass;
         // 如果已存在实例，直接返回
         if (this.container.has(className)) {
             return this.container.get(className);
