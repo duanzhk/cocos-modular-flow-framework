@@ -10,7 +10,7 @@
 
 1. 确保已安装 `mflow-tools` 编辑器扩展（安装 `dzkcc-mflow` 后会自动安装）
 2. 在 Cocos Creator 编辑器顶部菜单栏，点击 **mflow-tools** 菜单
-3. 选择 **Generate decorator mapping/生成装饰器映射** (生成类型映射)
+3. 选择 **Generate API type hints/生成API类型提示** (生成类型映射)
 4. 等待生成完成，会弹出成功或失败的提示
 
 **优点**：
@@ -106,12 +106,12 @@ export class GameManager {
 ### 生成的类型文件
 
 ```typescript
-// assets/types/manager-model-mapping.d.ts
+// assets/types/api-type-hints.d.ts
 /**
  * 自动生成的类型映射文件
  * ⚠️ 请勿手动修改此文件！
  * 重新生成方法：
- *   - 在 Cocos Creator 编辑器中：mflow-tools 菜单 -> Generate decorator mapping/生成装饰器映射
+ *   - 在 Cocos Creator 编辑器中：mflow-tools 菜单 -> Generate API type hints/生成API类型提示
  */
 
 import { UserModel } from '../src/models/UserModel';
@@ -182,7 +182,7 @@ homeMgr.start();  // ✅ 类型安全
 
 **A:** 当前版本仅支持单个 Model 目录和单个 Manager 目录，但可以在这些目录下创建子目录，工具会递归扫描
 
-### Q: 扩展菜单中找不到 Generate decorator mapping/生成装饰器映射 选项
+### Q: 扩展菜单中找不到 Generate API type hints/生成API类型提示 选项
 
 **A:** 确保已正确安装 mflow-tools 扩展：
 1. 检查项目 node_modules 中是否有 dzkcc-mflow

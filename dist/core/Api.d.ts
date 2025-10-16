@@ -62,14 +62,16 @@ export interface IView {
 }
 /**
  * UI 管理器接口 - 管理视图的打开、关闭和栈操作
+ *
+ * 注意：open 和 openAndPush 的返回类型由 .d.ts 文件的函数重载提供
  */
 export interface IUIManager {
     /** 打开视图 */
-    open<T extends IView>(viewKey: string, args?: any): Promise<T>;
+    open(viewKey: string, args?: any): Promise<IView>;
     /** 关闭视图 */
     close(viewKey: string | IView, destory?: boolean): void;
     /** 打开视图并入栈 */
-    openAndPush<T extends IView>(viewKey: string, group: string, args?: any): Promise<T>;
+    openAndPush(viewKey: string, group: string, args?: any): Promise<IView>;
     /** 关闭栈顶视图并弹出 */
     closeAndPop(group: string, destroy?: boolean): void;
     /** 获取栈顶视图 */

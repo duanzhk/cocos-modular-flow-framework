@@ -43,13 +43,13 @@ export class GameManager extends AbstractManager {
 在 Cocos Creator 编辑器中：
 - 点击菜单：**mflow-tools -> Generate decorator mapping**
 
-这会生成 `assets/types/manager-model-mapping.d.ts` 文件：
+这会生成 `assets/types/api-type-hints.d.ts` 文件：
 
 ```typescript
 /**
  * 自动生成的类型映射文件
  * ⚠️ 请勿手动修改此文件！
- * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> Generate decorator mapping/生成装饰器映射
+ * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> Generate API type hints/生成API类型提示
  */
 
 // Model 导入
@@ -175,7 +175,7 @@ getModel<S extends symbol>(modelSymbol: S): InferModelType<S>
 **检查清单：**
 
 1. ✅ 确保已生成类型映射文件
-   - 文件路径：`assets/types/manager-model-mapping.d.ts`
+   - 文件路径：`assets/types/api-type-hints.d.ts`
    - 或自定义路径
 
 2. ✅ 确保 TypeScript 包含了类型文件

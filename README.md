@@ -188,7 +188,7 @@ userModel.name;  // ✅ 有完整的代码补全
 
 > ⚠️ **如果 getManager/getModel 没有类型提示**？
 > 
-> 需要创建类型映射文件，使用编辑器的 **mflow-tools -> Generate decorator mapping/生成装饰器映射** 自动生成，
+> 需要创建类型映射文件，使用编辑器的 **mflow-tools -> Generate API type hints/生成API类型提示** 自动生成，
 > 或查看 [类型提示问题解决方案](./docs/TYPE_INFERENCE_FIX.md)
 
 📖 **查看文档**: [类型自动推断](./docs/TYPE_INFERENCE.md) | [类型生成工具](./docs/TYPE_GENERATION.md) | [类型提示问题解决](./docs/TYPE_INFERENCE_FIX.md)

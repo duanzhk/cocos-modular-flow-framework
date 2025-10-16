@@ -28,11 +28,11 @@
             {
                 "path": "mflow-tools",
                 "label": "i18n:mflow-tools.generate-mapping",
-                "message": "generate-manager-model-mapping"
+                "message": "generate-api-type-hints"
             }
         ],
         "messages": {
-            "generate-manager-model-mapping": {
+            "generate-api-type-hints": {
                 "methods": ["onGenerateTypesMapping"]
             }
         }

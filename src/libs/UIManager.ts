@@ -64,14 +64,14 @@ abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
         return this.internalGetTopView();
     }
-    open<T extends IView>(viewKey: string, args?: any): Promise<T> {
-        return this.internalOpen(viewKey, args) as unknown as Promise<T>;
+    open(viewKey: string, args?: any): Promise<IView> {
+        return this.internalOpen(viewKey, args);
     }
     close(viewKey: string | IView, destory?: boolean): void {
         this.internalClose(viewKey, destory);
     }
-    openAndPush<T extends IView>(viewKey: string, group: string, args?: any): Promise<T> {
-        return this.internalOpenAndPush(viewKey, group, args) as unknown as Promise<T>;
+    openAndPush(viewKey: string, group: string, args?: any): Promise<IView> {
+        return this.internalOpenAndPush(viewKey, group, args);
     }
     closeAndPop(group: string, destroy?: boolean): void {
         this.internalCloseAndPop(group, destroy);
@@ -80,9 +80,9 @@ abstract class CcocosUIManager implements IUIManager {
         this.internalClearStack(group, destroy);
     }
 
-    protected abstract internalOpen<T extends ICocosView>(viewKey: string, args?: any): Promise<T>
+    protected abstract internalOpen(viewKey: string, args?: any): Promise<ICocosView>
     protected abstract internalClose(viewKey: string | IView, destory?: boolean): void
-    protected abstract internalOpenAndPush<T extends ICocosView>(viewKey: string, group: string, args?: any): Promise<T>
+    protected abstract internalOpenAndPush(viewKey: string, group: string, args?: any): Promise<ICocosView>
     protected abstract internalCloseAndPop(group: string, destroy?: boolean): void;
     protected abstract internalClearStack(group: string, destroy?: boolean): void
     protected abstract internalGetTopView(): ICocosView | undefined
@@ -144,8 +144,8 @@ export class UIManager extends CcocosUIManager {
         }
     }
 
-    private async _load<T extends ICocosView>(viewKey: string, args?: any): Promise<T> {
-        const viewType = getViewClass<T>(viewKey);
+    private async _load(viewKey: string, args?: any): Promise<ICocosView> {
+        const viewType = getViewClass<ICocosView>(viewKey);
         let target: Node
         if (this._cache.has(viewType.name)) {
             target = this._cache.get(viewType.name)!;
@@ -157,7 +157,7 @@ export class UIManager extends CcocosUIManager {
             this._cache.set(viewType.name, target);
         }
         target.active = true;
-        return target.getComponent<T>(viewType)!
+        return target.getComponent(viewType)! as ICocosView;
     }
 
     private _remove(viewKeyOrInstance: string | IView, destroy?: boolean): void {
@@ -222,9 +222,9 @@ export class UIManager extends CcocosUIManager {
         return undefined;
     }
 
-    protected async internalOpen<T extends ICocosView>(viewKey: string, args?: any): Promise<T> {
+    protected async internalOpen(viewKey: string, args?: any): Promise<ICocosView> {
         this._blockInput(true);
-        let view = await this._load<T>(viewKey, args);
+        let view = await this._load(viewKey, args);
         addChild(view.node)
         this._adjustMaskLayer();
         view.onEnter(args);
@@ -237,9 +237,9 @@ export class UIManager extends CcocosUIManager {
         this._adjustMaskLayer();
     }
 
-    protected async internalOpenAndPush<T extends ICocosView>(viewKey: string, group: string, args?: any): Promise<T> {
+    protected async internalOpenAndPush(viewKey: string, group: string, args?: any): Promise<ICocosView> {
         this._blockInput(true);
-        let view = await this._load<T>(viewKey, args);
+        let view = await this._load(viewKey, args);
         let stack = this._groupStacks.get(group) || []
         this._groupStacks.set(group, stack);
         let top = stack[stack.length - 1]

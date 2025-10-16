@@ -1,6 +1,6 @@
 /**
- * @en Generate type map file for the classes decorated with @model() or @manager()
- * @zh 为被装饰器装饰(@model()或@manager())的类生成类型映射文件，实现完整的类型推断支持。
+ * @en Generate type map file for the classes decorated with @model(), @manager() or @view()
+ * @zh 为被装饰器装饰(@model()、@manager()或@view())的类生成类型映射文件，实现完整的类型推断支持。
  */
 
 import * as fs from 'fs';
@@ -10,13 +10,14 @@ import * as path from 'path';
 interface TypeGenConfig {
     modelDir: string;
     managerDir: string;
+    viewDir: string;
     outputFile: string;
     moduleImportPath: string;
 }
 
 // 解析结果接口
 interface ParsedItem {
-    type: 'model' | 'manager';
+    type: 'model' | 'manager' | 'view';
     decoratorName: string;
     className: string;
     filePath: string;
@@ -73,6 +74,17 @@ function parseFile(filePath: string): ParsedItem | null {
         };
     }
 
+    // 匹配 @view('Name') 或 @view()
+    const viewMatch = content.match(/@view\s*\(\s*['"](\w+)['"]\s*\)/);
+    if (viewMatch) {
+        return {
+            type: 'view',
+            decoratorName: viewMatch[1],
+            className: fileName,
+            filePath: filePath
+        };
+    }
+
     // 如果没有指定名称，使用类名
     if (content.includes('@model()')) {
         return {
@@ -92,18 +104,27 @@ function parseFile(filePath: string): ParsedItem | null {
         };
     }
 
+    if (content.includes('@view()')) {
+        return {
+            type: 'view',
+            decoratorName: fileName,
+            className: fileName,
+            filePath: filePath
+        };
+    }
+
     return null;
 }
 
 // 生成类型映射代码
-function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: TypeGenConfig): string {
+function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: ParsedItem[], config: TypeGenConfig): string {
     const lines: string[] = [];
 
     // 文件头注释
     lines.push('/**');
     lines.push(' * 自动生成的类型映射文件');
     lines.push(' * ⚠️ 请勿手动修改此文件！');
-    lines.push(' * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> Generate decorator mapping/生成装饰器映射');
+    lines.push(' * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> Generate API type hints/生成API类型提示');
     lines.push(' */');
     lines.push('');
 
@@ -133,13 +154,28 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
         lines.push('');
     }
 
+    // 导入 View
+    if (views.length > 0) {
+        lines.push('// View 导入');
+        for (const view of views) {
+            const relativePath = path.relative(
+                path.dirname(config.outputFile),
+                view.filePath
+            ).replace(/\\/g, '/').replace('.ts', '');
+            lines.push(`import type { ${view.className} } from '${relativePath}';`);
+        }
+        lines.push('');
+    }
+
     // 导入 Names（用于函数重载）
     const needModelNames = models.length > 0;
     const needManagerNames = managers.length > 0;
-    if (needModelNames || needManagerNames) {
+    const needViewNames = views.length > 0;
+    if (needModelNames || needManagerNames || needViewNames) {
         const imports: string[] = [];
         if (needModelNames) imports.push('ModelNames');
         if (needManagerNames) imports.push('ManagerNames');
+        if (needViewNames) imports.push('ViewNames');
         lines.push(`import { ${imports.join(', ')} } from '${config.moduleImportPath}';`);
         lines.push('');
     }
@@ -168,6 +204,16 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
         lines.push('');
     }
 
+    if (views.length > 0) {
+        lines.push('    // 扩展 ViewNamesType，将每个属性定义为字符串字面量');
+        lines.push('    interface ViewNamesType {');
+        for (const view of views) {
+            lines.push(`        readonly ${view.decoratorName}: '${view.decoratorName}';`);
+        }
+        lines.push('    }');
+        lines.push('');
+    }
+
     // ICore 接口扩展（使用函数重载提供精确的类型推断）
     if (models.length > 0 || managers.length > 0) {
         lines.push('    // 扩展 ICore 接口，添加精确的类型重载');
@@ -185,6 +231,25 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], config: T
             for (const manager of managers) {
                 lines.push(`        getManager(managerKey: '${manager.decoratorName}'): ${manager.className};`);
             }
+        }
+        
+        lines.push('    }');
+        lines.push('');
+    }
+
+    // IUIManager 接口扩展（为 View 提供类型推断）
+    if (views.length > 0) {
+        lines.push('    // 扩展 IUIManager 接口，添加 View 类型重载');
+        lines.push('    interface IUIManager {');
+        
+        // 为每个 View 添加 open 重载
+        for (const view of views) {
+            lines.push(`        open(viewKey: '${view.decoratorName}', args?: any): Promise<${view.className}>;`);
+        }
+        
+        // 为每个 View 添加 openAndPush 重载
+        for (const view of views) {
+            lines.push(`        openAndPush(viewKey: '${view.decoratorName}', group: string, args?: any): Promise<${view.className}>;`);
         }
         
         lines.push('    }');
@@ -217,15 +282,23 @@ export function generateTypes(config: TypeGenConfig): { success: boolean; messag
             .filter((item): item is ParsedItem => item !== null && item.type === 'manager');
         console.log(`   找到 ${managers.length} 个 Manager\n`);
 
-        if (models.length === 0 && managers.length === 0) {
+        // 扫描 View 目录
+        console.log(`📂 扫描 View 目录: ${config.viewDir}`);
+        const viewFiles = scanDirectory(config.viewDir);
+        const views = viewFiles
+            .map(parseFile)
+            .filter((item): item is ParsedItem => item !== null && item.type === 'view');
+        console.log(`   找到 ${views.length} 个 View\n`);
+
+        if (models.length === 0 && managers.length === 0 && views.length === 0) {
             return {
                 success: false,
-                message: '⚠️  未找到任何 Model 或 Manager，跳过生成'
+                message: '⚠️  未找到任何 Model、Manager 或 View，跳过生成'
             };
         }
 
         // 生成类型映射
-        const content = generateTypeMap(models, managers, config);
+        const content = generateTypeMap(models, managers, views, config);
 
         // 确保输出目录存在
         const outputDir = path.dirname(config.outputFile);
@@ -246,6 +319,10 @@ export function generateTypes(config: TypeGenConfig): { success: boolean; messag
             message += '   Managers:\n';
             managers.forEach(m => message += `     - ${m.decoratorName} → ${m.className}\n`);
         }
+        if (views.length > 0) {
+            message += '   Views:\n';
+            views.forEach(v => message += `     - ${v.decoratorName} → ${v.className}\n`);
+        }
         message += '\n🎉 完成！';
 
         console.log(message);
@@ -261,9 +338,10 @@ export function generateTypes(config: TypeGenConfig): { success: boolean; messag
 // 从项目配置文件读取配置
 function loadConfigFromProject(projectPath: string): TypeGenConfig | null {
     const defaultConfig = {
-        modelDir: 'assets/src/models',
-        managerDir: 'assets/src/managers',
-        outputFile: 'assets/types/manager-model-mapping.d.ts',
+        modelDir: 'assets/src/game/models',
+        managerDir: 'assets/src/game/managers',
+        viewDir: 'assets/src/game/gui',
+        outputFile: 'assets/types/api-type-hints.d.ts',
         moduleImportPath: 'dzkcc-mflow/core'
     };
 
@@ -271,6 +349,7 @@ function loadConfigFromProject(projectPath: string): TypeGenConfig | null {
     const normalizeConfig = (config: Partial<TypeGenConfig>): TypeGenConfig => ({
         modelDir: path.resolve(projectPath, config.modelDir || defaultConfig.modelDir),
         managerDir: path.resolve(projectPath, config.managerDir || defaultConfig.managerDir),
+        viewDir: path.resolve(projectPath, config.viewDir || defaultConfig.viewDir),
         outputFile: path.resolve(projectPath, config.outputFile || defaultConfig.outputFile),
         moduleImportPath: config.moduleImportPath || defaultConfig.moduleImportPath
     });
