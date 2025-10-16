@@ -14,6 +14,9 @@ class Container {
             throw new Error(`${key} not registered!`);
         return ins;
     }
+    has(key) {
+        return this.key2ins.has(key);
+    }
 }
 class AbstractCore {
     constructor() {
@@ -61,6 +64,22 @@ class AbstractCore {
      */
     getManager(managerKey) {
         return this.container.get(managerKey);
+    }
+    /**
+     * 检查 Model 是否已注册
+     * @param modelKey Model 的 Key
+     * @returns 是否已注册
+     */
+    hasModel(modelKey) {
+        return this.container.has(modelKey);
+    }
+    /**
+     * 检查 Manager 是否已注册
+     * @param managerKey Manager 的 Key
+     * @returns 是否已注册
+     */
+    hasManager(managerKey) {
+        return this.container.has(managerKey);
     }
 }
 class AbstractManager {

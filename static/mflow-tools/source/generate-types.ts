@@ -175,8 +175,8 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: Pa
         const imports: string[] = [];
         if (needModelNames) imports.push('ModelNames');
         if (needManagerNames) imports.push('ManagerNames');
-        if (needViewNames) imports.push('ViewNames');
-        lines.push(`import { ${imports.join(', ')} } from '${config.moduleImportPath}';`);
+        if (needViewNames) imports.push('ViewNames', 'IView');
+        lines.push(`import type { ${imports.join(', ')} } from '${config.moduleImportPath}';`);
         lines.push('');
     }
 
@@ -214,25 +214,47 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: Pa
         lines.push('');
     }
 
+    // 生成严格的字符串字面量联合类型
+    if (models.length > 0) {
+        const modelKeys = models.map(m => `'${m.decoratorName}'`).join(' | ');
+        lines.push('    // 严格的 Model 键类型');
+        lines.push(`    type ModelKey = ${modelKeys};`);
+        lines.push('');
+    }
+
+    if (managers.length > 0) {
+        const managerKeys = managers.map(m => `'${m.decoratorName}'`).join(' | ');
+        lines.push('    // 严格的 Manager 键类型');
+        lines.push(`    type ManagerKey = ${managerKeys};`);
+        lines.push('');
+    }
+
+    if (views.length > 0) {
+        const viewKeys = views.map(v => `'${v.decoratorName}'`).join(' | ');
+        lines.push('    // 严格的 View 键类型');
+        lines.push(`    type ViewKey = ${viewKeys};`);
+        lines.push('');
+    }
+
     // ICore 接口扩展（使用函数重载提供精确的类型推断）
     if (models.length > 0 || managers.length > 0) {
         lines.push('    // 扩展 ICore 接口，添加精确的类型重载');
         lines.push('    interface ICore {');
-        
+
         // 为每个 Model 添加 getModel 重载
         if (models.length > 0) {
             for (const model of models) {
-                lines.push(`        getModel<T extends '${model.decoratorName}'>(modelKey: T): ${model.className};`);
+                lines.push(`        getModel(modelKey: '${model.decoratorName}'): ${model.className};`);
             }
         }
-        
+
         // 为每个 Manager 添加 getManager 重载
         if (managers.length > 0) {
             for (const manager of managers) {
-                lines.push(`        getManager<T extends '${manager.decoratorName}'>(managerKey: T): ${manager.className};`);
+                lines.push(`        getManager(managerKey: '${manager.decoratorName}'): ${manager.className};`);
             }
         }
-        
+
         lines.push('    }');
         lines.push('');
     }
@@ -241,22 +263,22 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: Pa
     if (views.length > 0) {
         lines.push('    // 扩展 IUIManager 接口，添加 View 类型重载');
         lines.push('    interface IUIManager {');
-        
+
         // 为每个 View 添加 open 重载
         for (const view of views) {
-            lines.push(`        open<T extends '${view.decoratorName}'>(viewKey: T, args?: any): Promise<${view.className}>;`);
+            lines.push(`        open(viewKey: '${view.decoratorName}', args?: any): Promise<${view.className}>;`);
         }
-        
+
         // 为每个 View 添加 openAndPush 重载
         for (const view of views) {
-            lines.push(`        openAndPush<T extends '${view.decoratorName}'>(viewKey: T, group: string, args?: any): Promise<${view.className}>;`);
+            lines.push(`        openAndPush(viewKey: '${view.decoratorName}', group: string, args?: any): Promise<${view.className}>;`);
         }
-        
+
         // 为每个 View 添加 close 重载
         for (const view of views) {
-            lines.push(`        close<T extends '${view.decoratorName}'>(viewKey: T | IView, destory?: boolean): void;`);
+            lines.push(`        close(viewKey: '${view.decoratorName}' | IView, destory?: boolean): void;`);
         }
-        
+
         lines.push('    }');
     }
 

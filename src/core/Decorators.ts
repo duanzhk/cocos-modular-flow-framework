@@ -215,6 +215,7 @@ export function getViewClass<T>(viewKey: string): new () => T {
 /**
  * 自动注册所有使用装饰器标记的 Model 和 Manager
  * @param core Core 实例
+ * @param options 注册选项
  * @example
  * ```typescript
  * // 导入所有 Model 和 Manager
@@ -223,18 +224,39 @@ export function getViewClass<T>(viewKey: string): new () => T {
  * 
  * // 自动注册
  * autoRegister(mf.core);
+ * 
+ * // 带选项的自动注册
+ * autoRegister(mf.core, { 
+ *   skipExisting: true,  // 跳过已注册的
+ *   verbose: false       // 静默模式
+ * });
  * ```
  */
-export function autoRegister(core: ICore) {
+export function autoRegister(core: ICore, options: {
+    skipExisting?: boolean;
+    verbose?: boolean;
+} = {}) {
+    const { skipExisting = false, verbose = true } = options;
+
     // 注册所有 Model
     ctorToModelKey.forEach((modelKey, ctor) => {
-        console.log(`${ctor.name} initialize`);
+        if (skipExisting && core.hasModel(modelKey as keyof ModelNamesType)) {
+            if (verbose) console.log(`${ctor.name} already registered, skipping`);
+            return;
+        }
+        
+        if (verbose) console.log(`${ctor.name} initialize`);
         core.regModel(modelKey as keyof ModelNamesType);
     });
 
     // 注册所有 Manager
     ctorToManagerKey.forEach((managerKey, ctor) => {
-        console.log(`${ctor.name} initialize`);
+        if (skipExisting && core.hasManager(managerKey as keyof ManagerNamesType)) {
+            if (verbose) console.log(`${ctor.name} already registered, skipping`);
+            return;
+        }
+        
+        if (verbose) console.log(`${ctor.name} initialize`);
         core.regManager(managerKey as keyof ManagerNamesType);
     });
 }

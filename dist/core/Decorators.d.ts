@@ -103,6 +103,7 @@ export declare function getViewClass<T>(viewKey: string): new () => T;
 /**
  * 自动注册所有使用装饰器标记的 Model 和 Manager
  * @param core Core 实例
+ * @param options 注册选项
  * @example
  * ```typescript
  * // 导入所有 Model 和 Manager
@@ -111,6 +112,15 @@ export declare function getViewClass<T>(viewKey: string): new () => T;
  *
  * // 自动注册
  * autoRegister(mf.core);
+ *
+ * // 带选项的自动注册
+ * autoRegister(mf.core, {
+ *   skipExisting: true,  // 跳过已注册的
+ *   verbose: false       // 静默模式
+ * });
  * ```
  */
-export declare function autoRegister(core: ICore): void;
+export declare function autoRegister(core: ICore, options?: {
+    skipExisting?: boolean;
+    verbose?: boolean;
+}): void;

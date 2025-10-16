@@ -65,13 +65,13 @@ abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
         return this.internalGetTopView();
     }
-    open<T extends keyof ViewNamesType>(viewKey: T, args?: any): Promise<IView> {
+    open(viewKey: keyof ViewNamesType, args?: any): Promise<IView> {
         return this.internalOpen(viewKey as string, args);
     }
-    close<T extends keyof ViewNamesType>(viewKey: T | IView, destory?: boolean): void {
+    close(viewKey: keyof ViewNamesType | IView, destory?: boolean): void {
         this.internalClose(viewKey as string | IView, destory);
     }
-    openAndPush<T extends keyof ViewNamesType>(viewKey: T, group: string, args?: any): Promise<IView> {
+    openAndPush(viewKey: keyof ViewNamesType, group: string, args?: any): Promise<IView> {
         return this.internalOpenAndPush(viewKey as string, group, args);
     }
     closeAndPop(group: string, destroy?: boolean): void {
