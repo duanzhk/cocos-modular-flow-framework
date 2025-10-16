@@ -222,14 +222,14 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: Pa
         // 为每个 Model 添加 getModel 重载
         if (models.length > 0) {
             for (const model of models) {
-                lines.push(`        getModel(modelKey: '${model.decoratorName}'): ${model.className};`);
+                lines.push(`        getModel<T extends '${model.decoratorName}'>(modelKey: T): ${model.className};`);
             }
         }
         
         // 为每个 Manager 添加 getManager 重载
         if (managers.length > 0) {
             for (const manager of managers) {
-                lines.push(`        getManager(managerKey: '${manager.decoratorName}'): ${manager.className};`);
+                lines.push(`        getManager<T extends '${manager.decoratorName}'>(managerKey: T): ${manager.className};`);
             }
         }
         
@@ -244,12 +244,17 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: Pa
         
         // 为每个 View 添加 open 重载
         for (const view of views) {
-            lines.push(`        open(viewKey: '${view.decoratorName}', args?: any): Promise<${view.className}>;`);
+            lines.push(`        open<T extends '${view.decoratorName}'>(viewKey: T, args?: any): Promise<${view.className}>;`);
         }
         
         // 为每个 View 添加 openAndPush 重载
         for (const view of views) {
-            lines.push(`        openAndPush(viewKey: '${view.decoratorName}', group: string, args?: any): Promise<${view.className}>;`);
+            lines.push(`        openAndPush<T extends '${view.decoratorName}'>(viewKey: T, group: string, args?: any): Promise<${view.className}>;`);
+        }
+        
+        // 为每个 View 添加 close 重载
+        for (const view of views) {
+            lines.push(`        close<T extends '${view.decoratorName}'>(viewKey: T | IView, destory?: boolean): void;`);
         }
         
         lines.push('    }');

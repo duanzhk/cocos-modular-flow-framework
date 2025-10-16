@@ -1,6 +1,6 @@
-import { ICore, IManager } from "./Api";
+import { ICore, IManager, ModelNamesType, ManagerNamesType } from "./Api";
 import { ServiceLocator } from "./ServiceLocator";
-import { getModelClass, getManagerClass } from "./Decorators";
+import { getModelClass, getManagerClass} from "./Decorators";
 
 class Container {
     private key2ins = new Map<string, any>();
@@ -25,10 +25,11 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     protected abstract initialize(): void;
 
     // 注册与获取模型
-    regModel(modelKey: string): void {
-        const ModelClass = getModelClass<T>(modelKey);
+    regModel<T extends keyof ModelNamesType>(modelKey: T): void {
+        const modelKeyStr = modelKey as string;
+        const ModelClass = getModelClass<any>(modelKeyStr);
         const model = new ModelClass();
-        this.container.reg(modelKey, model);
+        this.container.reg(modelKeyStr, model);
         model.initialize();
     }
 
@@ -42,15 +43,16 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel(modelKey: string): any {
-        return this.container.get(modelKey);
+    getModel<T extends keyof ModelNamesType>(modelKey: T): any {
+        return this.container.get(modelKey as string);
     }
 
     // 注册与获取管理器
-    regManager(managerKey: string): void {
-        const ManagerClass = getManagerClass<T>(managerKey);
+    regManager<T extends keyof ManagerNamesType>(managerKey: T): void {
+        const managerKeyStr = managerKey as string;
+        const ManagerClass = getManagerClass<any>(managerKeyStr);
         const manager = new ManagerClass();
-        this.container.reg(managerKey, manager);
+        this.container.reg(managerKeyStr, manager);
         manager.initialize();
     }
 
@@ -64,8 +66,8 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager(managerKey: string): any {
-        return this.container.get(managerKey);
+    getManager<T extends keyof ManagerNamesType>(managerKey: T): any {
+        return this.container.get(managerKey as string);
     }
 }
 
@@ -80,7 +82,7 @@ export abstract class AbstractManager implements IManager {
      * @param modelKey Model 的 Key，使用 ModelNames.XXX
      * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getModel(modelKey: string): any {
+    protected getModel<T extends keyof ModelNamesType>(modelKey: T): any {
         // 保持框架独立性，不与具体应用入口(app类)耦合
         // 框架高内聚，使用ServiceLocator获取core
         return ServiceLocator.getService<ICore>('core').getModel(modelKey);
@@ -91,7 +93,7 @@ export abstract class AbstractManager implements IManager {
      * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
      * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getManager(managerKey: string): any {
+    protected getManager<T extends keyof ManagerNamesType>(managerKey: T): any {
         return ServiceLocator.getService<ICore>('core').getManager(managerKey);
     }
 }

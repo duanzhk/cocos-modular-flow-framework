@@ -22,9 +22,10 @@ class AbstractCore {
     }
     // 注册与获取模型
     regModel(modelKey) {
-        const ModelClass = getModelClass(modelKey);
+        const modelKeyStr = modelKey;
+        const ModelClass = getModelClass(modelKeyStr);
         const model = new ModelClass();
-        this.container.reg(modelKey, model);
+        this.container.reg(modelKeyStr, model);
         model.initialize();
     }
     /**
@@ -42,9 +43,10 @@ class AbstractCore {
     }
     // 注册与获取管理器
     regManager(managerKey) {
-        const ManagerClass = getManagerClass(managerKey);
+        const managerKeyStr = managerKey;
+        const ManagerClass = getManagerClass(managerKeyStr);
         const manager = new ManagerClass();
-        this.container.reg(managerKey, manager);
+        this.container.reg(managerKeyStr, manager);
         manager.initialize();
     }
     /**

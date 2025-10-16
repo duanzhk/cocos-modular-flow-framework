@@ -1,5 +1,6 @@
 import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab } from "cc";
 import { ICocosResManager, IUIManager, IView, ServiceLocator, getViewClass } from "../core";
+import { ViewNamesType } from "../core";
 
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
@@ -64,14 +65,14 @@ abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
         return this.internalGetTopView();
     }
-    open(viewKey: string, args?: any): Promise<IView> {
-        return this.internalOpen(viewKey, args);
+    open<T extends keyof ViewNamesType>(viewKey: T, args?: any): Promise<IView> {
+        return this.internalOpen(viewKey as string, args);
     }
-    close(viewKey: string | IView, destory?: boolean): void {
-        this.internalClose(viewKey, destory);
+    close<T extends keyof ViewNamesType>(viewKey: T | IView, destory?: boolean): void {
+        this.internalClose(viewKey as string | IView, destory);
     }
-    openAndPush(viewKey: string, group: string, args?: any): Promise<IView> {
-        return this.internalOpenAndPush(viewKey, group, args);
+    openAndPush<T extends keyof ViewNamesType>(viewKey: T, group: string, args?: any): Promise<IView> {
+        return this.internalOpenAndPush(viewKey as string, group, args);
     }
     closeAndPop(group: string, destroy?: boolean): void {
         this.internalCloseAndPop(group, destroy);

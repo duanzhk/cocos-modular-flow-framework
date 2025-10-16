@@ -1,5 +1,6 @@
 import { _decorator, Asset, Component } from 'cc';
 import { IView, IEventManager, ICocosResManager } from '../core';
+import { ModelNamesType, ManagerNamesType } from '../core';
 const { ccclass, property } = _decorator;
 
 export abstract class BaseView extends Component implements IView {
@@ -88,7 +89,7 @@ export abstract class BaseView extends Component implements IView {
      * const userModel = this.getModel(ModelNames.User);
      * ```
      */
-    protected getModel(modelKey: string): any {
+    protected getModel<T extends keyof ModelNamesType>(modelKey: T): any {
         return mf.core.getModel(modelKey);
     }
 
@@ -102,7 +103,7 @@ export abstract class BaseView extends Component implements IView {
      * const gameManager = this.getManager(ManagerNames.Game);
      * ```
      */
-    protected getManager(managerKey: string): any {
+    protected getManager<T extends keyof ManagerNamesType>(managerKey: T): any {
         return mf.core.getManager(managerKey);
     }
 

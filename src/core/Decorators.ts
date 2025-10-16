@@ -1,37 +1,4 @@
-import { ICore } from "./Api";
-
-// ============================================================================
-// 类型定义（由业务层通过 .d.ts 扩展）
-// ============================================================================
-
-/**
- * ModelNames 接口（由业务层扩展以提供代码补全和类型推断）
- * @example
- * ```typescript
- * // 在 .d.ts 文件中扩展
- * interface ModelNamesType {
- *     readonly User: 'User';
- * }
- * ```
- */
-export interface ModelNamesType extends Record<string, string> {}
-
-/**
- * ManagerNames 接口（由业务层扩展以提供代码补全和类型推断）
- * @example
- * ```typescript
- * // 在 .d.ts 文件中扩展
- * interface ManagerNamesType {
- *     readonly Home: 'Home';
- * }
- * ```
- */
-export interface ManagerNamesType extends Record<string, string> {}
-
-/** 
- * ViewNames 接口（由业务层扩展以提供代码补全和类型推断）
- */
-export interface ViewNamesType extends Record<string, string> {}
+import { ICore, ModelNamesType, ManagerNamesType, ViewNamesType } from "./Api";
 
 
 // ============================================================================
@@ -83,12 +50,12 @@ const viewRegistry = new Map<string, Function>();     // Key → 类
 export function model(name?: string) {
     return function (ctor: Function) {
         const modelName = name || ctor.name;
-        
+
         // 注册到映射表
         modelRegistry.set(modelName, ctor);
         ctorToModelKey.set(ctor, modelName);
         (ModelNames as any)[modelName] = modelName;
-        
+
         console.log(`Model registered: ${modelName}`);
     };
 }
@@ -143,12 +110,12 @@ export function getModelKey(ctor: Function): string | undefined {
 export function manager(name?: string) {
     return function (ctor: Function) {
         const managerName = name || ctor.name;
-        
+
         // 注册到映射表
         managerRegistry.set(managerName, ctor);
         ctorToManagerKey.set(ctor, managerName);
         (ManagerNames as any)[managerName] = managerName;
-        
+
         console.log(`Manager registered: ${managerName}`);
     };
 }
@@ -209,11 +176,11 @@ export function getManagerKey(ctor: Function): string | undefined {
 export function view(name?: string) {
     return function (ctor: Function) {
         const viewName = name || ctor.name;
-        
+
         // 注册到映射表
         viewRegistry.set(viewName, ctor);
         (ViewNames as any)[viewName] = viewName;
-        
+
         console.log(`View registered: ${viewName}`);
     };
 }
@@ -240,6 +207,7 @@ export function getViewClass<T>(viewKey: string): new () => T {
     return viewClass as new () => T;
 }
 
+
 // ============================================================================
 // 自动注册
 // ============================================================================
@@ -261,12 +229,12 @@ export function autoRegister(core: ICore) {
     // 注册所有 Model
     ctorToModelKey.forEach((modelKey, ctor) => {
         console.log(`${ctor.name} initialize`);
-        core.regModel(modelKey);
+        core.regModel(modelKey as keyof ModelNamesType);
     });
-    
+
     // 注册所有 Manager
     ctorToManagerKey.forEach((managerKey, ctor) => {
         console.log(`${ctor.name} initialize`);
-        core.regManager(managerKey);
+        core.regManager(managerKey as keyof ManagerNamesType);
     });
 }

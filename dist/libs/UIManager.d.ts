@@ -1,11 +1,12 @@
 import { Component } from "cc";
 import { IUIManager, IView } from "../core";
+import { ViewNamesType } from "../core";
 type ICocosView = IView & Component;
 declare abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined;
-    open(viewKey: string, args?: any): Promise<IView>;
-    close(viewKey: string | IView, destory?: boolean): void;
-    openAndPush(viewKey: string, group: string, args?: any): Promise<IView>;
+    open<T extends keyof ViewNamesType>(viewKey: T, args?: any): Promise<IView>;
+    close<T extends keyof ViewNamesType>(viewKey: T | IView, destory?: boolean): void;
+    openAndPush<T extends keyof ViewNamesType>(viewKey: T, group: string, args?: any): Promise<IView>;
     closeAndPop(group: string, destroy?: boolean): void;
     clearStack(group: string, destroy?: boolean): void;
     protected abstract internalOpen(viewKey: string, args?: any): Promise<ICocosView>;

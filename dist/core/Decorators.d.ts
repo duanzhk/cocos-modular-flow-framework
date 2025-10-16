@@ -1,33 +1,4 @@
-import { ICore } from "./Api";
-/**
- * ModelNames 接口（由业务层扩展以提供代码补全和类型推断）
- * @example
- * ```typescript
- * // 在 .d.ts 文件中扩展
- * interface ModelNamesType {
- *     readonly User: 'User';
- * }
- * ```
- */
-export interface ModelNamesType extends Record<string, string> {
-}
-/**
- * ManagerNames 接口（由业务层扩展以提供代码补全和类型推断）
- * @example
- * ```typescript
- * // 在 .d.ts 文件中扩展
- * interface ManagerNamesType {
- *     readonly Home: 'Home';
- * }
- * ```
- */
-export interface ManagerNamesType extends Record<string, string> {
-}
-/**
- * ViewNames 接口（由业务层扩展以提供代码补全和类型推断）
- */
-export interface ViewNamesType extends Record<string, string> {
-}
+import { ICore, ModelNamesType, ManagerNamesType, ViewNamesType } from "./Api";
 /** Model 名称常量对象，用于代码补全和类型推断 */
 export declare const ModelNames: ModelNamesType;
 /** Manager 名称常量对象，用于代码补全和类型推断 */

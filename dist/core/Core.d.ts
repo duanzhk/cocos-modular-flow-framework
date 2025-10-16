@@ -1,9 +1,9 @@
-import { ICore, IManager } from "./Api";
+import { ICore, IManager, ModelNamesType, ManagerNamesType } from "./Api";
 export declare abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     private readonly container;
     constructor();
     protected abstract initialize(): void;
-    regModel(modelKey: string): void;
+    regModel<T extends keyof ModelNamesType>(modelKey: T): void;
     /**
      * 获取 Model 实例
      * @param modelKey Model 的 Key，使用 ModelNames.XXX
@@ -14,8 +14,8 @@ export declare abstract class AbstractCore<T extends AbstractCore<T>> implements
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel(modelKey: string): any;
-    regManager(managerKey: string): void;
+    getModel<T extends keyof ModelNamesType>(modelKey: T): any;
+    regManager<T extends keyof ManagerNamesType>(managerKey: T): void;
     /**
      * 获取 Manager 实例
      * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
@@ -26,7 +26,7 @@ export declare abstract class AbstractCore<T extends AbstractCore<T>> implements
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager(managerKey: string): any;
+    getManager<T extends keyof ManagerNamesType>(managerKey: T): any;
 }
 export declare abstract class AbstractManager implements IManager {
     abstract initialize(): void;
@@ -36,11 +36,11 @@ export declare abstract class AbstractManager implements IManager {
      * @param modelKey Model 的 Key，使用 ModelNames.XXX
      * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getModel(modelKey: string): any;
+    protected getModel<T extends keyof ModelNamesType>(modelKey: T): any;
     /**
      * 获取 Manager 实例
      * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
      * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
      */
-    protected getManager(managerKey: string): any;
+    protected getManager<T extends keyof ManagerNamesType>(managerKey: T): any;
 }

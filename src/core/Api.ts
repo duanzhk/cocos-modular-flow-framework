@@ -1,4 +1,38 @@
 // ============================================================================
+// 类型定义（由业务层通过 .d.ts 扩展）
+// ============================================================================
+
+/**
+ * ModelNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ModelNamesType {
+ *     readonly User: 'User';
+ * }
+ * ```
+ */
+export interface ModelNamesType extends Record<string, string> {}
+
+/**
+ * ManagerNames 接口（由业务层扩展以提供代码补全和类型推断）
+ * @example
+ * ```typescript
+ * // 在 .d.ts 文件中扩展
+ * interface ManagerNamesType {
+ *     readonly Home: 'Home';
+ * }
+ * ```
+ */
+export interface ManagerNamesType extends Record<string, string> {}
+
+/** 
+ * ViewNames 接口（由业务层扩展以提供代码补全和类型推断）
+ */
+export interface ViewNamesType extends Record<string, string> {}
+
+
+// ============================================================================
 // 核心接口定义
 // ============================================================================
 
@@ -9,7 +43,7 @@
  */
 export interface ICore {
     /** 注册 Model - 通过 Key 自动实例化 */
-    regModel(modelKey: string): void;
+    regModel<T extends keyof ModelNamesType>(modelKey: T): void;
     
     /** 
      * 获取 Model 实例
@@ -21,10 +55,10 @@ export interface ICore {
      * const userModel = core.getModel(ModelNames.User);
      * ```
      */
-    getModel(modelKey: string): any;
+    getModel<T extends keyof ModelNamesType>(modelKey: T): any;
 
     /** 注册 Manager - 通过 Key 自动实例化 */
-    regManager(managerKey: string): void;
+    regManager<T extends keyof ManagerNamesType>(managerKey: T): void;
     
     /** 
      * 获取 Manager 实例
@@ -36,7 +70,7 @@ export interface ICore {
      * const gameManager = core.getManager(ManagerNames.Game);
      * ```
      */
-    getManager(managerKey: string): any;
+    getManager<T extends keyof ManagerNamesType>(managerKey: T): any;
 }
 
 /**
@@ -82,11 +116,11 @@ export interface IView {
  */
 export interface IUIManager {
     /** 打开视图 */
-    open(viewKey: string, args?: any): Promise<IView>;
+    open<T extends keyof ViewNamesType>(viewKey: T, args?: any): Promise<IView>;
     /** 关闭视图 */
-    close(viewKey: string | IView, destory?: boolean): void;
+    close<T extends keyof ViewNamesType>(viewKey: T | IView, destory?: boolean): void;
     /** 打开视图并入栈 */
-    openAndPush(viewKey: string, group: string, args?: any): Promise<IView>;
+    openAndPush<T extends keyof ViewNamesType>(viewKey: T, group: string, args?: any): Promise<IView>;
     /** 关闭栈顶视图并弹出 */
     closeAndPop(group: string, destroy?: boolean): void;
     /** 获取栈顶视图 */
