@@ -60,14 +60,17 @@ class CcocosUIManager {
     getTopView() {
         return this.internalGetTopView();
     }
-    open(viewKey, args) {
-        return this.internalOpen(viewKey, args);
+    open(viewClass, args) {
+        const className = viewClass.name;
+        return this.internalOpen(className, args);
     }
-    close(viewKey, destory) {
-        this.internalClose(viewKey, destory);
+    close(viewClass) {
+        const className = viewClass.name;
+        this.internalClose(className);
     }
-    openAndPush(viewKey, group, args) {
-        return this.internalOpenAndPush(viewKey, group, args);
+    openAndPush(viewClass, group, args) {
+        const className = viewClass.name;
+        return this.internalOpenAndPush(className, group, args);
     }
     closeAndPop(group, destroy) {
         this.internalCloseAndPop(group, destroy);
@@ -88,7 +91,8 @@ class UIManager extends CcocosUIManager {
                     this.closeAndPop(view.__group__, false);
                 }
                 else {
-                    this.close(view, false);
+                    // 对于直接关闭视图，我们需要通过内部方法处理
+                    this.internalClose(view, false);
                 }
             }
         });

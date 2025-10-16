@@ -1,6 +1,5 @@
 import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab } from "cc";
 import { ICocosResManager, IUIManager, IView, ServiceLocator, getViewClass } from "../core";
-import { ViewNamesType } from "../core";
 
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
@@ -65,14 +64,17 @@ abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
         return this.internalGetTopView();
     }
-    open(viewKey: keyof ViewNamesType, args?: any): Promise<IView> {
-        return this.internalOpen(viewKey as string, args);
+    open<T extends keyof UIRegistry>(viewClass: T, args?: any): Promise<InstanceType<UIRegistry[T]>> {
+        const className = (viewClass as any).name;
+        return this.internalOpen(className, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
-    close(viewKey: keyof ViewNamesType | IView, destory?: boolean): void {
-        this.internalClose(viewKey as string | IView, destory);
+    close<T extends keyof UIRegistry>(viewClass: T): void {
+        const className = (viewClass as any).name;
+        this.internalClose(className);
     }
-    openAndPush(viewKey: keyof ViewNamesType, group: string, args?: any): Promise<IView> {
-        return this.internalOpenAndPush(viewKey as string, group, args);
+    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: any): Promise<InstanceType<UIRegistry[T]>> {
+        const className = (viewClass as any).name;
+        return this.internalOpenAndPush(className, group, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
     closeAndPop(group: string, destroy?: boolean): void {
         this.internalCloseAndPop(group, destroy);
@@ -101,7 +103,8 @@ export class UIManager extends CcocosUIManager {
                 if (view.__group__ != undefined) {
                     this.closeAndPop(view.__group__ as string, false);
                 } else {
-                    this.close(view, false);
+                    // 对于直接关闭视图，我们需要通过内部方法处理
+                    this.internalClose(view, false);
                 }
             }
         });

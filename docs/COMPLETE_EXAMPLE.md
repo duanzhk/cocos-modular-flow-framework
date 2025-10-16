@@ -19,7 +19,7 @@ assets/
 │   │   ├── GameView.ts          # 游戏界面
 │   │   └── ResultView.ts        # 结算界面
 │   └── types/
-│       └── core-types.d.ts      # 类型映射
+│       └── api-type-hints.d.ts      # API提示文件
 └── resources/
     └── prefabs/
         └── ui/
@@ -564,7 +564,7 @@ export class ResultView extends BaseView {
 
 ## 类型映射
 
-### types/core-types.d.ts
+### types/api-type-hints.d.ts
 
 ```typescript
 import { GameModel } from '../models/GameModel';

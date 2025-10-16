@@ -1,18 +1,4 @@
-import { ICore, ModelNamesType, ManagerNamesType, ViewNamesType } from "./Api";
-
-
-// ============================================================================
-// Key 注册系统 - Names 对象（提供代码补全和类型推断）
-// ============================================================================
-
-/** Model 名称常量对象，用于代码补全和类型推断 */
-export const ModelNames = {} as ModelNamesType;
-
-/** Manager 名称常量对象，用于代码补全和类型推断 */
-export const ManagerNames = {} as ManagerNamesType;
-
-/** View 名称常量对象，用于代码补全和类型推断 */
-export const ViewNames = {} as ViewNamesType;
+import { ICore } from "./Api";
 
 // ============================================================================
 // 内部注册表
@@ -20,11 +6,9 @@ export const ViewNames = {} as ViewNamesType;
 
 // Model 注册表
 const modelRegistry = new Map<string, Function>();    // Key → 类
-const ctorToModelKey = new Map<Function, string>();   // 类 → Key
 
 // Manager 注册表
 const managerRegistry = new Map<string, Function>();  // Key → 类
-const ctorToManagerKey = new Map<Function, string>(); // 类 → Key
 
 // View 注册表
 const viewRegistry = new Map<string, Function>();     // Key → 类
@@ -44,7 +28,7 @@ const viewRegistry = new Map<string, Function>();     // Key → 类
  * }
  * 
  * // 使用
- * const user = mf.core.getModel(ModelNames.User);
+ * const user = mf.core.getModel(UserModel);
  * ```
  */
 export function model(name?: string) {
@@ -53,8 +37,6 @@ export function model(name?: string) {
 
         // 注册到映射表
         modelRegistry.set(modelName, ctor);
-        ctorToModelKey.set(ctor, modelName);
-        (ModelNames as any)[modelName] = modelName;
 
         console.log(`Model registered: ${modelName}`);
     };
@@ -65,7 +47,7 @@ export function model(name?: string) {
  * @returns Model 名称数组
  */
 export function getRegisteredModelNames(): string[] {
-    return Object.keys(ModelNames);
+    return Array.from(modelRegistry.keys());
 }
 
 /**
@@ -82,15 +64,6 @@ export function getModelClass<T>(modelKey: string): new () => T {
     return modelClass as new () => T;
 }
 
-/**
- * 通过类构造函数获取 Model 的 Key
- * @param ctor Model 类构造函数
- * @returns Model 的 Key
- * @internal 内部使用
- */
-export function getModelKey(ctor: Function): string | undefined {
-    return ctorToModelKey.get(ctor);
-}
 
 // ============================================================================
 // Manager 装饰器
@@ -113,8 +86,6 @@ export function manager(name?: string) {
 
         // 注册到映射表
         managerRegistry.set(managerName, ctor);
-        ctorToManagerKey.set(ctor, managerName);
-        (ManagerNames as any)[managerName] = managerName;
 
         console.log(`Manager registered: ${managerName}`);
     };
@@ -125,7 +96,7 @@ export function manager(name?: string) {
  * @returns Manager 名称数组
  */
 export function getRegisteredManagerNames(): string[] {
-    return Object.keys(ManagerNames);
+    return Array.from(managerRegistry.keys());
 }
 
 /**
@@ -142,15 +113,6 @@ export function getManagerClass<T>(managerKey: string): new () => T {
     return managerClass as new () => T;
 }
 
-/**
- * 通过类构造函数获取 Manager 的 Key
- * @param ctor Manager 类构造函数
- * @returns Manager 的 Key
- * @internal 内部使用
- */
-export function getManagerKey(ctor: Function): string | undefined {
-    return ctorToManagerKey.get(ctor);
-}
 
 // ============================================================================
 // View 装饰器
@@ -170,7 +132,7 @@ export function getManagerKey(ctor: Function): string | undefined {
  * }
  * 
  * // 使用
- * await mf.ui.open(ViewNames.Home);
+ * await mf.ui.open(HomeView);
  * ```
  */
 export function view(name?: string) {
@@ -179,7 +141,6 @@ export function view(name?: string) {
 
         // 注册到映射表
         viewRegistry.set(viewName, ctor);
-        (ViewNames as any)[viewName] = viewName;
 
         console.log(`View registered: ${viewName}`);
     };
@@ -190,7 +151,7 @@ export function view(name?: string) {
  * @returns View 名称数组
  */
 export function getRegisteredViewNames(): string[] {
-    return Object.keys(ViewNames);
+    return Array.from(viewRegistry.keys());
 }
 
 /**
@@ -207,56 +168,3 @@ export function getViewClass<T>(viewKey: string): new () => T {
     return viewClass as new () => T;
 }
 
-
-// ============================================================================
-// 自动注册
-// ============================================================================
-
-/**
- * 自动注册所有使用装饰器标记的 Model 和 Manager
- * @param core Core 实例
- * @param options 注册选项
- * @example
- * ```typescript
- * // 导入所有 Model 和 Manager
- * import '@/models/UserModel';
- * import '@/managers/GameManager';
- * 
- * // 自动注册
- * autoRegister(mf.core);
- * 
- * // 带选项的自动注册
- * autoRegister(mf.core, { 
- *   skipExisting: true,  // 跳过已注册的
- *   verbose: false       // 静默模式
- * });
- * ```
- */
-export function autoRegister(core: ICore, options: {
-    skipExisting?: boolean;
-    verbose?: boolean;
-} = {}) {
-    const { skipExisting = false, verbose = true } = options;
-
-    // 注册所有 Model
-    ctorToModelKey.forEach((modelKey, ctor) => {
-        if (skipExisting && core.hasModel(modelKey as keyof ModelNamesType)) {
-            if (verbose) console.log(`${ctor.name} already registered, skipping`);
-            return;
-        }
-        
-        if (verbose) console.log(`${ctor.name} initialize`);
-        core.regModel(modelKey as keyof ModelNamesType);
-    });
-
-    // 注册所有 Manager
-    ctorToManagerKey.forEach((managerKey, ctor) => {
-        if (skipExisting && core.hasManager(managerKey as keyof ManagerNamesType)) {
-            if (verbose) console.log(`${ctor.name} already registered, skipping`);
-            return;
-        }
-        
-        if (verbose) console.log(`${ctor.name} initialize`);
-        core.regManager(managerKey as keyof ManagerNamesType);
-    });
-}

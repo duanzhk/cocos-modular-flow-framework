@@ -205,7 +205,7 @@ assets/scripts/
 │   ├── MathUtil.ts
 │   └── StringUtil.ts
 └── types/                # 类型定义
-    └── core-types.d.ts
+    └── api-type-hints.d.ts
 ```
 
 ## 代码组织

@@ -9,7 +9,7 @@ your-game-project/
   assets/
     src/
       types/
-        core-types.d.ts          ← 类型映射文件
+        api-type-hints.d.ts          ← 类型映射文件
       models/
         UserModel.ts
         ScoreModel.ts
@@ -25,7 +25,7 @@ your-game-project/
 ## 完整的类型映射文件
 
 ```typescript
-// assets/src/types/core-types.d.ts
+// assets/src/types/api-type-hints.d.ts
 
 // 1. 导入所有需要类型映射的类
 import { HomeMgr } from '../managers/HomeMgr';
@@ -328,7 +328,7 @@ interface ManagerTypeMap {
 
 不要手动维护类型映射文件！使用框架提供的自动生成工具：
 
-**Cocos Creator 编辑器菜单：mflow-tools → generate-types**
+**Cocos Creator 编辑器菜单：mflow-tools → Generate API type hints/生成API类型提示**
 
 工具会自动：
 - ✅ 扫描所有使用 `@manager()`、`@model()`、`@view()` 的类

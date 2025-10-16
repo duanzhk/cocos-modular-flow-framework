@@ -1,6 +1,5 @@
 import { Component } from 'cc';
 import { AbstractCore } from '../core/Core.js';
-import { autoRegister } from '../core/Decorators.js';
 import { ServiceLocator } from '../core/ServiceLocator.js';
 import { UIManager } from './UIManager.js';
 import { ResLoader } from './ResLoader.js';
@@ -20,9 +19,6 @@ class Core extends AbstractCore {
         ServiceLocator.regService('HttpManager', new HttpManager());
         ServiceLocator.regService('WebSocketManager', new WebSocketManager());
         ServiceLocator.regService('RedDotManager', new RedDotManager());
-        // 注册业务模块（通过装饰器自动注册）
-        // 推迟到构造函数执行完毕
-        queueMicrotask(() => autoRegister(this));
     }
 }
 class CocosCore extends Component {

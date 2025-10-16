@@ -33,7 +33,7 @@
         ],
         "messages": {
             "generate-api-type-hints": {
-                "methods": ["onGenerateTypesMapping"]
+                "methods": ["onGenerateApiHints"]
             }
         }
     }

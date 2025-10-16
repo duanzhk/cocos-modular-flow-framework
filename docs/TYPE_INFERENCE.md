@@ -51,10 +51,10 @@ gameManager.score;  // ❌ 没有代码补全，类型是 IManager
 
 ### 步骤 1：创建类型映射文件
 
-在项目中创建 `types/core-types.d.ts`：
+在项目中创建 `types/api-type-hints.d.ts`：
 
 ```typescript
-// types/core-types.d.ts
+// types/api-type-hints.d.ts
 import { UserModel } from '../models/UserModel';
 import { GameManager } from '../managers/GameManager';
 import { ModelNames, ManagerNames } from 'dzkcc-mflow/core';
@@ -102,7 +102,7 @@ gameManager.score;  // ✅ 有完整的代码补全
 
 框架提供了自动生成工具，每次新增 Model/Manager 后在编辑器中运行：
 
-**编辑器菜单：mflow-tools -> generate-types**
+**编辑器菜单：mflow-tools -> Generate API type hints/生成API类型提示**
 
 工具会自动：
 - ✅ 扫描 `assets/src/models/` 和 `assets/src/managers/` 目录
@@ -112,7 +112,7 @@ gameManager.score;  // ✅ 有完整的代码补全
 
 ### 方式 2：手动维护
 
-每次新增 Model/Manager 时，手动在 `types/core-types.d.ts` 中添加：
+每次新增 Model/Manager 时，手动在 `types/api-type-hints.d.ts` 中添加：
 
 ```typescript
 // 1. 添加 import
@@ -134,7 +134,7 @@ declare module 'dzkcc-mflow/core' {
 - 修改装饰器名称时
 - 重构项目结构时
 
-在编辑器中使用 **mflow-tools -> generate-types** 重新生成，确保类型映射始终是最新的。
+在编辑器中使用 **mflow-tools -> Generate API type hints/生成API类型提示** 重新生成，确保类型映射始终是最新的。
 
 ## 常见问题
 
@@ -162,14 +162,14 @@ const model = mf.core.getModel(ModelNames.New);
 // model 类型是 IModel（基础接口），没有具体类的代码补全
 ```
 
-**解决方案：** 在编辑器中运行 **mflow-tools -> generate-types** 补充映射。
+**解决方案：** 在编辑器中运行 **mflow-tools -> Generate API type hints/生成API类型提示** 补充映射。
 
 ### Q: 为什么没有代码补全？
 
 **检查清单：**
 
 1. **是否创建了类型映射文件？**
-   在编辑器中运行 **mflow-tools -> generate-types** 生成类型映射文件
+   在编辑器中运行 **mflow-tools -> Generate API type hints/生成API类型提示** 生成类型映射文件
 
 2. **是否重启了 TS 语言服务？**
    - VS Code: `Cmd+Shift+P` → "Restart TS Server"
@@ -266,10 +266,10 @@ export class GameView extends BaseView {
 ### 对于新项目
 
 1. **初始化时运行一次**
-   在编辑器中运行 **mflow-tools -> generate-types**
+   在编辑器中运行 **mflow-tools -> Generate API type hints/生成API类型提示**
 
 2. **每次新增 Model/Manager 后运行**
-   在编辑器中运行 **mflow-tools -> generate-types**
+   在编辑器中运行 **mflow-tools -> Generate API type hints/生成API类型提示**
 
 3. **保持更新**
    确保在新增或修改 Model/Manager 后及时重新生成类型映射
@@ -277,11 +277,11 @@ export class GameView extends BaseView {
 ### 对于现有项目
 
 1. **运行一次生成全部**
-   在编辑器中运行 **mflow-tools -> generate-types** 自动扫描并生成所有映射
+   在编辑器中运行 **mflow-tools -> Generate API type hints/生成API类型提示** 自动扫描并生成所有映射
 
 2. **提交到 Git**
    ```bash
-   git add types/core-types.d.ts
+   git add types/api-type-hints.d.ts
    git commit -m "feat: add type map"
    ```
 

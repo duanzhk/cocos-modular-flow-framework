@@ -176,7 +176,7 @@ homeMgr.start();  // ✅ 类型安全
 
 ### Q: 新增 Model/Manager 后类型推断不生效
 
-**A:** 每次新增或修改装饰器后，需要重新运行类型生成工具（编辑器菜单：mflow-tools -> generate-types）
+**A:** 每次新增或修改装饰器后，需要重新运行类型生成工具（编辑器菜单：mflow-tools -> Generate API type hints/生成API类型提示）
 
 ### Q: 可以配置多个目录吗？
 

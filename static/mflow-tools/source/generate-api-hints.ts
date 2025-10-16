@@ -1,6 +1,6 @@
 /**
- * @en Generate type map file for the classes decorated with @model(), @manager() or @view()
- * @zh 为被装饰器装饰(@model()、@manager()或@view())的类生成类型映射文件，实现完整的类型推断支持。
+ * @en Generate global type declarations for the classes decorated with @model(), @manager() or @view()
+ * @zh 为被装饰器装饰(@model()、@manager()或@view())的类生成全局类型声明，实现基于泛型约束的类型推断。
  */
 
 import * as fs from 'fs';
@@ -116,13 +116,13 @@ function parseFile(filePath: string): ParsedItem | null {
     return null;
 }
 
-// 生成类型映射代码
-function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: ParsedItem[], config: TypeGenConfig): string {
+// 生成全局类型声明代码
+function generateGlobalTypeMap(models: ParsedItem[], managers: ParsedItem[], views: ParsedItem[], config: TypeGenConfig): string {
     const lines: string[] = [];
 
     // 文件头注释
     lines.push('/**');
-    lines.push(' * 自动生成的类型映射文件');
+    lines.push(' * 自动生成的全局类型声明文件');
     lines.push(' * ⚠️ 请勿手动修改此文件！');
     lines.push(' * 重新生成：在 Cocos Creator 编辑器中运行 mflow-tools -> Generate API type hints/生成API类型提示');
     lines.push(' */');
@@ -167,119 +167,49 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: Pa
         lines.push('');
     }
 
-    // 导入 Names（用于函数重载）
-    const needModelNames = models.length > 0;
-    const needManagerNames = managers.length > 0;
-    const needViewNames = views.length > 0;
-    if (needModelNames || needManagerNames || needViewNames) {
-        const imports: string[] = [];
-        if (needModelNames) imports.push('ModelNames');
-        if (needManagerNames) imports.push('ManagerNames');
-        if (needViewNames) imports.push('ViewNames', 'IView');
-        lines.push(`import type { ${imports.join(', ')} } from '${config.moduleImportPath}';`);
-        lines.push('');
-    }
-
-    // 声明模块
-    lines.push(`declare module '${config.moduleImportPath}' {`);
-
-    // 扩展 NamesType 接口，将每个属性定义为字符串字面量类型
+    // 全局类型声明
+    lines.push('declare global {');
+    
+    // Model 注册表
     if (models.length > 0) {
-        lines.push('    // 扩展 ModelNamesType，将每个属性定义为字符串字面量');
-        lines.push('    interface ModelNamesType {');
+        lines.push('    /**');
+        lines.push('     * Model 注册表 - 全局类型声明');
+        lines.push('     * 用于 getModel<ModelClass>() 的类型推断');
+        lines.push('     */');
+        lines.push('    interface ModelRegistry {');
         for (const model of models) {
-            lines.push(`        readonly ${model.decoratorName}: '${model.decoratorName}';`);
+            lines.push(`        ${model.className}: typeof ${model.className};`);
         }
         lines.push('    }');
         lines.push('');
     }
 
+    // Manager 注册表
     if (managers.length > 0) {
-        lines.push('    // 扩展 ManagerNamesType，将每个属性定义为字符串字面量');
-        lines.push('    interface ManagerNamesType {');
+        lines.push('    /**');
+        lines.push('     * Manager 注册表 - 全局类型声明');
+        lines.push('     * 用于 getManager<ManagerClass>() 的类型推断');
+        lines.push('     */');
+        lines.push('    interface ManagerRegistry {');
         for (const manager of managers) {
-            lines.push(`        readonly ${manager.decoratorName}: '${manager.decoratorName}';`);
+            lines.push(`        ${manager.className}: typeof ${manager.className};`);
         }
         lines.push('    }');
         lines.push('');
     }
 
+    // UI 注册表
     if (views.length > 0) {
-        lines.push('    // 扩展 ViewNamesType，将每个属性定义为字符串字面量');
-        lines.push('    interface ViewNamesType {');
+        lines.push('    /**');
+        lines.push('     * UI 注册表 - 全局类型声明');
+        lines.push('     * 用于 open<UIClass>() 的类型推断');
+        lines.push('     */');
+        lines.push('    interface UIRegistry {');
         for (const view of views) {
-            lines.push(`        readonly ${view.decoratorName}: '${view.decoratorName}';`);
+            lines.push(`        ${view.className}: typeof ${view.className};`);
         }
         lines.push('    }');
         lines.push('');
-    }
-
-    // 生成严格的字符串字面量联合类型
-    if (models.length > 0) {
-        const modelKeys = models.map(m => `'${m.decoratorName}'`).join(' | ');
-        lines.push('    // 严格的 Model 键类型');
-        lines.push(`    type ModelKey = ${modelKeys};`);
-        lines.push('');
-    }
-
-    if (managers.length > 0) {
-        const managerKeys = managers.map(m => `'${m.decoratorName}'`).join(' | ');
-        lines.push('    // 严格的 Manager 键类型');
-        lines.push(`    type ManagerKey = ${managerKeys};`);
-        lines.push('');
-    }
-
-    if (views.length > 0) {
-        const viewKeys = views.map(v => `'${v.decoratorName}'`).join(' | ');
-        lines.push('    // 严格的 View 键类型');
-        lines.push(`    type ViewKey = ${viewKeys};`);
-        lines.push('');
-    }
-
-    // ICore 接口扩展（使用函数重载提供精确的类型推断）
-    if (models.length > 0 || managers.length > 0) {
-        lines.push('    // 扩展 ICore 接口，添加精确的类型重载');
-        lines.push('    interface ICore {');
-
-        // 为每个 Model 添加 getModel 重载
-        if (models.length > 0) {
-            for (const model of models) {
-                lines.push(`        getModel(modelKey: '${model.decoratorName}'): ${model.className};`);
-            }
-        }
-
-        // 为每个 Manager 添加 getManager 重载
-        if (managers.length > 0) {
-            for (const manager of managers) {
-                lines.push(`        getManager(managerKey: '${manager.decoratorName}'): ${manager.className};`);
-            }
-        }
-
-        lines.push('    }');
-        lines.push('');
-    }
-
-    // IUIManager 接口扩展（为 View 提供类型推断）
-    if (views.length > 0) {
-        lines.push('    // 扩展 IUIManager 接口，添加 View 类型重载');
-        lines.push('    interface IUIManager {');
-
-        // 为每个 View 添加 open 重载
-        for (const view of views) {
-            lines.push(`        open(viewKey: '${view.decoratorName}', args?: any): Promise<${view.className}>;`);
-        }
-
-        // 为每个 View 添加 openAndPush 重载
-        for (const view of views) {
-            lines.push(`        openAndPush(viewKey: '${view.decoratorName}', group: string, args?: any): Promise<${view.className}>;`);
-        }
-
-        // 为每个 View 添加 close 重载
-        for (const view of views) {
-            lines.push(`        close(viewKey: '${view.decoratorName}' | IView, destory?: boolean): void;`);
-        }
-
-        lines.push('    }');
     }
 
     lines.push('}');
@@ -289,9 +219,9 @@ function generateTypeMap(models: ParsedItem[], managers: ParsedItem[], views: Pa
 }
 
 // 主函数
-export function generateTypes(config: TypeGenConfig): { success: boolean; message: string } {
+export function generateGlobalTypes(config: TypeGenConfig): { success: boolean; message: string } {
     try {
-        console.log('🚀 开始生成类型映射文件...\n');
+        console.log('🚀 开始生成全局类型声明文件...\n');
 
         // 扫描 Model 目录
         console.log(`📂 扫描 Model 目录: ${config.modelDir}`);
@@ -324,8 +254,8 @@ export function generateTypes(config: TypeGenConfig): { success: boolean; messag
             };
         }
 
-        // 生成类型映射
-        const content = generateTypeMap(models, managers, views, config);
+        // 生成全局类型声明
+        const content = generateGlobalTypeMap(models, managers, views, config);
 
         // 确保输出目录存在
         const outputDir = path.dirname(config.outputFile);
@@ -336,21 +266,23 @@ export function generateTypes(config: TypeGenConfig): { success: boolean; messag
         // 写入文件
         fs.writeFileSync(config.outputFile, content, 'utf-8');
 
-        let message = `✅ 类型映射文件已生成: ${config.outputFile}\n\n`;
+        let message = `✅ 全局类型声明文件已生成: ${config.outputFile}\n\n`;
         message += '📋 生成的映射:\n';
         if (models.length > 0) {
             message += '   Models:\n';
-            models.forEach(m => message += `     - ${m.decoratorName} → ${m.className}\n`);
+            models.forEach(m => message += `     - ${m.className} (${m.decoratorName})\n`);
         }
         if (managers.length > 0) {
             message += '   Managers:\n';
-            managers.forEach(m => message += `     - ${m.decoratorName} → ${m.className}\n`);
+            managers.forEach(m => message += `     - ${m.className} (${m.decoratorName})\n`);
         }
         if (views.length > 0) {
             message += '   Views:\n';
-            views.forEach(v => message += `     - ${v.decoratorName} → ${v.className}\n`);
+            views.forEach(v => message += `     - ${v.className} (${v.decoratorName})\n`);
         }
-        message += '\n🎉 完成！';
+        message += '\n🎉 完成！现在可以使用泛型语法：';
+        message += '\n   mf.core.getManager(ManagerClass)';
+        message += '\n   mf.uiManager.open(UIClass)';
 
         console.log(message);
         return { success: true, message };
@@ -397,7 +329,7 @@ function loadConfigFromProject(projectPath: string): TypeGenConfig | null {
 }
 
 // 编辑器扩展入口
-export async function onGenerateTypes() {
+export async function onGenerateApiHints() {
     try {
         // 获取项目路径
         const projectPath = Editor.Project.path;
@@ -411,26 +343,25 @@ export async function onGenerateTypes() {
 
         console.log('使用配置:', config);
 
-        // 生成类型映射
-        const result = generateTypes(config);
+        // 生成全局类型声明
+        const result = generateGlobalTypes(config);
 
         if (result.success) {
-            await Editor.Dialog.info('类型映射生成成功！', {
+            await Editor.Dialog.info('全局类型声明生成成功！', {
                 detail: result.message,
                 buttons: ['确定']
             });
         } else {
-            await Editor.Dialog.warn('类型映射生成失败', {
+            await Editor.Dialog.warn('全局类型声明生成失败', {
                 detail: result.message,
                 buttons: ['确定']
             });
         }
     } catch (error) {
-        console.error('生成类型映射失败:', error);
-        await Editor.Dialog.error('生成类型映射失败', {
+        console.error('生成全局类型声明失败:', error);
+        await Editor.Dialog.error('生成全局类型声明失败', {
             detail: error instanceof Error ? error.message : String(error),
             buttons: ['确定']
         });
     }
 }
-

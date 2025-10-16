@@ -1,6 +1,6 @@
-import { ICore, IManager, ModelNamesType, ManagerNamesType } from "./Api";
+import { ICore, IManager } from "./Api";
 import { ServiceLocator } from "./ServiceLocator";
-import { getModelClass, getManagerClass} from "./Decorators";
+import { getModelClass, getManagerClass } from "./Decorators";
 
 class Container {
     private key2ins = new Map<string, any>();
@@ -28,68 +28,56 @@ export abstract class AbstractCore<T extends AbstractCore<T>> implements ICore {
     // 初始化抽象方法
     protected abstract initialize(): void;
 
-    // 注册与获取模型
-    regModel(modelKey: keyof ModelNamesType): void {
-        const modelKeyStr = modelKey as string;
-        const ModelClass = getModelClass<any>(modelKeyStr);
-        const model = new ModelClass();
-        this.container.reg(modelKeyStr, model);
-        model.initialize();
-    }
-
     /**
      * 获取 Model 实例
-     * @param modelKey Model 的 Key，使用 ModelNames.XXX
-     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param modelClass Model 类构造函数
+     * @returns Model 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const userModel = core.getModel(ModelNames.User);
+     * const userModel = core.getModel(UserModel);
      * ```
      */
-    getModel(modelKey: keyof ModelNamesType): any {
-        return this.container.get(modelKey as string);
-    }
-
-    // 注册与获取管理器
-    regManager(managerKey: keyof ManagerNamesType): void {
-        const managerKeyStr = managerKey as string;
-        const ManagerClass = getManagerClass<any>(managerKeyStr);
-        const manager = new ManagerClass();
-        this.container.reg(managerKeyStr, manager);
-        manager.initialize();
+    getModel<T extends keyof ModelRegistry>(modelClass: T): InstanceType<ModelRegistry[T]> {
+        const className = (modelClass as any).name;
+        
+        // 如果已存在实例，直接返回
+        if (this.container.has(className)) {
+            return this.container.get(className);
+        }
+        
+        // 创建新实例
+        const ModelClass = getModelClass<any>(className);
+        const instance = new ModelClass();
+        this.container.reg(className, instance);
+        instance.initialize();
+        
+        return instance;
     }
 
     /**
      * 获取 Manager 实例
-     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
-     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param managerClass Manager 类构造函数
+     * @returns Manager 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const gameManager = core.getManager(ManagerNames.Game);
+     * const gameManager = core.getManager(GameManager);
      * ```
      */
-    getManager(managerKey: keyof ManagerNamesType): any {
-        return this.container.get(managerKey as string);
-    }
-
-    /**
-     * 检查 Model 是否已注册
-     * @param modelKey Model 的 Key
-     * @returns 是否已注册
-     */
-    hasModel(modelKey: keyof ModelNamesType): boolean {
-        return this.container.has(modelKey as string);
-    }
-
-    /**
-     * 检查 Manager 是否已注册
-     * @param managerKey Manager 的 Key
-     * @returns 是否已注册
-     */
-    hasManager(managerKey: keyof ManagerNamesType): boolean {
-        return this.container.has(managerKey as string);
+    getManager<T extends keyof ManagerRegistry>(managerClass: T): InstanceType<ManagerRegistry[T]> {
+        const className = (managerClass as any).name;
+        
+        // 如果已存在实例，直接返回
+        if (this.container.has(className)) {
+            return this.container.get(className);
+        }
+        
+        // 创建新实例
+        const ManagerClass = getManagerClass<any>(className);
+        const instance = new ManagerClass();
+        this.container.reg(className, instance);
+        instance.initialize();
+        
+        return instance;
     }
 }
 
@@ -101,21 +89,21 @@ export abstract class AbstractManager implements IManager {
 
     /**
      * 获取 Model 实例
-     * @param modelKey Model 的 Key，使用 ModelNames.XXX
-     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param modelClass Model 类构造函数
+     * @returns Model 实例（类型由泛型参数推断）
      */
-    protected getModel(modelKey: keyof ModelNamesType): any {
+    protected getModel<T extends keyof ModelRegistry>(modelClass: T): InstanceType<ModelRegistry[T]> {
         // 保持框架独立性，不与具体应用入口(app类)耦合
         // 框架高内聚，使用ServiceLocator获取core
-        return ServiceLocator.getService<ICore>('core').getModel(modelKey);
+        return ServiceLocator.getService<ICore>('core').getModel(modelClass);
     }
 
     /**
      * 获取 Manager 实例
-     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
-     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param managerClass Manager 类构造函数
+     * @returns Manager 实例（类型由泛型参数推断）
      */
-    protected getManager(managerKey: keyof ManagerNamesType): any {
-        return ServiceLocator.getService<ICore>('core').getManager(managerKey);
+    protected getManager<T extends keyof ManagerRegistry>(managerClass: T): InstanceType<ManagerRegistry[T]> {
+        return ServiceLocator.getService<ICore>('core').getManager(managerClass);
     }
 }

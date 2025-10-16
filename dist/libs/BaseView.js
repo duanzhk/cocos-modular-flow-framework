@@ -71,29 +71,27 @@ class BaseView extends Component {
     }
     /**
      * 获取 Model 实例
-     * @param modelKey Model 的 Key，使用 ModelNames.XXX
-     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param modelClass Model 类构造函数
+     * @returns Model 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const userModel = this.getModel(ModelNames.User);
+     * const userModel = this.getModel(UserModel);
      * ```
      */
-    getModel(modelKey) {
-        return mf.core.getModel(modelKey);
+    getModel(modelClass) {
+        return mf.core.getModel(modelClass);
     }
     /**
      * 获取 Manager 实例
-     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
-     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param managerClass Manager 类构造函数
+     * @returns Manager 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const gameManager = this.getManager(ManagerNames.Game);
+     * const gameManager = this.getManager(GameManager);
      * ```
      */
-    getManager(managerKey) {
-        return mf.core.getManager(managerKey);
+    getManager(managerClass) {
+        return mf.core.getManager(managerClass);
     }
 }
 

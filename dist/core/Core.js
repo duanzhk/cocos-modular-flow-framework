@@ -23,63 +23,49 @@ class AbstractCore {
         this.container = new Container();
         this.initialize();
     }
-    // 注册与获取模型
-    regModel(modelKey) {
-        const modelKeyStr = modelKey;
-        const ModelClass = getModelClass(modelKeyStr);
-        const model = new ModelClass();
-        this.container.reg(modelKeyStr, model);
-        model.initialize();
-    }
     /**
      * 获取 Model 实例
-     * @param modelKey Model 的 Key，使用 ModelNames.XXX
-     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param modelClass Model 类构造函数
+     * @returns Model 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const userModel = core.getModel(ModelNames.User);
+     * const userModel = core.getModel(UserModel);
      * ```
      */
-    getModel(modelKey) {
-        return this.container.get(modelKey);
-    }
-    // 注册与获取管理器
-    regManager(managerKey) {
-        const managerKeyStr = managerKey;
-        const ManagerClass = getManagerClass(managerKeyStr);
-        const manager = new ManagerClass();
-        this.container.reg(managerKeyStr, manager);
-        manager.initialize();
+    getModel(modelClass) {
+        const className = modelClass.name;
+        // 如果已存在实例，直接返回
+        if (this.container.has(className)) {
+            return this.container.get(className);
+        }
+        // 创建新实例
+        const ModelClass = getModelClass(className);
+        const instance = new ModelClass();
+        this.container.reg(className, instance);
+        instance.initialize();
+        return instance;
     }
     /**
      * 获取 Manager 实例
-     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
-     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param managerClass Manager 类构造函数
+     * @returns Manager 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const gameManager = core.getManager(ManagerNames.Game);
+     * const gameManager = core.getManager(GameManager);
      * ```
      */
-    getManager(managerKey) {
-        return this.container.get(managerKey);
-    }
-    /**
-     * 检查 Model 是否已注册
-     * @param modelKey Model 的 Key
-     * @returns 是否已注册
-     */
-    hasModel(modelKey) {
-        return this.container.has(modelKey);
-    }
-    /**
-     * 检查 Manager 是否已注册
-     * @param managerKey Manager 的 Key
-     * @returns 是否已注册
-     */
-    hasManager(managerKey) {
-        return this.container.has(managerKey);
+    getManager(managerClass) {
+        const className = managerClass.name;
+        // 如果已存在实例，直接返回
+        if (this.container.has(className)) {
+            return this.container.get(className);
+        }
+        // 创建新实例
+        const ManagerClass = getManagerClass(className);
+        const instance = new ManagerClass();
+        this.container.reg(className, instance);
+        instance.initialize();
+        return instance;
     }
 }
 class AbstractManager {
@@ -87,21 +73,21 @@ class AbstractManager {
     }
     /**
      * 获取 Model 实例
-     * @param modelKey Model 的 Key，使用 ModelNames.XXX
-     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param modelClass Model 类构造函数
+     * @returns Model 实例（类型由泛型参数推断）
      */
-    getModel(modelKey) {
+    getModel(modelClass) {
         // 保持框架独立性，不与具体应用入口(app类)耦合
         // 框架高内聚，使用ServiceLocator获取core
-        return ServiceLocator.getService('core').getModel(modelKey);
+        return ServiceLocator.getService('core').getModel(modelClass);
     }
     /**
      * 获取 Manager 实例
-     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
-     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param managerClass Manager 类构造函数
+     * @returns Manager 实例（类型由泛型参数推断）
      */
-    getManager(managerKey) {
-        return ServiceLocator.getService('core').getManager(managerKey);
+    getManager(managerClass) {
+        return ServiceLocator.getService('core').getManager(managerClass);
     }
 }
 

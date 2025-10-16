@@ -168,7 +168,7 @@ mf.reddot.on('main/bag', (totalCount) => {
 
 ```typescript
 // 只需要一次性配置类型映射
-// types/core-types.d.ts
+// types/api-type-hints.d.ts
 declare module 'dzkcc-mflow/core' {
     interface ModelTypeMap {
         [ModelNames.User]: UserModel;
@@ -184,7 +184,7 @@ userModel.name;  // ✅ 有完整的代码补全
 
 框架提供了自动类型生成工具，在 Cocos Creator 编辑器中使用：
 
-**编辑器菜单**：**mflow-tools -> generate-types**
+**编辑器菜单**：**mflow-tools -> Generate API type hints/生成API类型提示**
 
 > ⚠️ **如果 getManager/getModel 没有类型提示**？
 > 

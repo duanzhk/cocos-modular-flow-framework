@@ -1,5 +1,5 @@
 import { Component } from "cc";
-import { AbstractCore, autoRegister, IEventMsgKey, ServiceLocator } from "../core";
+import { AbstractCore, IEventMsgKey, ServiceLocator } from "../core";
 import { UIManager} from "./UIManager";
 import { ResLoader} from "./ResLoader";
 import { Broadcaster} from "./Broadcaster";
@@ -18,10 +18,6 @@ class Core extends AbstractCore<Core> {
         ServiceLocator.regService('HttpManager', new HttpManager());
         ServiceLocator.regService('WebSocketManager', new WebSocketManager());
         ServiceLocator.regService('RedDotManager', new RedDotManager());
-
-        // 注册业务模块（通过装饰器自动注册）
-        // 推迟到构造函数执行完毕
-        queueMicrotask(() => autoRegister(this))
     }
 }
 

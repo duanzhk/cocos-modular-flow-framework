@@ -1,21 +1,10 @@
 // ============================================================================
-// Key 注册系统 - Names 对象（提供代码补全和类型推断）
-// ============================================================================
-/** Model 名称常量对象，用于代码补全和类型推断 */
-const ModelNames = {};
-/** Manager 名称常量对象，用于代码补全和类型推断 */
-const ManagerNames = {};
-/** View 名称常量对象，用于代码补全和类型推断 */
-const ViewNames = {};
-// ============================================================================
 // 内部注册表
 // ============================================================================
 // Model 注册表
 const modelRegistry = new Map(); // Key → 类
-const ctorToModelKey = new Map(); // 类 → Key
 // Manager 注册表
 const managerRegistry = new Map(); // Key → 类
-const ctorToManagerKey = new Map(); // 类 → Key
 // View 注册表
 const viewRegistry = new Map(); // Key → 类
 // ============================================================================
@@ -32,7 +21,7 @@ const viewRegistry = new Map(); // Key → 类
  * }
  *
  * // 使用
- * const user = mf.core.getModel(ModelNames.User);
+ * const user = mf.core.getModel(UserModel);
  * ```
  */
 function model(name) {
@@ -40,8 +29,6 @@ function model(name) {
         const modelName = name || ctor.name;
         // 注册到映射表
         modelRegistry.set(modelName, ctor);
-        ctorToModelKey.set(ctor, modelName);
-        ModelNames[modelName] = modelName;
         console.log(`Model registered: ${modelName}`);
     };
 }
@@ -50,7 +37,7 @@ function model(name) {
  * @returns Model 名称数组
  */
 function getRegisteredModelNames() {
-    return Object.keys(ModelNames);
+    return Array.from(modelRegistry.keys());
 }
 /**
  * 通过 Key 获取 Model 类构造函数
@@ -64,15 +51,6 @@ function getModelClass(modelKey) {
         throw new Error(`Model not registered: ${modelKey}`);
     }
     return modelClass;
-}
-/**
- * 通过类构造函数获取 Model 的 Key
- * @param ctor Model 类构造函数
- * @returns Model 的 Key
- * @internal 内部使用
- */
-function getModelKey(ctor) {
-    return ctorToModelKey.get(ctor);
 }
 // ============================================================================
 // Manager 装饰器
@@ -93,8 +71,6 @@ function manager(name) {
         const managerName = name || ctor.name;
         // 注册到映射表
         managerRegistry.set(managerName, ctor);
-        ctorToManagerKey.set(ctor, managerName);
-        ManagerNames[managerName] = managerName;
         console.log(`Manager registered: ${managerName}`);
     };
 }
@@ -103,7 +79,7 @@ function manager(name) {
  * @returns Manager 名称数组
  */
 function getRegisteredManagerNames() {
-    return Object.keys(ManagerNames);
+    return Array.from(managerRegistry.keys());
 }
 /**
  * 通过 Key 获取 Manager 类构造函数
@@ -117,15 +93,6 @@ function getManagerClass(managerKey) {
         throw new Error(`Manager not registered: ${managerKey}`);
     }
     return managerClass;
-}
-/**
- * 通过类构造函数获取 Manager 的 Key
- * @param ctor Manager 类构造函数
- * @returns Manager 的 Key
- * @internal 内部使用
- */
-function getManagerKey(ctor) {
-    return ctorToManagerKey.get(ctor);
 }
 // ============================================================================
 // View 装饰器
@@ -144,7 +111,7 @@ function getManagerKey(ctor) {
  * }
  *
  * // 使用
- * await mf.ui.open(ViewNames.Home);
+ * await mf.ui.open(HomeView);
  * ```
  */
 function view(name) {
@@ -152,7 +119,6 @@ function view(name) {
         const viewName = name || ctor.name;
         // 注册到映射表
         viewRegistry.set(viewName, ctor);
-        ViewNames[viewName] = viewName;
         console.log(`View registered: ${viewName}`);
     };
 }
@@ -161,7 +127,7 @@ function view(name) {
  * @returns View 名称数组
  */
 function getRegisteredViewNames() {
-    return Object.keys(ViewNames);
+    return Array.from(viewRegistry.keys());
 }
 /**
  * 通过 Key 获取 View 类构造函数
@@ -176,53 +142,5 @@ function getViewClass(viewKey) {
     }
     return viewClass;
 }
-// ============================================================================
-// 自动注册
-// ============================================================================
-/**
- * 自动注册所有使用装饰器标记的 Model 和 Manager
- * @param core Core 实例
- * @param options 注册选项
- * @example
- * ```typescript
- * // 导入所有 Model 和 Manager
- * import '@/models/UserModel';
- * import '@/managers/GameManager';
- *
- * // 自动注册
- * autoRegister(mf.core);
- *
- * // 带选项的自动注册
- * autoRegister(mf.core, {
- *   skipExisting: true,  // 跳过已注册的
- *   verbose: false       // 静默模式
- * });
- * ```
- */
-function autoRegister(core, options = {}) {
-    const { skipExisting = false, verbose = true } = options;
-    // 注册所有 Model
-    ctorToModelKey.forEach((modelKey, ctor) => {
-        if (skipExisting && core.hasModel(modelKey)) {
-            if (verbose)
-                console.log(`${ctor.name} already registered, skipping`);
-            return;
-        }
-        if (verbose)
-            console.log(`${ctor.name} initialize`);
-        core.regModel(modelKey);
-    });
-    // 注册所有 Manager
-    ctorToManagerKey.forEach((managerKey, ctor) => {
-        if (skipExisting && core.hasManager(managerKey)) {
-            if (verbose)
-                console.log(`${ctor.name} already registered, skipping`);
-            return;
-        }
-        if (verbose)
-            console.log(`${ctor.name} initialize`);
-        core.regManager(managerKey);
-    });
-}
 
-export { ManagerNames, ModelNames, ViewNames, autoRegister, getManagerClass, getManagerKey, getModelClass, getModelKey, getRegisteredManagerNames, getRegisteredModelNames, getRegisteredViewNames, getViewClass, manager, model, view };
+export { getManagerClass, getModelClass, getRegisteredManagerNames, getRegisteredModelNames, getRegisteredViewNames, getViewClass, manager, model, view };

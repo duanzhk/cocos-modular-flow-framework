@@ -1,6 +1,5 @@
 import { _decorator, Asset, Component } from 'cc';
 import { IView, IEventManager, ICocosResManager } from '../core';
-import { ModelNamesType, ManagerNamesType } from '../core';
 const { ccclass, property } = _decorator;
 
 export abstract class BaseView extends Component implements IView {
@@ -81,30 +80,28 @@ export abstract class BaseView extends Component implements IView {
 
     /**
      * 获取 Model 实例
-     * @param modelKey Model 的 Key，使用 ModelNames.XXX
-     * @returns Model 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param modelClass Model 类构造函数
+     * @returns Model 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const userModel = this.getModel(ModelNames.User);
+     * const userModel = this.getModel(UserModel);
      * ```
      */
-    protected getModel<T extends keyof ModelNamesType>(modelKey: T): any {
-        return mf.core.getModel(modelKey);
+    protected getModel<T extends keyof ModelRegistry>(modelClass: T): InstanceType<ModelRegistry[T]> {
+        return mf.core.getModel(modelClass);
     }
 
     /**
      * 获取 Manager 实例
-     * @param managerKey Manager 的 Key，使用 ManagerNames.XXX
-     * @returns Manager 实例（具体类型由 .d.ts 文件的函数重载推断）
+     * @param managerClass Manager 类构造函数
+     * @returns Manager 实例（类型由泛型参数推断）
      * @example
      * ```typescript
-     * // 类型由 .d.ts 文件的重载自动推断
-     * const gameManager = this.getManager(ManagerNames.Game);
+     * const gameManager = this.getManager(GameManager);
      * ```
      */
-    protected getManager<T extends keyof ManagerNamesType>(managerKey: T): any {
-        return mf.core.getManager(managerKey);
+    protected getManager<T extends keyof ManagerRegistry>(managerClass: T): InstanceType<ManagerRegistry[T]> {
+        return mf.core.getManager(managerClass);
     }
 
 }
