@@ -1,10 +1,37 @@
-import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab } from "cc";
+import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab, SpriteFrame, Texture2D, Color, Rect } from "cc";
 import { ICocosResManager, IUIManager, IView, ServiceLocator, getViewClass } from "../core";
 
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
     widget.isAlignLeft = widget.isAlignRight = widget.isAlignTop = widget.isAlignBottom = true;
     widget.left = widget.right = widget.top = widget.bottom = 0;
+}
+
+// 创建纯色SpriteFrame用于遮罩
+function createSolidColorSpriteFrame(color: Color = new Color(0, 0, 0, 125)): SpriteFrame {
+    // 创建一个1x1像素的纯色纹理
+    const texture = new Texture2D();
+    texture.reset({
+        width: 1,
+        height: 1,
+        format: Texture2D.PixelFormat.RGBA8888
+    });
+    
+    // 设置像素数据
+    const pixelData = new Uint8Array(4);
+    pixelData[0] = color.r; // R
+    pixelData[1] = color.g; // G
+    pixelData[2] = color.b; // B
+    pixelData[3] = color.a; // A
+    
+    texture.uploadData(pixelData);
+    
+    // 创建SpriteFrame
+    const spriteFrame = new SpriteFrame();
+    spriteFrame.texture = texture;
+    spriteFrame.rect = new Rect(0, 0, 1, 1);
+    
+    return spriteFrame;
 }
 
 let _uiRoot: Node | undefined
@@ -40,9 +67,9 @@ const UIMask = new Proxy({} as Node, {
         if (!_uiMask) {
             _uiMask = new Node('__UIMask__');
             addChild(_uiMask);
-            addWidget(_uiMask);
             _uiMask.setPosition(0, 0);
-            _uiMask.addComponent(Sprite).color.set(0, 0, 0, 0.5);
+            _uiMask.addComponent(Sprite).spriteFrame = createSolidColorSpriteFrame();
+            addWidget(_uiMask);
         }
         const value = Reflect.get(_uiMask!, prop);
         // 如果是放的话，可能要绑定原始实例上下文

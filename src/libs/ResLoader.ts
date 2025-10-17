@@ -4,17 +4,17 @@ import { ICocosResManager, AssetType } from "../core";
 const DefaultBundle = "resources";
 export class ResLoader implements ICocosResManager {
     loadAsset<T extends Asset>(path: string, type: AssetType<T>, nameOrUrl: string = DefaultBundle): Promise<T> {
-        if (assetManager.assets.has(path)) {
-            const asset = assetManager.assets.get(path) as T;
-            asset.addRef();
-            return Promise.resolve<T>(asset);
-        }
-        return new Promise((resolve, reject) => {
-            assetManager.loadBundle(nameOrUrl, (err: Error | null, bundle: AssetManager.Bundle) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    bundle.load<T>(path, type, (err: Error | null, data: T) => {
+        // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
+        const _path = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
+        // 加载资源的通用逻辑
+        const loadFromBundle = (bundle: AssetManager.Bundle): Promise<T> => {
+            const cachedAsset = bundle.get<T>(_path, type);
+            if (cachedAsset) {
+                cachedAsset.addRef();
+                return Promise.resolve(cachedAsset);
+            } else {
+                return new Promise((resolve, reject) => {
+                    bundle.load<T>(_path, type, (err: Error | null, data: T) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -22,9 +22,24 @@ export class ResLoader implements ICocosResManager {
                             resolve(data);
                         }
                     });
-                }
-            })
-        });
+                });
+            }
+        };
+
+        // 如果 bundle 未加载，先加载 bundle
+        const bundle = assetManager.getBundle(nameOrUrl);
+        if (!bundle) {
+            return new Promise((resolve, reject) => {
+                assetManager.loadBundle(nameOrUrl, (err: Error | null, bundle: AssetManager.Bundle) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        loadFromBundle(bundle).then(resolve).catch(reject);
+                    }
+                });
+            });
+        }
+        return loadFromBundle(bundle);
     }
 
     loadPrefab(path: string, nameOrUrl: string = DefaultBundle): Promise<Prefab> {
