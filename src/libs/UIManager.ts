@@ -565,7 +565,7 @@ export class UIManager extends CcocosUIManager {
 
             // 先执行onEnter初始化，再播放动画
             view.onEnter(op.args);
-            
+
             // 播放打开动画
             await view.onEnterAnimation?.();
 
@@ -581,8 +581,13 @@ export class UIManager extends CcocosUIManager {
     }
 
     protected async _internalClose(viewKeyOrInstance: string | IView, destroy?: boolean): Promise<void> {
-        await this._remove(viewKeyOrInstance, destroy);
-        this._adjustMaskLayer();
+        this._blockInput(true);
+        try {
+            await this._remove(viewKeyOrInstance, destroy);
+            this._adjustMaskLayer();
+        } finally {
+            this._blockInput(false);
+        }
     }
 
     protected async _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenOptions): Promise<ICocosView> {
@@ -627,7 +632,7 @@ export class UIManager extends CcocosUIManager {
 
             // 播放打开动画
             await view.onEnterAnimation?.();
-            
+
             return view;
         } finally {
             // 隐藏等待视图
@@ -646,21 +651,27 @@ export class UIManager extends CcocosUIManager {
             return;
         }
 
-        // 移除当前栈顶视图
-        await this._remove(stack.pop()!, destroy);
+        this._blockInput(true);
+        try {
+            // 移除当前栈顶视图
+            await this._remove(stack.pop()!, destroy);
 
-        // 恢复上一个视图
-        const top = stack[stack.length - 1];
-        if (top) {
-            top.onResume();
-            addChild(top.node);
-            
-            // 播放恢复动画
-            await top.onEnterAnimation?.();
+            // 恢复上一个视图
+            const top = stack[stack.length - 1];
+            if (top) {
+                top.onResume();
+                addChild(top.node);
+
+                // 播放恢复动画
+                await top.onEnterAnimation?.();
+            }
+
+            // 调整遮罩层级
+            this._adjustMaskLayer();
+
+        } finally {
+            this._blockInput(false);
         }
-
-        // 调整遮罩层级
-        this._adjustMaskLayer();
     }
 
     protected _internalClearStack(group: string, destroy?: boolean): void {
