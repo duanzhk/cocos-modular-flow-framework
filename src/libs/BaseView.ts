@@ -1,4 +1,4 @@
-import { _decorator, Asset, Component } from 'cc';
+import { _decorator, Asset, Component, tween, Vec3, UIOpacity } from 'cc';
 import { IView, IEventManager, ICocosResManager } from '../core';
 const { ccclass, property } = _decorator;
 
@@ -102,6 +102,83 @@ export abstract class BaseView extends Component implements IView {
      */
     protected getManager<T extends keyof ManagerRegistry>(managerClass: T): InstanceType<ManagerRegistry[T]> {
         return mf.core.getManager(managerClass);
+    }
+
+    /**
+     * 进入动画（可被子类覆盖以实现自定义动画）
+     * 默认实现：缩放+淡入效果
+     * @returns 返回 Promise 以支持异步动画
+     * @example
+     * ```typescript
+     * async onEnterAnimation(): Promise<void> {
+     *     // 自定义动画实现
+     *     return new Promise<void>((resolve) => {
+     *         tween(this.node)
+     *             .to(0.5, { scale: new Vec3(1, 1, 1) })
+     *             .call(() => resolve())
+     *             .start();
+     *     });
+     * }
+     * ```
+     */
+    async onEnterAnimation(): Promise<void> {
+        const node = this.node;
+        node.setScale(0.8, 0.8, 1);
+        
+        let uiOpacity = node.getComponent(UIOpacity);
+        if (uiOpacity) {
+            uiOpacity.opacity = 0;
+        }
+        
+        return new Promise<void>((resolve) => {
+            const tweenNode = tween(node).to(0.3, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' });
+            
+            if (uiOpacity) {
+                tween(uiOpacity)
+                    .to(0.3, { opacity: 255 })
+                    .start();
+            }
+            
+            tweenNode
+                .call(() => resolve())
+                .start();
+        });
+    }
+
+    /**
+     * 退出动画（可被子类覆盖以实现自定义动画）
+     * 默认实现：缩放+淡出效果
+     * @returns 返回 Promise 以支持异步动画
+     * @example
+     * ```typescript
+     * async onExitAnimation(): Promise<void> {
+     *     // 自定义动画实现
+     *     return new Promise<void>((resolve) => {
+     *         tween(this.node)
+     *             .to(0.3, { scale: new Vec3(0, 0, 1) })
+     *             .call(() => resolve())
+     *             .start();
+     *     });
+     * }
+     * ```
+     */
+    async onExitAnimation(): Promise<void> {
+        const node = this.node;
+        const uiOpacity = node.getComponent(UIOpacity);
+        
+        return new Promise<void>((resolve) => {
+            const tweenNode = tween(node).to(0.2, { scale: new Vec3(0.8, 0.8, 1) }, { easing: 'backIn' });
+            
+            if (uiOpacity) {
+                tween(uiOpacity)
+                    .to(0.2, { opacity: 0 })
+                    .start();
+            }
+            
+            tweenNode
+                .call(() => resolve())
+                .start();
+        });
     }
 
 }

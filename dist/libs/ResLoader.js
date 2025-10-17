@@ -1,21 +1,21 @@
 import { __awaiter } from '../_virtual/_tslib.js';
-import { assetManager, Prefab, Asset, SpriteFrame, sp } from 'cc';
+import { assetManager, Prefab, SpriteFrame, sp, Asset } from 'cc';
 
 const DefaultBundle = "resources";
 class ResLoader {
     loadAsset(path, type, nameOrUrl = DefaultBundle) {
-        if (assetManager.assets.has(path)) {
-            const asset = assetManager.assets.get(path);
-            asset.addRef();
-            return Promise.resolve(asset);
-        }
-        return new Promise((resolve, reject) => {
-            assetManager.loadBundle(nameOrUrl, (err, bundle) => {
-                if (err) {
-                    reject(err);
-                }
-                else {
-                    bundle.load(path, type, (err, data) => {
+        // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
+        const _path = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
+        // 加载资源的通用逻辑
+        const loadFromBundle = (bundle) => {
+            const cachedAsset = bundle.get(_path, type);
+            if (cachedAsset) {
+                cachedAsset.addRef();
+                return Promise.resolve(cachedAsset);
+            }
+            else {
+                return new Promise((resolve, reject) => {
+                    bundle.load(_path, type, (err, data) => {
                         if (err) {
                             reject(err);
                         }
@@ -24,9 +24,24 @@ class ResLoader {
                             resolve(data);
                         }
                     });
-                }
+                });
+            }
+        };
+        // 如果 bundle 未加载，先加载 bundle
+        const bundle = assetManager.getBundle(nameOrUrl);
+        if (!bundle) {
+            return new Promise((resolve, reject) => {
+                assetManager.loadBundle(nameOrUrl, (err, bundle) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        loadFromBundle(bundle).then(resolve).catch(reject);
+                    }
+                });
             });
-        });
+        }
+        return loadFromBundle(bundle);
     }
     loadPrefab(path, nameOrUrl = DefaultBundle) {
         //refCount 记录的是持有者数量，不是资源份数，所以prefab也需要addRef

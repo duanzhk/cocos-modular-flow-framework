@@ -1,4 +1,4 @@
-import { Color, Texture2D } from "cc";
+import { Color, Texture2D, SpriteFrame } from "cc";
 /**
  * 图像工具
  */
@@ -30,4 +30,8 @@ export declare class ImageUtil {
      * @param base64 Base64 字符
      */
     static base64ToBlob(base64: string): Blob;
+    /**
+     * 创建纯色SpriteFrame用于遮罩
+     */
+    static createSolidColorSpriteFrame(color?: Color): SpriteFrame;
 }

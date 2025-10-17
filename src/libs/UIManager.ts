@@ -1,5 +1,6 @@
-import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab, SpriteFrame, Texture2D, Color, Rect } from "cc";
+import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab, Color } from "cc";
 import { ICocosResManager, IUIManager, IView, ServiceLocator, getViewClass } from "../core";
+import { ImageUtil } from "../utils";
 
 /**
  * UI遮罩配置选项
@@ -12,41 +13,60 @@ export interface UIMaskOptions {
 }
 
 /**
+ * UI打开选项
+ */
+export interface UIOpenOptions {
+    /** 是否显示等待视图 */
+    showLoading?: boolean;
+    /** 是否可点击遮罩关闭 */
+    clickToClose?: boolean;
+    /** 自定义参数 */
+    args?: any;
+}
+
+/**
+ * 等待视图配置
+ */
+export interface UILoadingConfig {
+    /** 是否全局启用等待视图 */
+    enabled?: boolean;
+    /** 等待视图预制体路径 */
+    prefabPath?: string;
+    /** 等待视图显示延迟（毫秒） */
+    delay?: number;
+    /** 最小显示时间（毫秒） */
+    minShowTime?: number;
+    /** 自定义创建函数（高级用法） */
+    createCustomLoading?: () => Node | Promise<Node>;
+}
+
+/**
+ * LRU缓存配置
+ */
+export interface UICacheConfig {
+    /** 最大缓存数量 */
+    maxSize?: number;
+    /** 是否启用LRU策略 */
+    enableLRU?: boolean;
+}
+
+/**
+ * 预加载配置
+ */
+export interface UIPreloadConfig {
+    /** 预加载的视图列表 */
+    views?: (keyof UIRegistry)[];
+    /** 预加载延迟（毫秒） */
+    delay?: number;
+}
+
+/**
  * 为节点添加全屏Widget组件
  */
 function addWidget(node: Node) {
     const widget = node.getComponent(Widget) || node.addComponent(Widget);
     widget.isAlignLeft = widget.isAlignRight = widget.isAlignTop = widget.isAlignBottom = true;
     widget.left = widget.right = widget.top = widget.bottom = 0;
-}
-
-/**
- * 创建纯色SpriteFrame用于遮罩
- */
-function createSolidColorSpriteFrame(color: Color = new Color(0, 0, 0, 125)): SpriteFrame {
-    // 创建一个1x1像素的纯色纹理
-    const texture = new Texture2D();
-    texture.reset({
-        width: 1,
-        height: 1,
-        format: Texture2D.PixelFormat.RGBA8888
-    });
-    
-    // 设置像素数据
-    const pixelData = new Uint8Array(4);
-    pixelData[0] = color.r;
-    pixelData[1] = color.g;
-    pixelData[2] = color.b;
-    pixelData[3] = color.a;
-    
-    texture.uploadData(pixelData);
-    
-    // 创建SpriteFrame
-    const spriteFrame = new SpriteFrame();
-    spriteFrame.texture = texture;
-    spriteFrame.rect = new Rect(0, 0, 1, 1);
-    
-    return spriteFrame;
 }
 
 let _uiRoot: Node | undefined
@@ -86,7 +106,7 @@ const UIMask = new Proxy({} as Node, {
             _uiMask = new Node('__UIMask__');
             addChild(_uiMask);
             _uiMask.setPosition(0, 0);
-            _uiMask.addComponent(Sprite).spriteFrame = createSolidColorSpriteFrame();
+            _uiMask.addComponent(Sprite).spriteFrame = ImageUtil.createSolidColorSpriteFrame();
             addWidget(_uiMask);
         }
         const value = Reflect.get(_uiMask!, prop);
@@ -106,54 +126,55 @@ type ICocosView = IView & Component
 // 接口隔离，实现具体的CcocosUIManager
 abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
-        return this.internalGetTopView();
+        return this._internalGetTopView();
     }
-    open<T extends keyof UIRegistry>(viewClass: T, args?: any): Promise<InstanceType<UIRegistry[T]>> {
-        return this.internalOpen(viewClass, args) as Promise<InstanceType<UIRegistry[T]>>;
+    open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>> {
+        return this._internalOpen(viewClass, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
-    close<T extends keyof UIRegistry>(viewClass: T): void {
-        this.internalClose(viewClass);
+    close<T extends keyof UIRegistry>(viewClass: T): Promise<void> {
+        return this._internalClose(viewClass);
     }
-    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: any): Promise<InstanceType<UIRegistry[T]>> {
-        return this.internalOpenAndPush(viewClass, group, args) as Promise<InstanceType<UIRegistry[T]>>;
+    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>> {
+        return this._internalOpenAndPush(viewClass, group, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
-    closeAndPop(group: string, destroy?: boolean): void {
-        this.internalCloseAndPop(group, destroy);
+    closeAndPop(group: string, destroy?: boolean): Promise<void> {
+        return this._internalCloseAndPop(group, destroy);
     }
     clearStack(group: string, destroy?: boolean): void {
-        this.internalClearStack(group, destroy);
+        this._internalClearStack(group, destroy);
     }
-
-    protected abstract internalOpen(viewKey: string, args?: any): Promise<ICocosView>
-    protected abstract internalClose(viewKey: string | IView, destory?: boolean): void
-    protected abstract internalOpenAndPush(viewKey: string, group: string, args?: any): Promise<ICocosView>
-    protected abstract internalCloseAndPop(group: string, destroy?: boolean): void;
-    protected abstract internalClearStack(group: string, destroy?: boolean): void
-    protected abstract internalGetTopView(): ICocosView | undefined
+    closeAll(destroy?: boolean): void {
+        this._internalCloseAll(destroy);
+    }
+    protected abstract _internalOpen(viewKey: string, args?: UIOpenOptions): Promise<ICocosView>
+    protected abstract _internalClose(viewKey: string | IView, destory?: boolean): Promise<void>
+    protected abstract _internalOpenAndPush(viewKey: string, group: string, args?: UIOpenOptions): Promise<ICocosView>
+    protected abstract _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
+    protected abstract _internalClearStack(group: string, destroy?: boolean): void
+    protected abstract _internalGetTopView(): ICocosView | undefined
+    protected abstract _internalCloseAll(destroy?: boolean): void
 }
 
 export class UIManager extends CcocosUIManager {
     private _cache: Map<string, Node> = new Map();
     private _groupStacks: Map<string, ICocosView[]> = new Map();
+
     private _inputBlocker: ((event: EventTouch) => void) | null = null;
+    private _loadingView: Node | null = null;
+    private _loadingPromises: Map<string, Promise<ICocosView>> = new Map();
+    private _lruOrder: string[] = [];
+    private _preloadedViews: Set<string> = new Set();
+
     private _maskOptions: UIMaskOptions = { clickToClose: true };
+    private _loadingConfig: UILoadingConfig = { enabled: true, delay: 200, minShowTime: 500 };
+    private _cacheConfig: UICacheConfig = { maxSize: 10, enableLRU: true };
+    private _preloadConfig: UIPreloadConfig = { views: [], delay: 1000 };
+    private _openOptions: UIOpenOptions = { showLoading: true, clickToClose: true };
 
     public constructor() {
         super();
         this._setupMaskClickHandler();
-    }
-
-    /**
-     * 设置遮罩配置
-     */
-    public setMaskOptions(options: UIMaskOptions): void {
-        this._maskOptions = { ...this._maskOptions, ...options };
-        if (options.color && _uiMask) {
-            const sprite = _uiMask.getComponent(Sprite);
-            if (sprite) {
-                sprite.spriteFrame = createSolidColorSpriteFrame(options.color);
-            }
-        }
+        this._startPreload();
     }
 
     /**
@@ -168,7 +189,7 @@ export class UIManager extends CcocosUIManager {
             if (!view) {
                 return;
             }
-            
+
             // 区分两种情况处理：
             // 1. 如果视图有 __group__ 属性且不为 undefined，说明是通过 openAndPush 打开的栈式UI
             // 2. 否则是通过 open 打开的普通 UI
@@ -177,9 +198,92 @@ export class UIManager extends CcocosUIManager {
                 this.closeAndPop(view.__group__ as string, false);
             } else {
                 // 普通UI：直接关闭该视图
-                this.internalClose(view, false);
+                this._internalClose(view, false);
             }
         });
+    }
+
+    /**
+     * 设置遮罩配置
+     */
+    public setMaskConfig(options: UIMaskOptions): void {
+        this._maskOptions = { ...this._maskOptions, ...options };
+        if (options.color && UIMask) {
+            const sprite = UIMask.getComponent(Sprite);
+            if (sprite) {
+                sprite.color = options.color;
+            }
+        }
+    }
+
+    /**
+     * 设置等待视图配置
+     */
+    public setLoadingConfig(config: UILoadingConfig): void {
+        this._loadingConfig = { ...this._loadingConfig, ...config };
+    }
+
+    /**
+     * 设置缓存配置
+     */
+    public setCacheConfig(config: UICacheConfig): void {
+        this._cacheConfig = { ...this._cacheConfig, ...config };
+    }
+
+    /**
+     * 设置预加载配置
+     */
+    public setPreloadConfig(config: UIPreloadConfig): void {
+        this._preloadConfig = { ...this._preloadConfig, ...config };
+        this._startPreload();
+    }
+
+    /**
+     * 显示等待视图
+     */
+    private async _showLoading(): Promise<void> {
+        if (!this._loadingConfig.enabled) {
+            return Promise.resolve();
+        }
+
+        // 如果已经显示了等待视图，直接返回
+        if (this._loadingView && this._loadingView.activeInHierarchy) {
+            return Promise.resolve();
+        }
+
+        // 首次加载或创建等待视图
+        if (!this._loadingView) {
+            if (this._loadingConfig.createCustomLoading) {
+                // 使用自定义创建函数
+                this._loadingView = await this._loadingConfig.createCustomLoading();
+            } else if (this._loadingConfig.prefabPath) {
+                try {
+                    // 从 prefab 创建等待视图
+                    this._loadingView = await this._loadUIViewNode({ prefabPath: this._loadingConfig.prefabPath });
+                } catch (error) {
+                    throw error;
+                }
+            } else {
+                // 没有配置等待视图
+                return Promise.resolve();
+            }
+        }
+
+        // 激活并添加到场景，调整到最顶层
+        this._loadingView.active = true;
+        UIRoot.parent!.addChild(this._loadingView);
+    }
+
+    /**
+     * 隐藏等待视图
+     */
+    private _hideLoading(): void {
+        if (this._loadingView && this._loadingView.activeInHierarchy) {
+            this._loadingView.active = false;
+            if (this._loadingView.parent) {
+                this._loadingView.removeFromParent();
+            }
+        }
     }
 
     private _getPrefabPath<T extends ICocosView>(viewType: new () => T): string {
@@ -206,13 +310,13 @@ export class UIManager extends CcocosUIManager {
      */
     private _adjustMaskLayer(): void {
         const activeViews = this._getActiveViews();
-        
+
         // 没有活跃视图时隐藏遮罩
         if (activeViews.length === 0) {
             UIMask.active = false;
             return;
         }
-        
+
         // 有视图时显示遮罩并调整到倒数第二层
         UIMask.active = true;
         const targetIndex = Math.max(UIRoot.children.length - 2, 0);
@@ -246,23 +350,122 @@ export class UIManager extends CcocosUIManager {
         }
     }
 
-    private async _load(viewKey: string, args?: any): Promise<ICocosView> {
+
+    /**
+     * 更新LRU顺序
+     */
+    private _updateLRUOrder(viewKey: string): void {
+        if (!this._cacheConfig.enableLRU) return;
+
+        const index = this._lruOrder.indexOf(viewKey);
+        if (index > -1) {
+            this._lruOrder.splice(index, 1);
+        }
+        this._lruOrder.push(viewKey);
+
+        // 检查缓存大小限制
+        if (this._lruOrder.length > this._cacheConfig.maxSize!) {
+            const oldestKey = this._lruOrder.shift()!;
+            const oldestNode = this._cache.get(oldestKey);
+            // 只清理未激活的视图（不在场景树中的）
+            if (oldestNode && !oldestNode.parent) {
+                this._cache.delete(oldestKey);
+                // LRU清理不需要走框架的remove机制，因为：
+                // 1. 这些节点已经不在场景树中（已通过_remove移除）
+                // 2. onExit等生命周期已在_remove中调用过
+                // 3. 直接销毁节点释放内存即可
+                oldestNode.destroy();
+
+                // 尝试释放对应的Prefab资源
+                this._releasePrefab(oldestKey);
+            }
+        }
+    }
+
+    /**
+     * 预加载视图
+     */
+    private _startPreload(): void {
+        if (!this._preloadConfig.views || this._preloadConfig.views.length === 0) {
+            return;
+        }
+
+        setTimeout(async () => {
+            for (const viewKey of this._preloadConfig.views!) {
+                if (!this._preloadedViews.has(viewKey)) {
+                    try {
+                        await this._preloadView(viewKey);
+                        this._preloadedViews.add(viewKey);
+                    } catch (error) {
+                        console.warn(`Failed to preload view ${viewKey}:`, error);
+                    }
+                }
+            }
+        }, this._preloadConfig.delay || 1000);
+    }
+
+    private async _loadUIViewNode(args: { viewKey?: string, prefabPath?: string }): Promise<Node> {
+        let prefabPath = args.prefabPath!;
+        if (!prefabPath) {
+            prefabPath = this._getPrefabPath(getViewClass<ICocosView>(args.viewKey!));
+        }
+        const ResMgr = ServiceLocator.getService<ICocosResManager>('ResLoader');
+        const prefab = await ResMgr.loadPrefab(prefabPath);
+        return instantiate(prefab);
+    }
+
+    /**
+     * 预加载单个视图
+     */
+    private async _preloadView(viewKey: string): Promise<void> {
         const viewType = getViewClass<ICocosView>(viewKey);
-        let target: Node
+        if (this._cache.has(viewType.name)) {
+            return; // 已经缓存
+        }
+        const target = await this._loadUIViewNode({ viewKey: viewKey });
+        target.active = false; // 预加载的视图保持不激活状态
+        this._cache.set(viewType.name, target);
+        this._updateLRUOrder(viewType.name);
+    }
+
+    private async _load(viewKey: string): Promise<ICocosView> {
+        // 并发控制：如果正在加载同一个视图，返回现有的Promise
+        if (this._loadingPromises.has(viewKey)) {
+            return this._loadingPromises.get(viewKey)!;
+        }
+
+        const loadPromise = this._loadInternal(viewKey);
+        this._loadingPromises.set(viewKey, loadPromise);
+
+        try {
+            return await loadPromise;
+        } finally {
+            this._loadingPromises.delete(viewKey);
+        }
+    }
+
+    private async _loadInternal(viewKey: string): Promise<ICocosView> {
+        const viewType = getViewClass<ICocosView>(viewKey);
+        let target: Node;
+
         if (this._cache.has(viewType.name)) {
             target = this._cache.get(viewType.name)!;
         } else {
-            let prefabPath = this._getPrefabPath(viewType);
-            const ResMgr = ServiceLocator.getService<ICocosResManager>('ResLoader');
-            const prefab = await ResMgr.loadPrefab(prefabPath)
-            target = instantiate(prefab) as Node
+            target = await this._loadUIViewNode({ viewKey: viewKey });
             this._cache.set(viewType.name, target);
         }
+
+        // 更新LRU顺序
+        this._updateLRUOrder(viewType.name);
+
         target.active = true;
         return target.getComponent(viewType)! as ICocosView;
     }
 
-    private _remove(viewKeyOrInstance: string | IView, destroy?: boolean): void {
+    /**
+     * 移除视图
+     */
+    private async _remove(viewKeyOrInstance: string | IView, destroy?: boolean, skipAnimation?: boolean): Promise<void> {
         // 如果是 string，从缓存中获取视图实例
         if (typeof viewKeyOrInstance === 'string') {
             const viewType = getViewClass<ICocosView>(viewKeyOrInstance);
@@ -276,7 +479,7 @@ export class UIManager extends CcocosUIManager {
                 console.warn(`No view component found on node ${cached.name}`);
                 return;
             }
-            this._remove(viewInstance as IView, destroy);
+            await this._remove(viewInstance as IView, destroy);
             return;
         }
 
@@ -285,6 +488,13 @@ export class UIManager extends CcocosUIManager {
         if ('__group__' in viewInstance) {
             viewInstance.__group__ = undefined
         }
+
+        if (!skipAnimation) {
+            // * 播放关闭动画,使用async是必要的，因为：
+            // * 确保动画播放完成后再执行onExit和节点移除，不然还没播放动画了，UI就已经没了
+            await viewInstance.onExitAnimation?.();
+        }
+
         viewInstance.onExit();
         viewInstance.node.removeFromParent();
         viewInstance.node.active = false;
@@ -295,130 +505,207 @@ export class UIManager extends CcocosUIManager {
             this._cache.delete(cacheKey);
 
             // 销毁被克隆出的UI后Node后，尝试释放 Prefab 资源
-            try {
-                const viewType = viewInstance.constructor as new () => ICocosView;
-                const prefabPath = this._getPrefabPath(viewType);
-                const ResMgr = ServiceLocator.getService<ICocosResManager>('ResLoader');
-                ResMgr.release(prefabPath, Prefab);
-            } catch (error) {
-                console.error(`Failed to release prefab for ${cacheKey}:`, error);
+            this._releasePrefab(viewInstance);
+        }
+    }
+
+    private _releasePrefab(viewKey: string | ICocosView): void {
+        try {
+            let prefabPath: string;
+            if (typeof viewKey === 'string') {
+                prefabPath = this._getPrefabPath(getViewClass<ICocosView>(viewKey));
+            } else {
+                prefabPath = this._getPrefabPath(viewKey.constructor as new () => ICocosView);
             }
+            const ResMgr = ServiceLocator.getService<ICocosResManager>('ResLoader');
+            ResMgr.release(prefabPath, Prefab);
+        } catch (error) {
+            console.error(`Failed to release prefab for ${viewKey}:`, error);
         }
     }
 
     /**
      * 获取当前最顶层的视图
      */
-    protected internalGetTopView(): ICocosView | undefined {
+    protected _internalGetTopView(): ICocosView | undefined {
         const activeViews = this._getActiveViews();
         if (activeViews.length === 0) {
             return undefined;
         }
-        
+
         // 获取最后一个视图节点（最顶层）
         const target = activeViews[activeViews.length - 1];
         const comps = target.components;
-        
+
         for (let i = 0; i < comps.length; i++) {
             const comp = comps[i];
             if ("__isIView__" in comp && comp.__isIView__) {
                 return comp as unknown as ICocosView;
             }
         }
-        
+
         console.warn(`No view found in ${target.name}`);
         return undefined;
     }
 
-    protected async internalOpen(viewKey: string, args?: any): Promise<ICocosView> {
+    protected async _internalOpen(viewKey: string, options?: UIOpenOptions): Promise<ICocosView> {
+        const op = { ...this._openOptions, ...options };
+
+        // 显示等待视图
+        if (op.showLoading) {
+            await this._showLoading();
+        }
+
+        // 打开UI前，阻塞输入事件
         this._blockInput(true);
         try {
-            const view = await this._load(viewKey, args);
+            const view = await this._load(viewKey);
             addChild(view.node);
             this._adjustMaskLayer();
-            view.onEnter(args);
+
+            // 先执行onEnter初始化，再播放动画
+            view.onEnter(op.args);
+            
+            // 播放打开动画
+            await view.onEnterAnimation?.();
+
             return view;
         } finally {
+            // 隐藏等待视图
+            if (op.showLoading) {
+                this._hideLoading();
+            }
+            // 打开UI后，解除输入事件阻塞
             this._blockInput(false);
         }
     }
 
-    protected internalClose(viewKey: string | IView, destroy?: boolean): void {
-        this._remove(viewKey, destroy);
+    protected async _internalClose(viewKeyOrInstance: string | IView, destroy?: boolean): Promise<void> {
+        await this._remove(viewKeyOrInstance, destroy);
         this._adjustMaskLayer();
     }
 
-    protected async internalOpenAndPush(viewKey: string, group: string, args?: any): Promise<ICocosView> {
+    protected async _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenOptions): Promise<ICocosView> {
+        const op = { ...this._openOptions, ...options };
+
+        // 显示等待视图
+        if (op.showLoading) {
+            await this._showLoading();
+        }
+
+        // 打开UI前，阻塞输入事件
         this._blockInput(true);
         try {
-            const view = await this._load(viewKey, args);
+            const view = await this._load(viewKey);
             let stack = this._groupStacks.get(group);
             if (!stack) {
                 stack = [];
                 this._groupStacks.set(group, stack);
             }
-            
+
             // 暂停并移除当前栈顶视图
             const top = stack[stack.length - 1];
             if (top) {
+                // 先执行onExit，再播放退出动画
+                await top.onExitAnimation?.();
+
                 top.onPause();
                 top.node.removeFromParent();
             }
-            
+
             // 标记视图所属组并入栈
             if ('__group__' in view) {
                 view.__group__ = group;
             }
             stack.push(view);
-            
+
             addChild(view.node);
             this._adjustMaskLayer();
-            view.onEnter(args);
+
+            // 先执行onEnter初始化，再播放动画
+            view.onEnter(op.args);
+
+            // 播放打开动画
+            await view.onEnterAnimation?.();
+            
             return view;
         } finally {
+            // 隐藏等待视图
+            if (op.showLoading) {
+                this._hideLoading();
+            }
+            // 打开UI后，解除输入事件阻塞
             this._blockInput(false);
         }
     }
 
-    protected internalCloseAndPop(group: string, destroy?: boolean): void {
+    protected async _internalCloseAndPop(group: string, destroy?: boolean): Promise<void> {
         const stack = this._groupStacks.get(group);
         if (!stack || stack.length === 0) {
             console.warn(`No stack or empty stack for group ${group}`);
             return;
         }
-        
+
         // 移除当前栈顶视图
-        this._remove(stack.pop()!, destroy);
-        
+        await this._remove(stack.pop()!, destroy);
+
         // 恢复上一个视图
         const top = stack[stack.length - 1];
         if (top) {
             top.onResume();
             addChild(top.node);
+            
+            // 播放恢复动画
+            await top.onEnterAnimation?.();
         }
-        
+
         // 调整遮罩层级
         this._adjustMaskLayer();
     }
 
-    protected internalClearStack(group: string, destroy?: boolean): void {
+    protected _internalClearStack(group: string, destroy?: boolean): void {
         const stack = this._groupStacks.get(group);
         if (!stack) {
             console.warn(`No stack found for group ${group}`);
             return;
         }
-        
-        // 清空栈中所有视图
+
+        // 清空栈中所有视图，不播放动画
         while (stack.length > 0) {
             const view = stack.pop();
             if (view) {
-                this._remove(view, destroy);
+                this._remove(view, destroy, true);
             }
         }
-        
+
         // 调整遮罩层级
         this._adjustMaskLayer();
     }
+
+    /**
+     * 关闭所有视图，不播放动画
+     */
+    protected _internalCloseAll(destroy?: boolean) {
+        const activeViews = this._getActiveViews();
+        for (const node of activeViews) {
+            const comps = node.components;
+            for (let i = 0; i < comps.length; i++) {
+                const comp = comps[i];
+                if ("__isIView__" in comp && comp.__isIView__) {
+                    this._remove(comp as unknown as ICocosView, destroy, true);
+                    break;
+                }
+            }
+        }
+
+        // 清空所有栈
+        this._groupStacks.clear();
+
+        // 调整遮罩
+        this._adjustMaskLayer();
+    }
+
+
 
     /**
      * 检查指定视图是否已打开
@@ -429,52 +716,22 @@ export class UIManager extends CcocosUIManager {
     }
 
     /**
-     * 查看指定组的栈顶视图（不移除）
+     * 预加载视图（支持单个或多个）
      */
-    public peek(group: string): IView | undefined {
-        const stack = this._groupStacks.get(group);
-        if (!stack || stack.length === 0) {
-            return undefined;
+    public async preload<T extends keyof UIRegistry>(viewKeyOrKeys: T | T[]): Promise<void> {
+        if (Array.isArray(viewKeyOrKeys)) {
+            const promises = viewKeyOrKeys.map(key => this._preloadView(key));
+            await Promise.all(promises);
+        } else {
+            await this._preloadView(viewKeyOrKeys);
         }
-        return stack[stack.length - 1];
     }
 
     /**
-     * 获取指定组的栈深度
+     * 检查视图是否正在加载
      */
-    public getStackDepth(group: string): number {
-        const stack = this._groupStacks.get(group);
-        return stack ? stack.length : 0;
-    }
-
-    /**
-     * 获取所有打开的视图数量
-     */
-    public getOpenViewCount(): number {
-        return this._getActiveViews().length;
-    }
-
-    /**
-     * 关闭所有视图
-     */
-    public closeAll(destroy?: boolean): void {
-        const activeViews = this._getActiveViews();
-        activeViews.forEach(node => {
-            const comps = node.components;
-            for (let i = 0; i < comps.length; i++) {
-                const comp = comps[i];
-                if ("__isIView__" in comp && comp.__isIView__) {
-                    this._remove(comp as unknown as ICocosView, destroy);
-                    break;
-                }
-            }
-        });
-        
-        // 清空所有栈
-        this._groupStacks.clear();
-        
-        // 调整遮罩
-        this._adjustMaskLayer();
+    public isLoading<T extends keyof UIRegistry>(viewKey: T): boolean {
+        return this._loadingPromises.has(viewKey);
     }
 
 }

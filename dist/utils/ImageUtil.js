@@ -1,4 +1,4 @@
-import { Color, Texture2D } from 'cc';
+import { Color, Texture2D, SpriteFrame, Rect } from 'cc';
 
 /**
  * 图像工具
@@ -91,6 +91,30 @@ class ImageUtil {
             uint8Array[i] = data.charCodeAt(i) & 0xff;
         }
         return new Blob([uint8Array], { type: type });
+    }
+    /**
+     * 创建纯色SpriteFrame用于遮罩
+     */
+    static createSolidColorSpriteFrame(color = new Color(0, 0, 0, 125)) {
+        // 创建一个1x1像素的纯色纹理
+        const texture = new Texture2D();
+        texture.reset({
+            width: 1,
+            height: 1,
+            format: Texture2D.PixelFormat.RGBA8888
+        });
+        // 设置像素数据
+        const pixelData = new Uint8Array(4);
+        pixelData[0] = color.r;
+        pixelData[1] = color.g;
+        pixelData[2] = color.b;
+        pixelData[3] = color.a;
+        texture.uploadData(pixelData);
+        // 创建SpriteFrame
+        const spriteFrame = new SpriteFrame();
+        spriteFrame.texture = texture;
+        spriteFrame.rect = new Rect(0, 0, 1, 1);
+        return spriteFrame;
     }
 }
 

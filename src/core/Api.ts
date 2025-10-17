@@ -84,6 +84,10 @@ export interface IView {
     onPause(): void;
     /** 恢复视图（从暂停状态恢复） */
     onResume(): void;
+    /** 进入动画（可选） */
+    onEnterAnimation?(): Promise<void>;
+    /** 退出动画（可选） */
+    onExitAnimation?(): Promise<void>;
 }
 
 // ============================================================================
@@ -99,15 +103,17 @@ export interface IUIManager {
     /** 打开视图 */
     open<T extends keyof UIRegistry>(viewClass: T, args?: any): Promise<InstanceType<UIRegistry[T]>>;
     /** 关闭视图 */
-    close<T extends keyof UIRegistry>(viewClass: T): void;
+    close<T extends keyof UIRegistry>(viewClass: T): Promise<void>;
     /** 打开视图并入栈 */
     openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: any): Promise<InstanceType<UIRegistry[T]>>;
     /** 关闭栈顶视图并弹出 */
-    closeAndPop(group: string, destroy?: boolean): void;
+    closeAndPop(group: string, destroy?: boolean): Promise<void>;
     /** 获取栈顶视图 */
     getTopView(): IView | undefined;
     /** 清空视图栈 */
     clearStack(group: string, destroy?: boolean): void;
+    /** 关闭所有视图 */
+    closeAll(destroy?: boolean): void;
 }
 
 // ============================================================================

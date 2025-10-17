@@ -132,14 +132,128 @@ const view = await mf.gui.open(ViewNames.Home);
 await mf.gui.open(ViewNames.Game, { level: 1, difficulty: 'hard' });
 
 // 关闭界面（保留缓存）
-mf.gui.close(ViewNames.Home);
+await mf.gui.close(ViewNames.Home);
 
 // 关闭并销毁界面（释放资源）
-mf.gui.close(ViewNames.Home, true);
+await mf.gui.close(ViewNames.Home, true);
 
 // 通过视图实例关闭
 const view = await mf.gui.open(ViewNames.Settings);
-mf.gui.close(view);
+await mf.gui.close(view);
+```
+
+### 高级功能
+
+#### 等待视图（Loading）
+
+UIManager 支持在打开 UI 时显示等待视图，提升用户体验。
+
+```typescript
+// 全局配置等待视图
+mf.gui.setLoadingConfig({
+    enabled: true,                    // 启用等待视图
+    prefabPath: 'ui/loading',        // 自定义等待视图预制体路径
+    delay: 200,                      // 延迟显示时间（毫秒）
+    minShowTime: 500                 // 最小显示时间（毫秒）
+});
+
+// 打开 UI 时显示等待视图
+await mf.gui.open(ViewNames.Game, { 
+    showLoading: true,               // 单独控制是否显示等待视图
+    args: { level: 1 } 
+});
+
+// 打开 UI 时不显示等待视图
+await mf.gui.open(ViewNames.Settings, { 
+    showLoading: false 
+});
+```
+
+#### 遮罩点击关闭配置
+
+可以全局或单独控制是否允许点击遮罩关闭 UI。
+
+```typescript
+// 全局配置遮罩
+mf.gui.setMaskOptions({
+    clickToClose: true,              // 允许点击遮罩关闭
+    color: new Color(0, 0, 0, 150)  // 遮罩颜色
+});
+
+// 打开 UI 时单独控制遮罩行为
+await mf.gui.open(ViewNames.Dialog, { 
+    clickToClose: false,             // 禁止点击遮罩关闭
+    args: { message: '重要提示' } 
+});
+```
+
+#### UI 动画支持
+
+支持自定义 UI 打开和关闭动画。
+
+```typescript
+// 打开 UI 时播放动画
+await mf.gui.open(ViewNames.Popup, {
+    animation: {
+        duration: 0.3,               // 动画持续时间
+        easing: 'backOut',           // 缓动类型
+        openAnimation: 'scaleIn',    // 打开动画（可选）
+        closeAnimation: 'scaleOut'   // 关闭动画（可选）
+    },
+    args: { title: '弹窗' }
+});
+```
+
+#### 并发控制
+
+防止同一视图被重复打开，提升性能。
+
+```typescript
+// 检查视图是否正在加载
+if (mf.gui.isLoading(ViewNames.Game)) {
+    console.log('游戏界面正在加载中...');
+    return;
+}
+
+// 多次调用只会加载一次
+const promise1 = mf.gui.open(ViewNames.Game);
+const promise2 = mf.gui.open(ViewNames.Game); // 返回同一个 Promise
+```
+
+#### LRU 缓存策略
+
+自动管理视图缓存，防止内存溢出。
+
+```typescript
+// 配置缓存策略
+mf.gui.setCacheConfig({
+    maxSize: 10,                     // 最大缓存数量
+    enableLRU: true                  // 启用 LRU 策略
+});
+
+// 获取缓存统计信息
+const stats = mf.gui.getCacheStats();
+console.log(`缓存大小: ${stats.size}/${stats.maxSize}`);
+console.log('LRU 顺序:', stats.lruOrder);
+
+// 手动清理缓存
+mf.gui.clearCache();
+```
+
+#### 视图预加载
+
+提前加载常用视图，减少用户等待时间。
+
+```typescript
+// 配置预加载
+mf.gui.setPreloadConfig({
+    views: [ViewNames.Home, ViewNames.Game, ViewNames.Settings],
+    delay: 1000                      // 延迟预加载时间（毫秒）
+});
+
+// 手动预加载视图
+await mf.gui.preload(ViewNames.Shop);  // 单个视图
+await mf.gui.preload([ViewNames.Inventory, ViewNames.Profile]);  // 多个视图
 ```
 
 ## 视图栈管理
@@ -156,7 +270,7 @@ await mf.gui.openAndPush(ViewNames.Level1, 'game', { levelId: 1 });
 await mf.gui.openAndPush(ViewNames.Level2, 'game', { levelId: 2 });
 
 // 关闭栈顶视图并弹出（会自动恢复上一个视图）
-mf.gui.closeAndPop('game');  // Level2 关闭，Level1 恢复
+await mf.gui.closeAndPop('game');  // Level2 关闭，Level1 恢复
 
 // 清空整个栈
 mf.gui.clearStack('game');  // 所有关卡视图关闭
@@ -180,7 +294,7 @@ await mf.gui.openAndPush(ViewNames.Level1, 'game');
 await mf.gui.openAndPush(ViewNames.Level2, 'game');
 
 // 关卡 2 失败，返回关卡 1（关卡 1 恢复）
-mf.gui.closeAndPop('game');
+await mf.gui.closeAndPop('game');
 
 // 退出游戏（清空所有关卡）
 mf.gui.clearStack('game', true);
@@ -197,9 +311,9 @@ await mf.gui.openAndPush(ViewNames.Activity2, 'popups', { order: 2 });
 await mf.gui.openAndPush(ViewNames.SignIn, 'popups', { order: 3 });
 
 // 关闭当前弹窗，自动显示下一个
-mf.gui.closeAndPop('popups');  // Activity1 关闭，Activity2 显示
-mf.gui.closeAndPop('popups');  // Activity2 关闭，SignIn 显示
-mf.gui.closeAndPop('popups');  // SignIn 关闭，所有弹窗完成
+await mf.gui.closeAndPop('popups');  // Activity1 关闭，Activity2 显示
+await mf.gui.closeAndPop('popups');  // Activity2 关闭，SignIn 显示
+await mf.gui.closeAndPop('popups');  // SignIn 关闭，所有弹窗完成
 ```
 
 ## Prefab 路径配置
@@ -286,6 +400,8 @@ export class GameView extends BaseView {
 
 ## 完整示例
 
+### 基础示例
+
 ```typescript
 import { view, ViewNames, ManagerNames, ModelNames } from 'dzkcc-mflow/core';
 import { BaseView } from 'dzkcc-mflow/libs';
@@ -347,8 +463,148 @@ export class HomeView extends BaseView {
     }
     
     private async onStartClick(): Promise<void> {
-        mf.gui.close(ViewNames.Home);
+        await mf.gui.close(ViewNames.Home);
         await mf.gui.open(ViewNames.Game);
+    }
+}
+```
+
+### 高级功能示例
+
+```typescript
+import { view, ViewNames } from 'dzkcc-mflow/core';
+import { BaseView } from 'dzkcc-mflow/libs';
+import { _decorator, Button, Label } from 'cc';
+
+const { ccclass, property } = _decorator;
+
+@view('Game')
+@ccclass('GameView')
+export class GameView extends BaseView {
+    /** @internal */
+    private static readonly __path__: string = 'ui/game';
+    
+    @property(Label)
+    scoreLabel: Label = null!;
+    
+    @property(Button)
+    pauseButton: Button = null!;
+    
+    @property(Button)
+    shopButton: Button = null!;
+    
+    onEnter(args?: any): void {
+        console.log('游戏界面打开，参数:', args);
+        
+        // 监听按钮事件
+        this.pauseButton.node.on(Button.EventType.CLICK, this.onPauseClick, this);
+        this.shopButton.node.on(Button.EventType.CLICK, this.onShopClick, this);
+    }
+    
+    onExit(): void {
+        console.log('游戏界面关闭');
+    }
+    
+    private async onPauseClick(): Promise<void> {
+        // 打开暂停菜单（带动画）
+        await mf.gui.open(ViewNames.PauseMenu, {
+            animation: {
+                duration: 0.3,
+                easing: 'backOut'
+            },
+            showLoading: false,  // 暂停菜单不需要等待视图
+            clickToClose: true   // 允许点击遮罩关闭
+        });
+    }
+    
+    private async onShopClick(): Promise<void> {
+        // 打开商店（带等待视图和动画）
+        await mf.gui.open(ViewNames.Shop, {
+            animation: {
+                duration: 0.5,
+                easing: 'elasticOut'
+            },
+            showLoading: true,   // 显示等待视图
+            clickToClose: false, // 禁止点击遮罩关闭
+            args: { 
+                category: 'weapons',
+                highlight: 'sword' 
+            }
+        });
+    }
+}
+```
+
+### 初始化配置示例
+
+```typescript
+// 游戏启动时的 UI 配置
+export class GameBootstrap {
+    static async initialize(): Promise<void> {
+        const uiManager = mf.gui;
+        
+        // 配置等待视图
+        uiManager.setLoadingConfig({
+            enabled: true,
+            prefabPath: 'ui/loading',  // 使用自定义等待视图
+            delay: 200,
+            minShowTime: 500
+        });
+        
+        // 配置遮罩
+        uiManager.setMaskOptions({
+            clickToClose: true,
+            color: new Color(0, 0, 0, 150)
+        });
+        
+        // 配置缓存策略
+        uiManager.setCacheConfig({
+            maxSize: 15,
+            enableLRU: true
+        });
+        
+        // 配置预加载
+        uiManager.setPreloadConfig({
+            views: [
+                ViewNames.Home,
+                ViewNames.Game,
+                ViewNames.Shop,
+                ViewNames.Settings
+            ],
+            delay: 2000  // 2秒后开始预加载
+        });
+        
+        // 预加载关键视图
+        await uiManager.preload([
+            ViewNames.Home,
+            ViewNames.Game
+        ]);
+        
+        console.log('UI 系统初始化完成');
+    }
+}
+```
+
+### 性能监控示例
+
+```typescript
+// 性能监控工具
+export class UIPerformanceMonitor {
+    static logStats(): void {
+        const stats = mf.gui.getCacheStats();
+        console.log('=== UI 缓存统计 ===');
+        console.log(`缓存大小: ${stats.size}/${stats.maxSize}`);
+        console.log(`LRU 顺序: ${stats.lruOrder.join(' -> ')}`);
+        console.log(`等待视图状态: ${mf.gui.isShowingLoading() ? '显示中' : '隐藏'}`);
+        console.log(`当前打开视图数: ${mf.gui.getOpenViewCount()}`);
+    }
+    
+    static checkLoadingStatus(viewKey: string): void {
+        if (mf.gui.isLoading(viewKey)) {
+            console.log(`${viewKey} 正在加载中...`);
+        } else {
+            console.log(`${viewKey} 未在加载`);
+        }
     }
 }
 ```
@@ -372,4 +628,126 @@ export class HomeView extends BaseView {
 4. **异步操作**：
    - UI 打开/关闭是异步操作，注意使用 `await`
    - 避免在异步操作中访问已销毁的节点
+
+5. **等待视图配置**：
+   - 等待视图会在延迟时间后显示，避免闪烁
+   - 最小显示时间确保用户能看到等待视图
+   - 可以自定义等待视图预制体
+
+6. **动画性能**：
+   - 避免同时播放过多动画
+   - 复杂动画可能影响性能，建议使用简单效果
+   - 动画完成后会自动清理
+
+7. **缓存管理**：
+   - LRU 策略会自动清理最少使用的视图
+   - 定期检查缓存统计，避免内存泄漏
+   - 预加载的视图不会立即显示
+
+8. **并发控制**：
+   - 同一视图多次打开会返回同一个 Promise
+   - 使用 `isLoading()` 检查加载状态
+   - 避免在加载中重复调用
+
+## 最佳实践
+
+### 1. 合理使用等待视图
+
+```typescript
+// ✅ 好的做法：重要界面使用等待视图
+await mf.gui.open(ViewNames.Game, { showLoading: true });
+
+// ✅ 好的做法：快速界面不使用等待视图
+await mf.gui.open(ViewNames.Tooltip, { showLoading: false });
+
+// ❌ 避免：所有界面都使用等待视图
+await mf.gui.open(ViewNames.SmallDialog, { showLoading: true });
+```
+
+### 2. 优化动画使用
+
+```typescript
+// ✅ 好的做法：简单快速的动画
+await mf.gui.open(ViewNames.Popup, {
+    animation: {
+        duration: 0.2,
+        easing: 'quadOut'
+    }
+});
+
+// ❌ 避免：过于复杂的动画
+await mf.gui.open(ViewNames.Popup, {
+    animation: {
+        duration: 2.0,  // 太长了
+        easing: 'elasticOut'  // 太复杂
+    }
+});
+```
+
+### 3. 合理配置缓存
+
+```typescript
+// ✅ 好的做法：根据设备性能配置
+const isLowEndDevice = /* 检测设备性能 */;
+mf.gui.setCacheConfig({
+    maxSize: isLowEndDevice ? 5 : 15,
+    enableLRU: true
+});
+
+// ❌ 避免：缓存过大导致内存问题
+mf.gui.setCacheConfig({
+    maxSize: 100,  // 太大了
+    enableLRU: false  // 不启用 LRU
+});
+```
+
+### 4. 预加载策略
+
+```typescript
+// ✅ 好的做法：预加载用户可能访问的界面
+mf.gui.setPreloadConfig({
+    views: [
+        ViewNames.Home,      // 主界面
+        ViewNames.Game,      // 游戏界面
+        ViewNames.Shop       // 商店界面
+    ],
+    delay: 3000  // 游戏启动后 3 秒开始预加载
+});
+
+// ❌ 避免：预加载所有界面
+mf.gui.setPreloadConfig({
+    views: getAllViewNames(),  // 预加载所有界面
+    delay: 0  // 立即预加载
+});
+```
+
+### 5. 错误处理
+
+```typescript
+// ✅ 好的做法：处理 UI 打开失败
+try {
+    await mf.gui.open(ViewNames.Game);
+} catch (error) {
+    console.error('打开游戏界面失败:', error);
+    // 显示错误提示或回退到其他界面
+}
+
+// ✅ 好的做法：检查加载状态
+if (mf.gui.isLoading(ViewNames.Game)) {
+    console.log('游戏界面正在加载，请稍候...');
+    return;
+}
+```
+
+### 6. 性能监控
+
+```typescript
+// ✅ 好的做法：定期检查性能
+setInterval(() => {
+    const stats = mf.gui.getCacheStats();
+    if (stats.size > stats.maxSize * 0.8) {
+        console.warn('UI 缓存使用率过高:', stats.size, '/', stats.maxSize);
+    }
+}, 30000);  // 每 30 秒检查一次
+```
 
