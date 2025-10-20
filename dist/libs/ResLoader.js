@@ -1,51 +1,71 @@
 import { __awaiter } from '../_virtual/_tslib.js';
-import { assetManager, Prefab, SpriteFrame, sp, Asset } from 'cc';
+import { path, assetManager, Prefab, SpriteFrame, sp, Asset } from 'cc';
 
 const DefaultBundle = "resources";
 class ResLoader {
-    loadAsset(path, type, nameOrUrl = DefaultBundle) {
-        // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
-        const _path = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
-        // 加载资源的通用逻辑
-        const loadFromBundle = (bundle) => {
-            const cachedAsset = bundle.get(_path, type);
-            if (cachedAsset) {
-                cachedAsset.addRef();
-                return Promise.resolve(cachedAsset);
-            }
-            else {
-                return new Promise((resolve, reject) => {
-                    bundle.load(_path, type, (err, data) => {
-                        if (err) {
-                            reject(err);
-                        }
-                        else {
-                            data.addRef();
-                            resolve(data);
-                        }
-                    });
-                });
-            }
-        };
-        // 如果 bundle 未加载，先加载 bundle
-        const bundle = assetManager.getBundle(nameOrUrl);
-        if (!bundle) {
-            return new Promise((resolve, reject) => {
-                assetManager.loadBundle(nameOrUrl, (err, bundle) => {
-                    if (err) {
-                        reject(err);
-                    }
-                    else {
-                        loadFromBundle(bundle).then(resolve).catch(reject);
-                    }
-                });
-            });
+    /**
+     *
+     * @param nameOrUrl 资源包名称或路径
+     * @returns Promise<AssetManager.Bundle>
+     */
+    _loadBundle(nameOrUrl = DefaultBundle) {
+        const bundleName = path.basename(nameOrUrl);
+        const bundle = assetManager.getBundle(bundleName);
+        if (bundle) {
+            return Promise.resolve(bundle);
         }
-        return loadFromBundle(bundle);
+        return new Promise((resolve, reject) => {
+            assetManager.loadBundle(nameOrUrl, (err, bundle) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve(bundle);
+                }
+            });
+        });
+    }
+    /**
+     *
+     * @param path
+     * @param type
+     * @param nameOrUrl
+     * @returns
+     */
+    loadAsset(path, type, nameOrUrl = DefaultBundle) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
+            const _path = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
+            // 加载资源的通用逻辑
+            const loadFromBundle = (bundle) => {
+                const cachedAsset = bundle.get(_path, type);
+                if (cachedAsset) {
+                    cachedAsset.addRef();
+                    return Promise.resolve(cachedAsset);
+                }
+                else {
+                    return new Promise((resolve, reject) => {
+                        bundle.load(_path, type, (err, data) => {
+                            if (err) {
+                                reject(err);
+                            }
+                            else {
+                                data.addRef();
+                                resolve(data);
+                            }
+                        });
+                    });
+                }
+            };
+            const bundle = yield this._loadBundle(nameOrUrl);
+            return loadFromBundle(bundle);
+        });
     }
     loadPrefab(path, nameOrUrl = DefaultBundle) {
-        //refCount 记录的是持有者数量，不是资源份数，所以prefab也需要addRef
-        return this.loadAsset(path, Prefab, nameOrUrl);
+        return __awaiter(this, void 0, void 0, function* () {
+            //refCount 记录的是持有者数量，不是资源份数，所以prefab也需要addRef
+            return yield this.loadAsset(path, Prefab, nameOrUrl);
+        });
     }
     loadSpriteFrame(ref, path, nameOrUrl = DefaultBundle) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73,6 +93,21 @@ class ResLoader {
                 this.release(path, sp.SkeletonData, nameOrUrl);
                 return Promise.reject(new Error("Spine is not valid"));
             }
+        });
+    }
+    preloadAsset(paths, type, nameOrUrl = DefaultBundle) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const bundle = yield this._loadBundle(nameOrUrl);
+            new Promise((resolve, reject) => {
+                bundle.preload(paths, type, (err, data) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve(data);
+                    }
+                });
+            });
         });
     }
     release(pathOrAsset, typeOrForce, nameOrUrl = DefaultBundle, forceParam = false) {

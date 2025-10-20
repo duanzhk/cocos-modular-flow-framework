@@ -85,10 +85,6 @@ export declare class UIManager extends CcocosUIManager {
     private _openOptions;
     constructor();
     /**
-     * 设置遮罩点击处理器
-     */
-    private _setupMaskClickHandler;
-    /**
      * 设置遮罩配置
      */
     setMaskConfig(options: UIMaskOptions): void;
@@ -105,70 +101,79 @@ export declare class UIManager extends CcocosUIManager {
      */
     setPreloadConfig(config: UIPreloadConfig): void;
     /**
-     * 显示等待视图
+     * 检查指定视图是否已打开
      */
-    private _showLoading;
+    contains<T extends keyof UIRegistry>(viewKey: T): boolean;
     /**
-     * 隐藏等待视图
+     * 检查视图是否正在加载
+    */
+    isLoading<T extends keyof UIRegistry>(viewKey: T): boolean;
+    /**
+     * 预加载视图（支持单个或多个）
      */
-    private _hideLoading;
+    preload<T extends keyof UIRegistry>(viewKeyOrKeys: T | T[]): Promise<void>;
     private _getPrefabPath;
     /**
      * 获取所有活跃的视图节点（排除遮罩节点）
      */
     private _getActiveViews;
     /**
+     * 通过prefab创建Node对象
+     * @param args
+     * @returns Node对象
+     */
+    private _generateNode;
+    /**
      * 调整遮罩层级：始终保持在最顶层UI的下一层
      */
     private _adjustMaskLayer;
-    /**
-     * 阻塞/解除输入事件
-     */
-    private _blockInput;
     /**
      * 更新LRU顺序
      */
     private _updateLRUOrder;
     /**
+     * 阻塞/解除输入事件
+     */
+    private _blockInput;
+    /**
+     * 设置遮罩点击处理器
+     */
+    private _setupMaskClickHandler;
+    /**
+    * 显示等待视图
+    */
+    private _showLoading;
+    /**
+     * 隐藏等待视图
+     */
+    private _hideLoading;
+    /**
      * 预加载视图
      */
     private _startPreload;
-    private _loadUIViewNode;
     /**
      * 预加载单个视图
      */
     private _preloadView;
+    /**
+     * 获取当前最顶层的视图
+     */
+    protected _internalGetTopView(): ICocosView | undefined;
     private _load;
     private _loadInternal;
+    protected _internalOpen(viewKey: string, options?: UIOpenOptions): Promise<ICocosView>;
+    protected _internalClose(viewKeyOrInstance: string | IView, destroy?: boolean): Promise<void>;
+    protected _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenOptions): Promise<ICocosView>;
+    protected _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
     /**
      * 移除视图
      */
     private _remove;
     private _releasePrefab;
-    /**
-     * 获取当前最顶层的视图
-     */
-    protected _internalGetTopView(): ICocosView | undefined;
-    protected _internalOpen(viewKey: string, options?: UIOpenOptions): Promise<ICocosView>;
-    protected _internalClose(viewKeyOrInstance: string | IView, destroy?: boolean): Promise<void>;
-    protected _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenOptions): Promise<ICocosView>;
-    protected _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
     protected _internalClearStack(group: string, destroy?: boolean): void;
     /**
      * 关闭所有视图，不播放动画
      */
     protected _internalCloseAll(destroy?: boolean): void;
-    /**
-     * 检查指定视图是否已打开
-     */
-    contains<T extends keyof UIRegistry>(viewKey: T): boolean;
-    /**
-     * 预加载视图（支持单个或多个）
-     */
-    preload<T extends keyof UIRegistry>(viewKeyOrKeys: T | T[]): Promise<void>;
-    /**
-     * 检查视图是否正在加载
-     */
-    isLoading<T extends keyof UIRegistry>(viewKey: T): boolean;
 }
 export {};

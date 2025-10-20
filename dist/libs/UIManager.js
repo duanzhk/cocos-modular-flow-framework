@@ -106,31 +106,6 @@ class UIManager extends CcocosUIManager {
         this._startPreload();
     }
     /**
-     * 设置遮罩点击处理器
-     */
-    _setupMaskClickHandler() {
-        UIMask.on(Node.EventType.TOUCH_END, (event) => {
-            if (!this._maskOptions.clickToClose) {
-                return;
-            }
-            const view = this.getTopView();
-            if (!view) {
-                return;
-            }
-            // 区分两种情况处理：
-            // 1. 如果视图有 __group__ 属性且不为 undefined，说明是通过 openAndPush 打开的栈式UI
-            // 2. 否则是通过 open 打开的普通 UI
-            if ('__group__' in view && view.__group__ !== undefined) {
-                // 栈式UI：调用 closeAndPop 来处理返回逻辑
-                this.closeAndPop(view.__group__, false);
-            }
-            else {
-                // 普通UI：直接关闭该视图
-                this._internalClose(view, false);
-            }
-        });
-    }
-    /**
      * 设置遮罩配置
      */
     setMaskConfig(options) {
@@ -162,53 +137,35 @@ class UIManager extends CcocosUIManager {
         this._startPreload();
     }
     /**
-     * 显示等待视图
+     * 检查指定视图是否已打开
      */
-    _showLoading() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this._loadingConfig.enabled) {
-                return Promise.resolve();
-            }
-            // 如果已经显示了等待视图，直接返回
-            if (this._loadingView && this._loadingView.activeInHierarchy) {
-                return Promise.resolve();
-            }
-            // 首次加载或创建等待视图
-            if (!this._loadingView) {
-                if (this._loadingConfig.createCustomLoading) {
-                    // 使用自定义创建函数
-                    this._loadingView = yield this._loadingConfig.createCustomLoading();
-                }
-                else if (this._loadingConfig.prefabPath) {
-                    try {
-                        // 从 prefab 创建等待视图
-                        this._loadingView = yield this._loadUIViewNode({ prefabPath: this._loadingConfig.prefabPath });
-                    }
-                    catch (error) {
-                        throw error;
-                    }
-                }
-                else {
-                    // 没有配置等待视图
-                    return Promise.resolve();
-                }
-            }
-            // 激活并添加到场景，调整到最顶层
-            this._loadingView.active = true;
-            UIRoot.parent.addChild(this._loadingView);
-        });
+    contains(viewKey) {
+        const viewType = getViewClass(viewKey);
+        return this._cache.has(viewType.name) && this._cache.get(viewType.name).parent !== null;
     }
     /**
-     * 隐藏等待视图
-     */
-    _hideLoading() {
-        if (this._loadingView && this._loadingView.activeInHierarchy) {
-            this._loadingView.active = false;
-            if (this._loadingView.parent) {
-                this._loadingView.removeFromParent();
-            }
-        }
+     * 检查视图是否正在加载
+    */
+    isLoading(viewKey) {
+        return this._loadingPromises.has(viewKey);
     }
+    /**
+     * 预加载视图（支持单个或多个）
+     */
+    preload(viewKeyOrKeys) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (Array.isArray(viewKeyOrKeys)) {
+                const promises = viewKeyOrKeys.map(key => this._preloadView(key));
+                yield Promise.all(promises);
+            }
+            else {
+                yield this._preloadView(viewKeyOrKeys);
+            }
+        });
+    }
+    //----------------------------------------------------------
+    // ⬇️⬇️⬇️⬇️⬇️ 内部私有方法 ⬇️⬇️⬇️⬇️⬇️
+    //----------------------------------------------------------
     _getPrefabPath(viewType) {
         let prototype = Object.getPrototypeOf(viewType);
         // 沿着原型链向上查找直到找到定义__path__的基类。注意通过类只能找到静态属性。
@@ -227,6 +184,22 @@ class UIManager extends CcocosUIManager {
         return UIRoot.children.filter(child => child !== _uiMask && child.name !== '__UIMask__');
     }
     /**
+     * 通过prefab创建Node对象
+     * @param args
+     * @returns Node对象
+     */
+    _generateNode(args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let prefabPath = args.prefabPath;
+            if (!prefabPath) {
+                prefabPath = this._getPrefabPath(getViewClass(args.viewKey));
+            }
+            const ResMgr = ServiceLocator.getService('ResLoader');
+            const prefab = yield ResMgr.loadPrefab(prefabPath);
+            return instantiate(prefab);
+        });
+    }
+    /**
      * 调整遮罩层级：始终保持在最顶层UI的下一层
      */
     _adjustMaskLayer() {
@@ -240,33 +213,6 @@ class UIManager extends CcocosUIManager {
         UIMask.active = true;
         const targetIndex = Math.max(UIRoot.children.length - 2, 0);
         UIMask.setSiblingIndex(targetIndex);
-    }
-    /**
-     * 阻塞/解除输入事件
-     */
-    _blockInput(block) {
-        if (block) {
-            // 创建并保存阻塞器引用
-            if (!this._inputBlocker) {
-                this._inputBlocker = (event) => {
-                    event.propagationImmediateStopped = true;
-                };
-            }
-            // 只监听常用的触摸和鼠标事件
-            input.on(Input.EventType.TOUCH_START, this._inputBlocker, this);
-            input.on(Input.EventType.TOUCH_MOVE, this._inputBlocker, this);
-            input.on(Input.EventType.TOUCH_END, this._inputBlocker, this);
-            input.on(Input.EventType.TOUCH_CANCEL, this._inputBlocker, this);
-        }
-        else {
-            // 使用保存的引用解除监听
-            if (this._inputBlocker) {
-                input.off(Input.EventType.TOUCH_START, this._inputBlocker, this);
-                input.off(Input.EventType.TOUCH_MOVE, this._inputBlocker, this);
-                input.off(Input.EventType.TOUCH_END, this._inputBlocker, this);
-                input.off(Input.EventType.TOUCH_CANCEL, this._inputBlocker, this);
-            }
-        }
     }
     /**
      * 更新LRU顺序
@@ -297,6 +243,106 @@ class UIManager extends CcocosUIManager {
         }
     }
     /**
+     * 阻塞/解除输入事件
+     */
+    _blockInput(block) {
+        if (block) {
+            // 创建并保存阻塞器引用
+            if (!this._inputBlocker) {
+                this._inputBlocker = (event) => {
+                    event.propagationImmediateStopped = true;
+                };
+            }
+            // 只监听常用的触摸和鼠标事件
+            input.on(Input.EventType.TOUCH_START, this._inputBlocker, this);
+            input.on(Input.EventType.TOUCH_MOVE, this._inputBlocker, this);
+            input.on(Input.EventType.TOUCH_END, this._inputBlocker, this);
+            input.on(Input.EventType.TOUCH_CANCEL, this._inputBlocker, this);
+        }
+        else {
+            // 使用保存的引用解除监听
+            if (this._inputBlocker) {
+                input.off(Input.EventType.TOUCH_START, this._inputBlocker, this);
+                input.off(Input.EventType.TOUCH_MOVE, this._inputBlocker, this);
+                input.off(Input.EventType.TOUCH_END, this._inputBlocker, this);
+                input.off(Input.EventType.TOUCH_CANCEL, this._inputBlocker, this);
+            }
+        }
+    }
+    /**
+     * 设置遮罩点击处理器
+     */
+    _setupMaskClickHandler() {
+        UIMask.on(Node.EventType.TOUCH_END, (event) => {
+            if (!this._maskOptions.clickToClose) {
+                return;
+            }
+            const view = this.getTopView();
+            if (!view) {
+                return;
+            }
+            // 区分两种情况处理：
+            // 1. 如果视图有 __group__ 属性且不为 undefined，说明是通过 openAndPush 打开的栈式UI
+            // 2. 否则是通过 open 打开的普通 UI
+            if ('__group__' in view && view.__group__ !== undefined) {
+                // 栈式UI：调用 _internalCloseAndPop 来处理返回逻辑
+                this._internalCloseAndPop(view.__group__, false);
+            }
+            else {
+                // 普通UI：直接关闭该视图
+                this._internalClose(view, false);
+            }
+        });
+    }
+    /**
+    * 显示等待视图
+    */
+    _showLoading() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this._loadingConfig.enabled) {
+                return Promise.resolve();
+            }
+            // 如果已经显示了等待视图，直接返回
+            if (this._loadingView && this._loadingView.activeInHierarchy) {
+                return Promise.resolve();
+            }
+            // 首次加载或创建等待视图
+            if (!this._loadingView) {
+                if (this._loadingConfig.createCustomLoading) {
+                    // 使用自定义创建函数
+                    this._loadingView = yield this._loadingConfig.createCustomLoading();
+                }
+                else if (this._loadingConfig.prefabPath) {
+                    try {
+                        // 从 prefab 创建等待视图
+                        this._loadingView = yield this._generateNode({ prefabPath: this._loadingConfig.prefabPath });
+                    }
+                    catch (error) {
+                        throw error;
+                    }
+                }
+                else {
+                    // 没有配置等待视图
+                    return Promise.resolve();
+                }
+            }
+            // 激活并添加到场景，调整到最顶层
+            this._loadingView.active = true;
+            UIRoot.parent.addChild(this._loadingView);
+        });
+    }
+    /**
+     * 隐藏等待视图
+     */
+    _hideLoading() {
+        if (this._loadingView && this._loadingView.activeInHierarchy) {
+            this._loadingView.active = false;
+            if (this._loadingView.parent) {
+                this._loadingView.removeFromParent();
+            }
+        }
+    }
+    /**
      * 预加载视图
      */
     _startPreload() {
@@ -317,17 +363,6 @@ class UIManager extends CcocosUIManager {
             }
         }), this._preloadConfig.delay || 1000);
     }
-    _loadUIViewNode(args) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let prefabPath = args.prefabPath;
-            if (!prefabPath) {
-                prefabPath = this._getPrefabPath(getViewClass(args.viewKey));
-            }
-            const ResMgr = ServiceLocator.getService('ResLoader');
-            const prefab = yield ResMgr.loadPrefab(prefabPath);
-            return instantiate(prefab);
-        });
-    }
     /**
      * 预加载单个视图
      */
@@ -337,12 +372,33 @@ class UIManager extends CcocosUIManager {
             if (this._cache.has(viewType.name)) {
                 return; // 已经缓存
             }
-            const target = yield this._loadUIViewNode({ viewKey: viewKey });
+            const target = yield this._generateNode({ viewKey: viewKey });
             target.active = false; // 预加载的视图保持不激活状态
             this._cache.set(viewType.name, target);
             this._updateLRUOrder(viewType.name);
         });
     }
+    /**
+     * 获取当前最顶层的视图
+     */
+    _internalGetTopView() {
+        const activeViews = this._getActiveViews();
+        if (activeViews.length === 0) {
+            return undefined;
+        }
+        // 获取最后一个视图节点（最顶层）
+        const target = activeViews[activeViews.length - 1];
+        const comps = target.components;
+        for (let i = 0; i < comps.length; i++) {
+            const comp = comps[i];
+            if ("__isIView__" in comp && comp.__isIView__) {
+                return comp;
+            }
+        }
+        console.warn(`No view found in ${target.name}`);
+        return undefined;
+    }
+    //----------------------------------------------------------
     _load(viewKey) {
         return __awaiter(this, void 0, void 0, function* () {
             // 并发控制：如果正在加载同一个视图，返回现有的Promise
@@ -367,13 +423,131 @@ class UIManager extends CcocosUIManager {
                 target = this._cache.get(viewType.name);
             }
             else {
-                target = yield this._loadUIViewNode({ viewKey: viewKey });
+                target = yield this._generateNode({ viewKey: viewKey });
                 this._cache.set(viewType.name, target);
             }
             // 更新LRU顺序
             this._updateLRUOrder(viewType.name);
             target.active = true;
             return target.getComponent(viewType);
+        });
+    }
+    _internalOpen(viewKey, options) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const op = Object.assign(Object.assign({}, this._openOptions), options);
+            // 显示等待视图
+            if (op.showLoading) {
+                yield this._showLoading();
+            }
+            // 打开UI前，阻塞输入事件
+            this._blockInput(true);
+            try {
+                const view = yield this._load(viewKey);
+                addChild(view.node);
+                this._adjustMaskLayer();
+                // 先执行onEnter初始化，再播放动画
+                view.onEnter(op.args);
+                // 播放打开动画
+                yield ((_a = view.onEnterAnimation) === null || _a === void 0 ? void 0 : _a.call(view));
+                return view;
+            }
+            finally {
+                // 隐藏等待视图
+                if (op.showLoading) {
+                    this._hideLoading();
+                }
+                // 打开UI后，解除输入事件阻塞
+                this._blockInput(false);
+            }
+        });
+    }
+    _internalClose(viewKeyOrInstance, destroy) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this._blockInput(true);
+            try {
+                yield this._remove(viewKeyOrInstance, destroy);
+                this._adjustMaskLayer();
+            }
+            finally {
+                this._blockInput(false);
+            }
+        });
+    }
+    _internalOpenAndPush(viewKey, group, options) {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function* () {
+            const op = Object.assign(Object.assign({}, this._openOptions), options);
+            // 显示等待视图
+            if (op.showLoading) {
+                yield this._showLoading();
+            }
+            // 打开UI前，阻塞输入事件
+            this._blockInput(true);
+            try {
+                const view = yield this._load(viewKey);
+                let stack = this._groupStacks.get(group);
+                if (!stack) {
+                    stack = [];
+                    this._groupStacks.set(group, stack);
+                }
+                // 暂停并移除当前栈顶视图
+                const top = stack[stack.length - 1];
+                if (top) {
+                    // 先执行onExit，再播放退出动画
+                    yield ((_a = top.onExitAnimation) === null || _a === void 0 ? void 0 : _a.call(top));
+                    top.onPause();
+                    top.node.removeFromParent();
+                }
+                // 标记视图所属组并入栈
+                if ('__group__' in view) {
+                    view.__group__ = group;
+                }
+                stack.push(view);
+                addChild(view.node);
+                this._adjustMaskLayer();
+                // 先执行onEnter初始化，再播放动画
+                view.onEnter(op.args);
+                // 播放打开动画
+                yield ((_b = view.onEnterAnimation) === null || _b === void 0 ? void 0 : _b.call(view));
+                return view;
+            }
+            finally {
+                // 隐藏等待视图
+                if (op.showLoading) {
+                    this._hideLoading();
+                }
+                // 打开UI后，解除输入事件阻塞
+                this._blockInput(false);
+            }
+        });
+    }
+    _internalCloseAndPop(group, destroy) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const stack = this._groupStacks.get(group);
+            if (!stack || stack.length === 0) {
+                console.warn(`No stack or empty stack for group ${group}`);
+                return;
+            }
+            this._blockInput(true);
+            try {
+                // 移除当前栈顶视图
+                yield this._remove(stack.pop(), destroy);
+                // 恢复上一个视图
+                const top = stack[stack.length - 1];
+                if (top) {
+                    top.onResume();
+                    addChild(top.node);
+                    // 播放恢复动画
+                    yield ((_a = top.onEnterAnimation) === null || _a === void 0 ? void 0 : _a.call(top));
+                }
+                // 调整遮罩层级
+                this._adjustMaskLayer();
+            }
+            finally {
+                this._blockInput(false);
+            }
         });
     }
     /**
@@ -436,132 +610,6 @@ class UIManager extends CcocosUIManager {
             console.error(`Failed to release prefab for ${viewKey}:`, error);
         }
     }
-    /**
-     * 获取当前最顶层的视图
-     */
-    _internalGetTopView() {
-        const activeViews = this._getActiveViews();
-        if (activeViews.length === 0) {
-            return undefined;
-        }
-        // 获取最后一个视图节点（最顶层）
-        const target = activeViews[activeViews.length - 1];
-        const comps = target.components;
-        for (let i = 0; i < comps.length; i++) {
-            const comp = comps[i];
-            if ("__isIView__" in comp && comp.__isIView__) {
-                return comp;
-            }
-        }
-        console.warn(`No view found in ${target.name}`);
-        return undefined;
-    }
-    _internalOpen(viewKey, options) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            const op = Object.assign(Object.assign({}, this._openOptions), options);
-            // 显示等待视图
-            if (op.showLoading) {
-                yield this._showLoading();
-            }
-            // 打开UI前，阻塞输入事件
-            this._blockInput(true);
-            try {
-                const view = yield this._load(viewKey);
-                addChild(view.node);
-                this._adjustMaskLayer();
-                // 先执行onEnter初始化，再播放动画
-                view.onEnter(op.args);
-                // 播放打开动画
-                yield ((_a = view.onEnterAnimation) === null || _a === void 0 ? void 0 : _a.call(view));
-                return view;
-            }
-            finally {
-                // 隐藏等待视图
-                if (op.showLoading) {
-                    this._hideLoading();
-                }
-                // 打开UI后，解除输入事件阻塞
-                this._blockInput(false);
-            }
-        });
-    }
-    _internalClose(viewKeyOrInstance, destroy) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this._remove(viewKeyOrInstance, destroy);
-            this._adjustMaskLayer();
-        });
-    }
-    _internalOpenAndPush(viewKey, group, options) {
-        var _a, _b;
-        return __awaiter(this, void 0, void 0, function* () {
-            const op = Object.assign(Object.assign({}, this._openOptions), options);
-            // 显示等待视图
-            if (op.showLoading) {
-                yield this._showLoading();
-            }
-            // 打开UI前，阻塞输入事件
-            this._blockInput(true);
-            try {
-                const view = yield this._load(viewKey);
-                let stack = this._groupStacks.get(group);
-                if (!stack) {
-                    stack = [];
-                    this._groupStacks.set(group, stack);
-                }
-                // 暂停并移除当前栈顶视图
-                const top = stack[stack.length - 1];
-                if (top) {
-                    // 先执行onExit，再播放退出动画
-                    yield ((_a = top.onExitAnimation) === null || _a === void 0 ? void 0 : _a.call(top));
-                    top.onPause();
-                    top.node.removeFromParent();
-                }
-                // 标记视图所属组并入栈
-                if ('__group__' in view) {
-                    view.__group__ = group;
-                }
-                stack.push(view);
-                addChild(view.node);
-                this._adjustMaskLayer();
-                // 先执行onEnter初始化，再播放动画
-                view.onEnter(op.args);
-                // 播放打开动画
-                yield ((_b = view.onEnterAnimation) === null || _b === void 0 ? void 0 : _b.call(view));
-                return view;
-            }
-            finally {
-                // 隐藏等待视图
-                if (op.showLoading) {
-                    this._hideLoading();
-                }
-                // 打开UI后，解除输入事件阻塞
-                this._blockInput(false);
-            }
-        });
-    }
-    _internalCloseAndPop(group, destroy) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            const stack = this._groupStacks.get(group);
-            if (!stack || stack.length === 0) {
-                console.warn(`No stack or empty stack for group ${group}`);
-                return;
-            }
-            // 移除当前栈顶视图
-            yield this._remove(stack.pop(), destroy);
-            // 恢复上一个视图
-            const top = stack[stack.length - 1];
-            if (top) {
-                top.onResume();
-                addChild(top.node);
-                // 播放恢复动画
-                yield ((_a = top.onEnterAnimation) === null || _a === void 0 ? void 0 : _a.call(top));
-            }
-            // 调整遮罩层级
-            this._adjustMaskLayer();
-        });
-    }
     _internalClearStack(group, destroy) {
         const stack = this._groupStacks.get(group);
         if (!stack) {
@@ -597,33 +645,6 @@ class UIManager extends CcocosUIManager {
         this._groupStacks.clear();
         // 调整遮罩
         this._adjustMaskLayer();
-    }
-    /**
-     * 检查指定视图是否已打开
-     */
-    contains(viewKey) {
-        const viewType = getViewClass(viewKey);
-        return this._cache.has(viewType.name) && this._cache.get(viewType.name).parent !== null;
-    }
-    /**
-     * 预加载视图（支持单个或多个）
-     */
-    preload(viewKeyOrKeys) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (Array.isArray(viewKeyOrKeys)) {
-                const promises = viewKeyOrKeys.map(key => this._preloadView(key));
-                yield Promise.all(promises);
-            }
-            else {
-                yield this._preloadView(viewKeyOrKeys);
-            }
-        });
-    }
-    /**
-     * 检查视图是否正在加载
-     */
-    isLoading(viewKey) {
-        return this._loadingPromises.has(viewKey);
     }
 }
 
