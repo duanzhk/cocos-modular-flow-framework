@@ -189,19 +189,89 @@ await mf.gui.open(ViewNames.Dialog, {
 
 #### UI 动画支持
 
-支持自定义 UI 打开和关闭动画。
+`BaseView` 提供了默认的打开和关闭动画效果。你可以通过覆盖 `onEnterAnimation()` 和 `onExitAnimation()` 方法来自定义动画。
+
+**默认动画效果：**
+- **打开动画**：缩放（从 0.8 到 1.0）+ 淡入（从透明到不透明），使用 `backOut` 缓动
+- **关闭动画**：缩放（从 1.0 到 0.8）+ 淡出（从不透明到透明），使用 `backIn` 缓动
 
 ```typescript
-// 打开 UI 时播放动画
-await mf.gui.open(ViewNames.Popup, {
-    animation: {
-        duration: 0.3,               // 动画持续时间
-        easing: 'backOut',           // 缓动类型
-        openAnimation: 'scaleIn',    // 打开动画（可选）
-        closeAnimation: 'scaleOut'   // 关闭动画（可选）
-    },
-    args: { title: '弹窗' }
-});
+@view('CustomPopup')
+@ccclass('CustomPopupView')
+export class CustomPopupView extends BaseView {
+    /** @internal */
+    private static readonly __path__: string = 'ui/custom-popup';
+
+    // 自定义打开动画：滑动进入 + 淡入
+    async onEnterAnimation(): Promise<void> {
+        const node = this.node;
+
+        // 初始状态：从屏幕上方滑入
+        node.setPosition(0, 500, 0);
+        node.setScale(0.5, 0.5, 1);
+
+        let uiOpacity = node.getComponent(UIOpacity);
+        if (uiOpacity) {
+            uiOpacity.opacity = 0;
+        }
+
+        return new Promise<void>((resolve) => {
+            // 同时执行滑动和缩放动画
+            tween(node)
+                .parallel(
+                    tween().to(0.4, { position: new Vec3(0, 0, 0) }, { easing: 'quartOut' }),
+                    tween().to(0.4, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' })
+                )
+                .start();
+
+            // 淡入动画
+            if (uiOpacity) {
+                tween(uiOpacity)
+                    .to(0.4, { opacity: 255 }, { easing: 'quadOut' })
+                    .start();
+            }
+
+            // 动画完成后调用 resolve
+            setTimeout(() => resolve(), 400);
+        });
+    }
+
+    // 自定义关闭动画：旋转退出 + 淡出
+    async onExitAnimation(): Promise<void> {
+        const node = this.node;
+        const uiOpacity = node.getComponent(UIOpacity);
+
+        return new Promise<void>((resolve) => {
+            // 同时执行旋转和淡出动画
+            tween(node)
+                .parallel(
+                    tween().to(0.3, { rotation: new Vec3(0, 0, 180) }, { easing: 'backIn' }),
+                    tween().to(0.3, { scale: new Vec3(0.8, 0.8, 1) }, { easing: 'backIn' })
+                )
+                .start();
+
+            if (uiOpacity) {
+                tween(uiOpacity)
+                    .to(0.3, { opacity: 0 }, { easing: 'quadIn' })
+                    .start();
+            }
+
+            // 动画完成后调用 resolve
+            setTimeout(() => resolve(), 300);
+        });
+    }
+
+    onEnter(args?: any): void {
+        console.log('弹窗打开，参数:', args);
+    }
+
+    onExit(): void {
+        console.log('弹窗关闭');
+    }
+
+    onPause(): void {}
+    onResume(): void {}
+}
 ```
 
 #### 并发控制
@@ -506,31 +576,25 @@ export class GameView extends BaseView {
     }
     
     private async onPauseClick(): Promise<void> {
-        // 打开暂停菜单（带动画）
+        // 打开暂停菜单（使用默认动画效果）
         await mf.gui.open(ViewNames.PauseMenu, {
-            animation: {
-                duration: 0.3,
-                easing: 'backOut'
-            },
             showLoading: false,  // 暂停菜单不需要等待视图
             clickToClose: true   // 允许点击遮罩关闭
         });
+        // 动画效果在 PauseMenuView 的 onEnterAnimation() 中定义
     }
     
     private async onShopClick(): Promise<void> {
-        // 打开商店（带等待视图和动画）
+        // 打开商店（带等待视图，使用自定义动画效果）
         await mf.gui.open(ViewNames.Shop, {
-            animation: {
-                duration: 0.5,
-                easing: 'elasticOut'
-            },
             showLoading: true,   // 显示等待视图
             clickToClose: false, // 禁止点击遮罩关闭
-            args: { 
+            args: {
                 category: 'weapons',
-                highlight: 'sword' 
+                highlight: 'sword'
             }
         });
+        // 自定义动画效果在 ShopView 的 onEnterAnimation() 中定义
     }
 }
 ```
@@ -634,10 +698,11 @@ export class UIPerformanceMonitor {
    - 最小显示时间确保用户能看到等待视图
    - 可以自定义等待视图预制体
 
-6. **动画性能**：
-   - 避免同时播放过多动画
-   - 复杂动画可能影响性能，建议使用简单效果
-   - 动画完成后会自动清理
+6. **动画实现**：
+   - 在 `onEnterAnimation()` 和 `onExitAnimation()` 中实现动画逻辑
+   - 动画方法必须返回 `Promise<void>` 以确保正确的执行顺序
+   - 避免同时播放过多动画，建议保持动画时长在 200-500ms
+   - 复杂动画可能影响性能，建议使用简单的缓动函数
 
 7. **缓存管理**：
    - LRU 策略会自动清理最少使用的视图
@@ -667,21 +732,35 @@ await mf.gui.open(ViewNames.SmallDialog, { showLoading: true });
 ### 2. 优化动画使用
 
 ```typescript
-// ✅ 好的做法：简单快速的动画
-await mf.gui.open(ViewNames.Popup, {
-    animation: {
-        duration: 0.2,
-        easing: 'quadOut'
+// ✅ 好的做法：简单快速的动画（在视图类中实现）
+@view('FastPopup')
+@ccclass('FastPopupView')
+export class FastPopupView extends BaseView {
+    async onEnterAnimation(): Promise<void> {
+        // 快速的缩放动画，200ms完成
+        return new Promise<void>((resolve) => {
+            tween(this.node)
+                .to(0.2, { scale: new Vec3(1, 1, 1) }, { easing: 'quadOut' })
+                .call(() => resolve())
+                .start();
+        });
     }
-});
+}
 
-// ❌ 避免：过于复杂的动画
-await mf.gui.open(ViewNames.Popup, {
-    animation: {
-        duration: 2.0,  // 太长了
-        easing: 'elasticOut'  // 太复杂
+// ❌ 避免：过于复杂的动画（在视图类中实现）
+@view('ComplexPopup')
+@ccclass('ComplexPopupView')
+export class ComplexPopupView extends BaseView {
+    async onEnterAnimation(): Promise<void> {
+        // 过于复杂的动画会影响性能
+        return new Promise<void>((resolve) => {
+            tween(this.node)
+                .to(2.0, { scale: new Vec3(1, 1, 1) }, { easing: 'elasticOut' })
+                .call(() => resolve())
+                .start();
+        });
     }
-});
+}
 ```
 
 ### 3. 合理配置缓存
