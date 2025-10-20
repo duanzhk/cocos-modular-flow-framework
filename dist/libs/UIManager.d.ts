@@ -53,7 +53,11 @@ export interface UIPreloadConfig {
     /** 预加载延迟（毫秒） */
     delay?: number;
 }
-type ICocosView = IView & Component;
+interface IInternalView extends IView {
+    __group__: string | undefined;
+    __isIView__: boolean;
+}
+type ICocosView = IInternalView & Component;
 declare abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined;
     open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>>;

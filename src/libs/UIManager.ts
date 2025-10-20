@@ -122,7 +122,13 @@ const UIMask = new Proxy({} as Node, {
     }
 })
 
-type ICocosView = IView & Component
+// 用于BaseView的内部接口，仅供 UIManager 使用
+interface IInternalView extends IView {
+    __group__: string | undefined;
+    __isIView__: boolean;
+}
+type ICocosView = IInternalView & Component
+
 // 接口隔离，实现具体的CcocosUIManager
 abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
@@ -362,7 +368,7 @@ export class UIManager extends CcocosUIManager {
             if (!this._maskOptions.clickToClose) {
                 return;
             }
-            const view = this.getTopView();
+            const view = this._internalGetTopView();
             if (!view) {
                 return;
             }
@@ -370,7 +376,7 @@ export class UIManager extends CcocosUIManager {
             // 区分两种情况处理：
             // 1. 如果视图有 __group__ 属性且不为 undefined，说明是通过 openAndPush 打开的栈式UI
             // 2. 否则是通过 open 打开的普通 UI
-            if ('__group__' in view && view.__group__ !== undefined) {
+            if (view.__group__ && view.__group__.trim() != "") {
                 // 栈式UI：调用 _internalCloseAndPop 来处理返回逻辑
                 this._internalCloseAndPop(view.__group__ as string, false);
             } else {
@@ -497,11 +503,10 @@ export class UIManager extends CcocosUIManager {
             return this._loadingPromises.get(viewKey)!;
         }
 
-        const loadPromise = this._loadInternal(viewKey);
-        this._loadingPromises.set(viewKey, loadPromise);
-
         try {
-            return await loadPromise;
+            const view = this._loadInternal(viewKey);
+            this._loadingPromises.set(viewKey, view);
+            return await view;
         } finally {
             this._loadingPromises.delete(viewKey);
         }
@@ -596,9 +601,8 @@ export class UIManager extends CcocosUIManager {
             }
 
             // 标记视图所属组并入栈
-            if ('__group__' in view) {
-                view.__group__ = group;
-            }
+            view.__group__ = group;
+
             stack.push(view);
 
             addChild(view.node);
@@ -674,9 +678,7 @@ export class UIManager extends CcocosUIManager {
 
         // 处理视图实例
         const viewInstance = viewKeyOrInstance as ICocosView;
-        if ('__group__' in viewInstance) {
-            viewInstance.__group__ = undefined
-        }
+        viewInstance.__group__ = undefined;
 
         if (!skipAnimation) {
             // * 播放关闭动画,使用async是必要的，因为：

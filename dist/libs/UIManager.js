@@ -277,14 +277,14 @@ class UIManager extends CcocosUIManager {
             if (!this._maskOptions.clickToClose) {
                 return;
             }
-            const view = this.getTopView();
+            const view = this._internalGetTopView();
             if (!view) {
                 return;
             }
             // 区分两种情况处理：
             // 1. 如果视图有 __group__ 属性且不为 undefined，说明是通过 openAndPush 打开的栈式UI
             // 2. 否则是通过 open 打开的普通 UI
-            if ('__group__' in view && view.__group__ !== undefined) {
+            if (view.__group__ && view.__group__.trim() != "") {
                 // 栈式UI：调用 _internalCloseAndPop 来处理返回逻辑
                 this._internalCloseAndPop(view.__group__, false);
             }
@@ -405,10 +405,10 @@ class UIManager extends CcocosUIManager {
             if (this._loadingPromises.has(viewKey)) {
                 return this._loadingPromises.get(viewKey);
             }
-            const loadPromise = this._loadInternal(viewKey);
-            this._loadingPromises.set(viewKey, loadPromise);
             try {
-                return yield loadPromise;
+                const view = this._loadInternal(viewKey);
+                this._loadingPromises.set(viewKey, view);
+                return yield view;
             }
             finally {
                 this._loadingPromises.delete(viewKey);
@@ -500,9 +500,7 @@ class UIManager extends CcocosUIManager {
                     top.node.removeFromParent();
                 }
                 // 标记视图所属组并入栈
-                if ('__group__' in view) {
-                    view.__group__ = group;
-                }
+                view.__group__ = group;
                 stack.push(view);
                 addChild(view.node);
                 this._adjustMaskLayer();
@@ -574,9 +572,7 @@ class UIManager extends CcocosUIManager {
             }
             // 处理视图实例
             const viewInstance = viewKeyOrInstance;
-            if ('__group__' in viewInstance) {
-                viewInstance.__group__ = undefined;
-            }
+            viewInstance.__group__ = undefined;
             if (!skipAnimation) {
                 // * 播放关闭动画,使用async是必要的，因为：
                 // * 确保动画播放完成后再执行onExit和节点移除，不然还没播放动画了，UI就已经没了
