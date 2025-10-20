@@ -92,6 +92,7 @@ class UIManager extends CcocosUIManager {
         super();
         this._cache = new Map();
         this._groupStacks = new Map();
+        this._view2group = new Map();
         this._inputBlocker = null;
         this._loadingView = null;
         this._loadingPromises = new Map();
@@ -281,12 +282,10 @@ class UIManager extends CcocosUIManager {
             if (!view) {
                 return;
             }
-            // 区分两种情况处理：
-            // 1. 如果视图有 __group__ 属性且不为 undefined，说明是通过 openAndPush 打开的栈式UI
-            // 2. 否则是通过 open 打开的普通 UI
-            if (view.__group__ && view.__group__.trim() != "") {
+            const group = this._view2group.get(view);
+            if (group && group.trim() != "") {
                 // 栈式UI：调用 _internalCloseAndPop 来处理返回逻辑
-                this._internalCloseAndPop(view.__group__, false);
+                this._internalCloseAndPop(group, false);
             }
             else {
                 // 普通UI：直接关闭该视图
@@ -500,7 +499,7 @@ class UIManager extends CcocosUIManager {
                     top.node.removeFromParent();
                 }
                 // 标记视图所属组并入栈
-                view.__group__ = group;
+                this._view2group.set(view, group);
                 stack.push(view);
                 addChild(view.node);
                 this._adjustMaskLayer();
@@ -531,7 +530,9 @@ class UIManager extends CcocosUIManager {
             this._blockInput(true);
             try {
                 // 移除当前栈顶视图
-                yield this._remove(stack.pop(), destroy);
+                const removed = stack.pop();
+                yield this._remove(removed, destroy);
+                this._view2group.delete(removed);
                 // 恢复上一个视图
                 const top = stack[stack.length - 1];
                 if (top) {
@@ -570,9 +571,8 @@ class UIManager extends CcocosUIManager {
                 yield this._remove(viewInstance, destroy);
                 return;
             }
-            // 处理视图实例
+            // 获取视图实例
             const viewInstance = viewKeyOrInstance;
-            viewInstance.__group__ = undefined;
             if (!skipAnimation) {
                 // * 播放关闭动画,使用async是必要的，因为：
                 // * 确保动画播放完成后再执行onExit和节点移除，不然还没播放动画了，UI就已经没了
@@ -619,6 +619,9 @@ class UIManager extends CcocosUIManager {
                 this._remove(view, destroy, true);
             }
         }
+        for (const view of this._view2group.keys()) {
+            this._view2group.delete(view);
+        }
         // 调整遮罩层级
         this._adjustMaskLayer();
     }
@@ -636,6 +639,9 @@ class UIManager extends CcocosUIManager {
                     break;
                 }
             }
+        }
+        for (const view of this._view2group.keys()) {
+            this._view2group.delete(view);
         }
         // 清空所有栈
         this._groupStacks.clear();

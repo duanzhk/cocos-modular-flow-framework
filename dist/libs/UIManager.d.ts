@@ -54,7 +54,6 @@ export interface UIPreloadConfig {
     delay?: number;
 }
 interface IInternalView extends IView {
-    __group__: string | undefined;
     __isIView__: boolean;
 }
 type ICocosView = IInternalView & Component;
@@ -77,6 +76,7 @@ declare abstract class CcocosUIManager implements IUIManager {
 export declare class UIManager extends CcocosUIManager {
     private _cache;
     private _groupStacks;
+    private _view2group;
     private _inputBlocker;
     private _loadingView;
     private _loadingPromises;
