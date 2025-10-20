@@ -1,9 +1,38 @@
-import { assetManager, Asset, AssetManager, Prefab, SpriteFrame, Sprite, sp } from "cc";
+import { assetManager, Asset, AssetManager, Prefab, SpriteFrame, Sprite, sp, path } from "cc";
 import { ICocosResManager, AssetType } from "../core";
 
 const DefaultBundle = "resources";
 export class ResLoader implements ICocosResManager {
-    loadAsset<T extends Asset>(path: string, type: AssetType<T>, nameOrUrl: string = DefaultBundle): Promise<T> {
+    /**
+     * 
+     * @param nameOrUrl 资源包名称或路径
+     * @returns Promise<AssetManager.Bundle>
+     */
+    private _loadBundle(nameOrUrl: string = DefaultBundle): Promise<AssetManager.Bundle> {
+        const bundleName = path.basename(nameOrUrl);
+        const bundle = assetManager.getBundle(bundleName);
+        if (bundle) {
+            return Promise.resolve(bundle);
+        }
+        return new Promise((resolve, reject) => {
+            assetManager.loadBundle(nameOrUrl, (err: Error | null, bundle: AssetManager.Bundle) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(bundle);
+                }
+            });
+        })
+    }
+
+    /**
+     * 
+     * @param path 
+     * @param type 
+     * @param nameOrUrl 
+     * @returns 
+     */
+    async loadAsset<T extends Asset>(path: string, type: AssetType<T>, nameOrUrl: string = DefaultBundle): Promise<T> {
         // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
         const _path = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
         // 加载资源的通用逻辑
@@ -26,25 +55,13 @@ export class ResLoader implements ICocosResManager {
             }
         };
 
-        // 如果 bundle 未加载，先加载 bundle
-        const bundle = assetManager.getBundle(nameOrUrl);
-        if (!bundle) {
-            return new Promise((resolve, reject) => {
-                assetManager.loadBundle(nameOrUrl, (err: Error | null, bundle: AssetManager.Bundle) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        loadFromBundle(bundle).then(resolve).catch(reject);
-                    }
-                });
-            });
-        }
+        const bundle = await this._loadBundle(nameOrUrl);
         return loadFromBundle(bundle);
     }
 
-    loadPrefab(path: string, nameOrUrl: string = DefaultBundle): Promise<Prefab> {
+    async loadPrefab(path: string, nameOrUrl: string = DefaultBundle): Promise<Prefab> {
         //refCount 记录的是持有者数量，不是资源份数，所以prefab也需要addRef
-        return this.loadAsset(path, Prefab, nameOrUrl);
+        return await this.loadAsset(path, Prefab, nameOrUrl);
     }
 
     async loadSpriteFrame(ref: Sprite, path: string, nameOrUrl: string = DefaultBundle): Promise<SpriteFrame> {
@@ -69,6 +86,19 @@ export class ResLoader implements ICocosResManager {
             this.release(path, sp.SkeletonData, nameOrUrl);
             return Promise.reject(new Error("Spine is not valid"));
         }
+    }
+
+    async preloadAsset(paths: string | string[], type: AssetType<Asset>, nameOrUrl: string = DefaultBundle) {
+        const bundle = await this._loadBundle(nameOrUrl);
+        new Promise((resolve, reject) => {
+            bundle.preload(paths, type, (err: Error | null, data: AssetManager.RequestItem[]) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data);
+                }
+            });
+        });
     }
 
     release(asset: Asset, force?: boolean): void
