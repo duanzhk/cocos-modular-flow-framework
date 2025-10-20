@@ -124,7 +124,6 @@ const UIMask = new Proxy({} as Node, {
 
 // 用于BaseView的内部接口，仅供 UIManager 使用
 interface IInternalView extends IView {
-    __group__: string | undefined;
     __isIView__: boolean;
 }
 type ICocosView = IInternalView & Component
@@ -164,6 +163,7 @@ abstract class CcocosUIManager implements IUIManager {
 export class UIManager extends CcocosUIManager {
     private _cache: Map<string, Node> = new Map();
     private _groupStacks: Map<string, ICocosView[]> = new Map();
+    private _view2group: Map<ICocosView, string> = new Map();
 
     private _inputBlocker: ((event: EventTouch) => void) | null = null;
     private _loadingView: Node | null = null;
@@ -373,12 +373,10 @@ export class UIManager extends CcocosUIManager {
                 return;
             }
 
-            // 区分两种情况处理：
-            // 1. 如果视图有 __group__ 属性且不为 undefined，说明是通过 openAndPush 打开的栈式UI
-            // 2. 否则是通过 open 打开的普通 UI
-            if (view.__group__ && view.__group__.trim() != "") {
+            const group = this._view2group.get(view);
+            if (group && group.trim() != "") {
                 // 栈式UI：调用 _internalCloseAndPop 来处理返回逻辑
-                this._internalCloseAndPop(view.__group__ as string, false);
+                this._internalCloseAndPop(group, false);
             } else {
                 // 普通UI：直接关闭该视图
                 this._internalClose(view, false);
@@ -601,7 +599,7 @@ export class UIManager extends CcocosUIManager {
             }
 
             // 标记视图所属组并入栈
-            view.__group__ = group;
+            this._view2group.set(view, group);
 
             stack.push(view);
 
@@ -635,7 +633,9 @@ export class UIManager extends CcocosUIManager {
         this._blockInput(true);
         try {
             // 移除当前栈顶视图
-            await this._remove(stack.pop()!, destroy);
+            const removed = stack.pop()!;
+            await this._remove(removed, destroy);
+            this._view2group.delete(removed);
 
             // 恢复上一个视图
             const top = stack[stack.length - 1];
@@ -676,9 +676,8 @@ export class UIManager extends CcocosUIManager {
             return;
         }
 
-        // 处理视图实例
+        // 获取视图实例
         const viewInstance = viewKeyOrInstance as ICocosView;
-        viewInstance.__group__ = undefined;
 
         if (!skipAnimation) {
             // * 播放关闭动画,使用async是必要的，因为：
@@ -730,6 +729,10 @@ export class UIManager extends CcocosUIManager {
             }
         }
 
+        for (const view of this._view2group.keys()) {
+            this._view2group.delete(view);
+        }
+
         // 调整遮罩层级
         this._adjustMaskLayer();
     }
@@ -748,6 +751,10 @@ export class UIManager extends CcocosUIManager {
                     break;
                 }
             }
+        }
+        
+        for (const view of this._view2group.keys()) {
+            this._view2group.delete(view);
         }
 
         // 清空所有栈
