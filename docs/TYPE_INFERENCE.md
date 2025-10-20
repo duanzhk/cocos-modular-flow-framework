@@ -6,7 +6,7 @@
 
 ## 问题背景
 
-在使用 `getModel` 和 `getManager` 时，之前面临两难选择：
+在使用 `getModel` 和 `getManager` 时，面临两难选择：
 
 ### 方案 A：使用泛型（有类型提示，但失去解耦优势）
 
@@ -15,28 +15,25 @@
 import { UserModel } from '../models/UserModel';
 import { GameManager } from '../managers/GameManager';
 
-const userModel = mf.core.getModel<UserModel>(ModelNames.User);
+const userModel = mf.core.getModel<UserModel>('UserModel');
 userModel.name;  // ✅ 有代码补全
 
-const gameManager = mf.core.getManager<GameManager>(ManagerNames.Game);
+const gameManager = mf.core.getManager<GameManager>('GameManager');
 gameManager.score;  // ✅ 有代码补全
 ```
 
 **问题：**
 - ❌ 必须 import 具体的类
-- ❌ Symbol 失去了解耦的意义
+- ❌ 失去了解耦的意义
 - ❌ 手动指定泛型很繁琐
 
 ### 方案 B：不使用泛型（解耦但没有类型提示）
 
 ```typescript
-// ✅ 只需要 import ModelNames 和 ManagerNames
-import { ModelNames, ManagerNames } from 'dzkcc-mflow/core';
-
-const userModel = mf.core.getModel(ModelNames.User);
+const userModel = mf.core.getModel('UserModel');
 userModel.name;  // ❌ 没有代码补全，类型是 IModel
 
-const gameManager = mf.core.getManager(ManagerNames.Game);
+const gameManager = mf.core.getManager('GameManager');
 gameManager.score;  // ❌ 没有代码补全，类型是 IManager
 ```
 
@@ -57,18 +54,17 @@ gameManager.score;  // ❌ 没有代码补全，类型是 IManager
 // types/api-type-hints.d.ts
 import { UserModel } from '../models/UserModel';
 import { GameManager } from '../managers/GameManager';
-import { ModelNames, ManagerNames } from 'dzkcc-mflow/core';
 
 declare module 'dzkcc-mflow/core' {
     interface ModelTypeMap {
-        [ModelNames.User]: UserModel;
-        [ModelNames.Score]: ScoreModel;
+        UserModel: UserModel;
+        ScoreModel: ScoreModel;
         // ... 其他 Model
     }
-    
+
     interface ManagerTypeMap {
-        [ManagerNames.Game]: GameManager;
-        [ManagerNames.Audio]: AudioManager;
+        GameManager: GameManager;
+        AudioManager: AudioManager;
         // ... 其他 Manager
     }
 }
@@ -77,23 +73,21 @@ declare module 'dzkcc-mflow/core' {
 ### 步骤 2：享受自动类型推断
 
 ```typescript
-import { ModelNames, ManagerNames } from 'dzkcc-mflow/core';
-
 // ✅ 自动推断为 UserModel 类型，无需手动指定泛型
-const userModel = mf.core.getModel(ModelNames.User);
+const userModel = mf.core.getModel('UserModel');
 userModel.name;  // ✅ 有完整的代码补全
 
 // ✅ 自动推断为 GameManager 类型
-const gameManager = mf.core.getManager(ManagerNames.Game);
+const gameManager = mf.core.getManager('GameManager');
 gameManager.score;  // ✅ 有完整的代码补全
 ```
 
 ## 核心优势
 
-✅ **无需手动指定泛型**：告别 `getModel<UserModel>(...)` 的繁琐写法  
-✅ **无需 import 具体类**：只需 import `ModelNames`/`ManagerNames`  
-✅ **完整的类型提示**：自动推断出正确的类型，享受完整的代码补全  
-✅ **保持 Symbol 的解耦优势**：既解耦，又类型安全  
+✅ **无需手动指定泛型**：告别 `getModel<UserModel>(...)` 的繁琐写法
+✅ **无需 import 具体类**：使用字符串标识符访问
+✅ **完整的类型提示**：自动推断出正确的类型，享受完整的代码补全
+✅ **保持解耦优势**：既解耦，又类型安全
 ✅ **编译时类型检查**：TypeScript 会在编译时检查类型错误  
 
 ## 维护类型映射
@@ -121,7 +115,7 @@ import { NewModel } from '../models/NewModel';
 // 2. 在接口中添加映射
 declare module 'dzkcc-mflow/core' {
     interface ModelTypeMap {
-        [ModelNames.New]: NewModel;  // ← 新添加
+        NewModel: NewModel;  // ← 新添加
     }
 }
 ```
@@ -183,9 +177,9 @@ const model = mf.core.getModel(ModelNames.New);
 
 4. **类型映射是否正确？**
    ```typescript
-   // 检查 Symbol 名称是否匹配
-   [ModelNames.User]: UserModel  // ✅ 正确
-   [ModelNames.User]: UserMode   // ❌ 类名错误
+   // 检查类名是否匹配
+   UserModel: UserModel  // ✅ 正确
+   UserModel: UserMode   // ❌ 类名错误
    ```
 
 ### Q: 为什么不能完全自动化？
@@ -210,17 +204,17 @@ const model = mf.core.getModel(ModelNames.New);
 
 ## 工作原理
 
-1. **装饰器注册**：`@model('User')` 注册 Symbol 到运行时
-2. **类型映射**：通过 `declare module` 建立 Symbol → Type 的关系
-3. **类型推断**：调用时 TypeScript 根据传入的 Symbol 查找对应类型
+1. **装饰器注册**：`@model('User')` 注册字符串标识符到运行时
+2. **类型映射**：通过 `declare module` 建立字符串 → Type 的关系
+3. **类型推断**：调用时 TypeScript 根据传入的字符串查找对应类型
 4. **代码补全**：IDE 获得完整类型信息，提供智能提示
 
 ```typescript
 // 框架内部实现
 export interface ModelTypeMap {}
 
-getModel<S extends symbol>(modelSymbol: S): 
-    S extends keyof ModelTypeMap ? ModelTypeMap[S] : IModel
+getModel<K extends string>(modelKey: K):
+    K extends keyof ModelTypeMap ? ModelTypeMap[K] : IModel
 ```
 
 ## 使用场景
@@ -229,14 +223,13 @@ getModel<S extends symbol>(modelSymbol: S):
 
 ```typescript
 import { AbstractManager } from 'dzkcc-mflow/core';
-import { ModelNames } from 'dzkcc-mflow/core';
 
 export class GameManager extends AbstractManager {
     initialize(): void {
         // ✅ 自动推断类型
-        const userModel = this.getModel(ModelNames.User);
-        const scoreModel = this.getModel(ModelNames.Score);
-        
+        const userModel = this.getModel('UserModel');
+        const scoreModel = this.getModel('ScoreModel');
+
         userModel.name;  // ✅ 有代码补全
         scoreModel.score;  // ✅ 有代码补全
     }
@@ -247,14 +240,13 @@ export class GameManager extends AbstractManager {
 
 ```typescript
 import { BaseView } from 'dzkcc-mflow/libs';
-import { ManagerNames } from 'dzkcc-mflow/core';
 
 export class GameView extends BaseView {
     onEnter(): void {
         // ✅ 自动推断类型
-        const gameManager = this.getManager(ManagerNames.Game);
-        const audioManager = this.getManager(ManagerNames.Audio);
-        
+        const gameManager = this.getManager('GameManager');
+        const audioManager = this.getManager('AudioManager');
+
         gameManager.startGame();  // ✅ 有代码补全
         audioManager.playBGM();  // ✅ 有代码补全
     }
@@ -292,7 +284,7 @@ export class GameView extends BaseView {
 这是一个**真正做到既解耦，又类型安全**的解决方案！
 
 ```
-✅ Symbol 解耦  +  ✅ 类型安全  +  ✅ 代码补全
+✅ 字符串标识  +  ✅ 类型安全  +  ✅ 代码补全
 ```
 
 虽然需要维护类型映射，但：

@@ -30,7 +30,7 @@ export class GameManager extends AbstractManager {
 }
 
 // 使用
-const gameManager = mf.core.getManager(ManagerNames.Game);
+const gameManager = mf.core.getManager('GameManager');
 gameManager.addScore(10);
 ```
 
@@ -46,10 +46,10 @@ gameManager.addScore(10);
 export class ExampleManager extends AbstractManager {
     initialize(): void {
         // 获取 Model
-        const userModel = this.getModel(ModelNames.User);
-        
+        const userModel = this.getModel('UserModel');
+
         // 获取其他 Manager
-        const gameManager = this.getManager(ManagerNames.Game);
+        const gameManager = this.getManager('GameManager');
         
         // 获取事件管理器
         const eventMgr = this.getEventManager();
@@ -109,7 +109,7 @@ export class UserModel implements IModel {
 }
 
 // 使用
-const userModel = mf.core.getModel(ModelNames.User);
+const userModel = mf.core.getModel('UserModel');
 userModel.playerName = 'Alice';
 userModel.levelUp();
 ```
@@ -168,12 +168,12 @@ export class HomeView extends BaseView {
     }
 }
 
-// 使用 - 通过 Symbol 打开视图
-await mf.gui.open(ViewNames.Home, { userId: 123 });
+// 使用 - 通过字符串打开视图
+await mf.gui.open('HomeView', { userId: 123 });
 
 // 关闭视图
-mf.gui.close(ViewNames.Home);  // 关闭但保留缓存
-mf.gui.close(ViewNames.Home, true);  // 关闭并销毁
+mf.gui.close('HomeView');  // 关闭但保留缓存
+mf.gui.close('HomeView', true);  // 关闭并销毁
 ```
 
 ### View 生命周期
@@ -196,25 +196,15 @@ mf.gui.close(ViewNames.Home, true);  // 关闭并销毁
 @view()     // 使用 'HomeView'
 ```
 
-## Names 对象代码补全
+## 字符串标识符
 
-装饰器注册后，对应的 Names 对象会自动添加属性，IDE 会提供代码补全：
+装饰器注册后，使用类名作为字符串标识符：
 
 ```typescript
-// ManagerNames 自动包含所有注册的 Manager
-ManagerNames.Game
-ManagerNames.Player
-ManagerNames.Audio
-
-// ModelNames 自动包含所有注册的 Model
-ModelNames.User
-ModelNames.Inventory
-ModelNames.Config
-
-// ViewNames 自动包含所有注册的 View
-ViewNames.Home
-ViewNames.Game
-ViewNames.Settings
+// 使用字符串直接访问
+'GameManager'      // Manager 类名
+'UserModel'        // Model 类名
+'HomeView'         // View 类名
 ```
 
 ## 完整示例
@@ -238,12 +228,12 @@ export class GameManager extends AbstractManager {
         console.log('GameManager 初始化');
         
         // 获取 Model
-        const gameData = this.getModel(ModelNames.GameData);
+        const gameData = this.getModel('GameDataModel');
         console.log('当前关卡:', gameData.level);
     }
     
     startGame(): void {
-        const gameData = this.getModel(ModelNames.GameData);
+        const gameData = this.getModel('GameDataModel');
         gameData.score = 0;
         
         // 派发事件
@@ -267,7 +257,7 @@ export class GameView extends BaseView {
         this.event.on('gameStart', this.onGameStart, this);
         
         // 获取 Manager
-        const gameManager = this.getManager(ManagerNames.Game);
+        const gameManager = this.getManager('GameManager');
         gameManager.startGame();
     }
     
@@ -281,9 +271,9 @@ export class GameView extends BaseView {
 }
 
 // 4. 使用
-const gameManager = mf.core.getManager(ManagerNames.Game);
-const gameData = mf.core.getModel(ModelNames.GameData);
-await mf.gui.open(ViewNames.Game);
+const gameManager = mf.core.getManager('GameManager');
+const gameData = mf.core.getModel('GameDataModel');
+await mf.gui.open('GameView');
 ```
 
 ## 注意事项
@@ -299,7 +289,6 @@ await mf.gui.open(ViewNames.Game);
 
 3. **导入模块**：
    - 使用装饰器后，需要在入口文件导入模块以触发注册
-   - 或使用 `autoRegister()` 自动注册
 
 ```typescript
 // 入口文件
@@ -307,9 +296,5 @@ import './models/UserModel';
 import './models/GameDataModel';
 import './managers/GameManager';
 import './views/GameView';
-
-// 或使用自动注册
-import { autoRegister } from 'dzkcc-mflow/core';
-autoRegister(core);
 ```
 

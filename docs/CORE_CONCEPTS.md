@@ -3,26 +3,25 @@
 ## 架构图
 
 ```
-┌─────────────────────────────────────────────────┐
-│                    全局对象 mf                    │
-│  (统一访问入口，暴露所有框架能力)                   │
-└──────────────────┬──────────────────────────────┘
-                   │
-    ┌──────────────┼──────────────┐
-    │              │              │
-    ▼              ▼              ▼
-┌─────────┐  ┌──────────┐  ┌──────────┐
-│  Core   │  │ Services │  │  Views   │
-│(核心容器)│  │(基础服务) │  │ (UI界面)  │
-└─────────┘  └──────────┘  └──────────┘
-    │              │              │
-    ├─ Manager ─┐  ├─ UIManager  ├─ BaseView
-    │           │  ├─ ResLoader  └─ 自动资源管理
-    ├─ Model ───┤  ├─ EventMgr     自动事件清理
-    │           │  ├─ HttpMgr
-    └─ Symbol ──┘  ├─ SocketMgr
-       映射系统    └─ RedDotMgr
-```
+┌─────────────────────────────────────────────────────────────────┐
+│                          全局对象 mf                              │
+│              (统一访问入口，暴露所有框架能力)                        │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+    ┌─────────────────────┼─────────────────────┐
+    │                     │                     │
+    ▼                     ▼                     ▼
+┌─────────┐  ┌─────────────────────────────────────────┐  ┌──────────┐
+│  Core   │  │            ServiceLocator              │  │  Views   │
+│(核心容器)│  │           (服务定位器)                  │  │ (UI界面)  │
+└─────────┘  └─────────────────────────────────────────┘  └──────────┘
+    │                     │                                   │
+    ├─ Manager ─┐         ├─ Broadcaster(EventMgr)             ├─ BaseView
+    │           │         ├─ UIManager                         └─ 自动资源管理
+    ├─ Model ───┤         ├─ ResLoader                          └─ 自动事件清理
+    │           │         ├─ HttpManager
+    └─ 字符串 ───┘         ├─ WebSocketManager
+       标识系统              └─ RedDotManager
 
 ## Core 核心容器
 
@@ -38,10 +37,10 @@
 
 ```typescript
 // 获取 Manager
-const gameManager = mf.core.getManager(ManagerNames.GameManager);
+const gameManager = mf.core.getManager('GameManager');
 
 // 获取 Model
-const userModel = mf.core.getModel(ModelNames.UserModel);
+const userModel = mf.core.getModel('UserModel');
 ```
 
 ## ServiceLocator 服务定位器
@@ -91,20 +90,20 @@ Manager 负责处理特定领域的业务逻辑。
 **示例：**
 
 ```typescript
-import { manager, AbstractManager, ModelNames } from 'dzkcc-mflow/core';
+import { manager, AbstractManager } from 'dzkcc-mflow/core';
 
 @manager('Game')
 export class GameManager extends AbstractManager {
     private score: number = 0;
-    
+
     initialize(): void {
         console.log('GameManager 初始化');
     }
-    
+
     dispose(): void {
         console.log('GameManager 销毁');
     }
-    
+
     addScore(value: number): void {
         this.score += value;
         this.getEventManager().dispatch('scoreChanged', this.score);
@@ -171,7 +170,7 @@ View 是 UI 界面的基类，提供完整的生命周期管理。
 **示例：**
 
 ```typescript
-import { view, ViewNames, ManagerNames } from 'dzkcc-mflow/core';
+import { view } from 'dzkcc-mflow/core';
 import { BaseView } from 'dzkcc-mflow/libs';
 import { _decorator, Label } from 'cc';
 
@@ -182,49 +181,44 @@ const { ccclass, property } = _decorator;
 export class GameView extends BaseView {
     @property(Label)
     scoreLabel: Label = null!;
-    
+
     onEnter(args?: any): void {
         // 监听事件（自动清理）
         this.event.on('scoreChanged', this.onScoreChanged, this);
-        
+
         // 获取 Manager
-        const gameManager = this.getManager(ManagerNames.Game);
+        const gameManager = this.getManager('GameManager');
     }
-    
+
     onExit(): void {
         // 事件监听会自动清理，无需手动 off
     }
-    
+
     onPause(): void {}
     onResume(): void {}
-    
+
     private onScoreChanged(score: number): void {
         this.scoreLabel.string = `分数: ${score}`;
     }
 }
 ```
 
-## Symbol 映射系统
+## 字符串标识系统
 
-框架使用 Symbol 作为标识符，配合 Names 对象实现类型安全和代码补全。
-
-**三种 Names 对象：**
-- `ModelNames` - Model 的 Symbol 映射
-- `ManagerNames` - Manager 的 Symbol 映射
-- `ViewNames` - View 的 Symbol 映射
+框架使用字符串作为标识符，实现简洁的依赖注入和模块管理。
 
 **优势：**
-- ✅ IDE 代码补全
-- ✅ 类型安全
+- ✅ 简洁直观
 - ✅ 避免字符串拼写错误
 - ✅ 便于重构
+- ✅ 类型安全（配合类型映射）
 
 **示例：**
 
 ```typescript
-// 装饰器注册后，Names 对象会自动添加属性
-ManagerNames.Game      // Symbol('Game')
-ModelNames.User        // Symbol('User')
-ViewNames.Home         // Symbol('Home')
+// 装饰器注册后，使用类名作为标识符
+@manager('Game')       // GameManager
+@model('User')         // UserModel
+@view('Home')          // HomeView
 ```
 

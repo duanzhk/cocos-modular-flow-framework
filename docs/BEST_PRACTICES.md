@@ -40,11 +40,11 @@ export class AppManager extends AbstractManager {
 使用装饰器自动注入依赖，避免硬编码。
 
 ```typescript
-// ✅ 好的方式：使用 Symbol
+// ✅ 好的方式：使用字符串标识
 @manager('Game')
 export class GameManager extends AbstractManager {
     initialize(): void {
-        const userModel = this.getModel(ModelNames.User);
+        const userModel = this.getModel('UserModel');
     }
 }
 
@@ -78,7 +78,7 @@ export class QuestManager extends AbstractManager {
         // 监听事件
         this.getEventManager().on('enemyKilled', this.onEnemyKilled, this);
     }
-    
+
     private onEnemyKilled(data: any): void {
         // 更新任务进度
     }
@@ -89,7 +89,7 @@ export class QuestManager extends AbstractManager {
 export class GameManager extends AbstractManager {
     killEnemy(): void {
         // 直接获取并调用其他 Manager
-        const questManager = this.getManager(ManagerNames.Quest);
+        const questManager = this.getManager('QuestManager');
         questManager.updateProgress();  // ❌ 紧耦合
     }
 }
@@ -299,7 +299,7 @@ export class GameManager extends AbstractManager {
 export class GameManager extends AbstractManager {
     someMethod(): void {
         // 每次都调用 getModel
-        this.getModel(ModelNames.User).name;
+        this.getModel('UserModel').name;
     }
 }
 ```
@@ -448,7 +448,7 @@ if (CC_DEV) {
 @manager('A')
 export class AManager extends AbstractManager {
     initialize(): void {
-        const b = this.getManager(ManagerNames.B);
+        const b = this.getManager('BManager');
         b.doSomething();
     }
 }
@@ -456,7 +456,7 @@ export class AManager extends AbstractManager {
 @manager('B')
 export class BManager extends AbstractManager {
     initialize(): void {
-        const a = this.getManager(ManagerNames.A);
+        const a = this.getManager('AManager');
         a.doSomething();  // ❌ 循环依赖
     }
 }
