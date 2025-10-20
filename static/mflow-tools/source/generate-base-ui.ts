@@ -65,8 +65,10 @@ export abstract class ${basescript} extends BaseView {
 //@ts-ignore
 import { ${basescript} } from 'db://assets/src/views/${basescript}';
 import { _decorator } from 'cc';
+import { view } from 'dzkcc-mflow/core';
 const { ccclass, property } = _decorator;
 
+@view()
 @ccclass('${info.name}')
 export class ${info.name} extends ${basescript} {
     onEnter(args?: any): void { }

@@ -35,8 +35,10 @@ npm i dzkcc-mflow@beta
   "extends": "./temp/tsconfig.cocos.json",
   "compilerOptions": {
     "strict": false,
+    "baseUrl": ".",//必须
     "paths": {
-      "dzkcc-mflow/*": ["./node_modules/dzkcc-mflow/dist/*"]
+      "db://assets/*": ["assets/*"], //必须
+      "dzkcc-mflow/*": ["./node_modules/dzkcc-mflow/dist/*"] //必须
     }
   }
 }
