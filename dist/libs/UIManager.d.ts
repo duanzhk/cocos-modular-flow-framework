@@ -53,10 +53,7 @@ export interface UIPreloadConfig {
     /** 预加载延迟（毫秒） */
     delay?: number;
 }
-interface IInternalView extends IView {
-    __isIView__: boolean;
-}
-type ICocosView = IInternalView & Component;
+type ICocosView = IView & Component;
 declare abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined;
     open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>>;
@@ -121,6 +118,12 @@ export declare class UIManager extends CcocosUIManager {
      * 获取所有活跃的视图节点（排除遮罩节点）
      */
     private _getActiveViews;
+    /**
+     * 从给定的Node对象上获得IView类型的脚本
+     * @param target
+     * @returns
+     */
+    private _getIViewFromNode;
     /**
      * 通过prefab创建Node对象
      * @param args

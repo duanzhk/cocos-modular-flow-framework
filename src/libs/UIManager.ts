@@ -122,11 +122,7 @@ const UIMask = new Proxy({} as Node, {
     }
 })
 
-// 用于BaseView的内部接口，仅供 UIManager 使用
-interface IInternalView extends IView {
-    __isIView__: boolean;
-}
-type ICocosView = IInternalView & Component
+type ICocosView = IView & Component
 
 // 接口隔离，实现具体的CcocosUIManager
 abstract class CcocosUIManager implements IUIManager {
@@ -267,6 +263,32 @@ export class UIManager extends CcocosUIManager {
      */
     private _getActiveViews(): Node[] {
         return UIRoot.children.filter(child => child !== _uiMask && child.name !== '__UIMask__');
+    }
+
+    /**
+     * 从给定的Node对象上获得IView类型的脚本
+     * @param target 
+     * @returns 
+     */
+    private _getIViewFromNode(target: Node): ICocosView | undefined {
+        const comps = target.components;
+        for (let i = 0; i < comps.length; i++) {
+            const comp = comps[i];
+            if ("__isIView__" in comp && comp.__isIView__) {
+                /**
+                 * 这里需要注意：
+                 * 1、_view2group中存储的是通过getComponent获取的。
+                 * 2、这里是通过所node.components获取的。
+                 * 3、这俩种方式获得的引用可能是不同的(_view2group.get(comp) == undefined)
+                 * 4、所以这里需要通过comp.constructor来获取视图类型，然后通过getComponent获取引用，确保一致。
+                 * 5、但我选择了_view2group使用node当作key，这样更稳定。
+                */
+                // const viewType = comp.constructor as new () => ICocosView;
+                // return target.getComponent(viewType) as ICocosView;
+                return comp as unknown as ICocosView;
+            }
+        }
+        console.warn(`No view found in ${target.name}`);
     }
 
     /**
@@ -479,27 +501,7 @@ export class UIManager extends CcocosUIManager {
 
         // 获取最后一个视图节点（最顶层）
         const target = activeViews[activeViews.length - 1];
-        const comps = target.components;
-
-        for (let i = 0; i < comps.length; i++) {
-            const comp = comps[i];
-            if ("__isIView__" in comp && comp.__isIView__) {
-                /**
-                 * 这里需要注意：
-                 * 1、_view2group中存储的是通过getComponent获取的。
-                 * 2、这里是通过所node.components获取的。
-                 * 3、这俩种方式获得的引用可能是不同的(_view2group.get(comp) == undefined)
-                 * 4、所以这里需要通过comp.constructor来获取视图类型，然后通过getComponent获取引用，确保一致。
-                 * 5、但我选择了_view2group使用node当作key，这样更稳定。
-                */
-                // const viewType = comp.constructor as new () => ICocosView;
-                // return target.getComponent(viewType) as ICocosView;
-                return comp as unknown as ICocosView;
-            }
-        }
-
-        console.warn(`No view found in ${target.name}`);
-        return undefined;
+        return this._getIViewFromNode(target)
     }
 
 
@@ -731,16 +733,19 @@ export class UIManager extends CcocosUIManager {
             return;
         }
 
+        //forEach 方法会按插入顺序遍历所有 初始存在的元素，即使元素在遍历过程中被删除，也不会影响剩余元素的遍历（已删除的元素不会被重复遍历，但未遍历的元素仍会被处理）。因此可直接在回调中判断并删除目标元素。
+        this._view2group.forEach((value, key, map) => {
+            if (value === group) {
+                map.delete(key);
+            }
+        });
+
         // 清空栈中所有视图，不播放动画
         while (stack.length > 0) {
             const view = stack.pop();
             if (view) {
                 this._remove(view, destroy, true);
             }
-        }
-
-        for (const view of this._view2group.keys()) {
-            this._view2group.delete(view);
         }
 
         // 调整遮罩层级
@@ -752,20 +757,16 @@ export class UIManager extends CcocosUIManager {
      */
     protected _internalCloseAll(destroy?: boolean) {
         const activeViews = this._getActiveViews();
-        for (const node of activeViews) {
-            const comps = node.components;
-            for (let i = 0; i < comps.length; i++) {
-                const comp = comps[i];
-                if ("__isIView__" in comp && comp.__isIView__) {
-                    this._remove(comp as unknown as ICocosView, destroy, true);
-                    break;
-                }
+        for (const target of activeViews) {
+            const comp = this._getIViewFromNode(target)
+            if (comp) {
+                this._remove(comp, destroy, true);
+                break;
             }
         }
-        
-        for (const view of this._view2group.keys()) {
-            this._view2group.delete(view);
-        }
+
+        // 情况所有UI组引用
+        this._view2group.clear()
 
         // 清空所有栈
         this._groupStacks.clear();

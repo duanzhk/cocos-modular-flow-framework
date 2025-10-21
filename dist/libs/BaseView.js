@@ -7,8 +7,6 @@ class BaseView extends Component {
         super(...arguments);
         /** @internal */
         this.__isIView__ = true;
-        /** @internal */
-        this.__group__ = undefined;
         this._eventHandlers = [];
         this._loaderHandlers = [];
     }

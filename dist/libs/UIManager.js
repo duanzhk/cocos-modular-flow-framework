@@ -185,6 +185,31 @@ class UIManager extends CcocosUIManager {
         return UIRoot.children.filter(child => child !== _uiMask && child.name !== '__UIMask__');
     }
     /**
+     * 从给定的Node对象上获得IView类型的脚本
+     * @param target
+     * @returns
+     */
+    _getIViewFromNode(target) {
+        const comps = target.components;
+        for (let i = 0; i < comps.length; i++) {
+            const comp = comps[i];
+            if ("__isIView__" in comp && comp.__isIView__) {
+                /**
+                 * 这里需要注意：
+                 * 1、_view2group中存储的是通过getComponent获取的。
+                 * 2、这里是通过所node.components获取的。
+                 * 3、这俩种方式获得的引用可能是不同的(_view2group.get(comp) == undefined)
+                 * 4、所以这里需要通过comp.constructor来获取视图类型，然后通过getComponent获取引用，确保一致。
+                 * 5、但我选择了_view2group使用node当作key，这样更稳定。
+                */
+                // const viewType = comp.constructor as new () => ICocosView;
+                // return target.getComponent(viewType) as ICocosView;
+                return comp;
+            }
+        }
+        console.warn(`No view found in ${target.name}`);
+    }
+    /**
      * 通过prefab创建Node对象
      * @param args
      * @returns Node对象
@@ -387,25 +412,7 @@ class UIManager extends CcocosUIManager {
         }
         // 获取最后一个视图节点（最顶层）
         const target = activeViews[activeViews.length - 1];
-        const comps = target.components;
-        for (let i = 0; i < comps.length; i++) {
-            const comp = comps[i];
-            if ("__isIView__" in comp && comp.__isIView__) {
-                /**
-                 * 这里需要注意：
-                 * 1、_view2group中存储的是通过getComponent获取的。
-                 * 2、这里是通过所node.components获取的。
-                 * 3、这俩种方式获得的引用可能是不同的(_view2group.get(comp) == undefined)
-                 * 4、所以这里需要通过comp.constructor来获取视图类型，然后通过getComponent获取引用，确保一致。
-                 * 5、但我选择了_view2group使用node当作key，这样更稳定。
-                */
-                // const viewType = comp.constructor as new () => ICocosView;
-                // return target.getComponent(viewType) as ICocosView;
-                return comp;
-            }
-        }
-        console.warn(`No view found in ${target.name}`);
-        return undefined;
+        return this._getIViewFromNode(target);
     }
     //----------------------------------------------------------
     _load(viewKey) {
@@ -622,15 +629,18 @@ class UIManager extends CcocosUIManager {
             console.warn(`No stack found for group ${group}`);
             return;
         }
+        //forEach 方法会按插入顺序遍历所有 初始存在的元素，即使元素在遍历过程中被删除，也不会影响剩余元素的遍历（已删除的元素不会被重复遍历，但未遍历的元素仍会被处理）。因此可直接在回调中判断并删除目标元素。
+        this._view2group.forEach((value, key, map) => {
+            if (value === group) {
+                map.delete(key);
+            }
+        });
         // 清空栈中所有视图，不播放动画
         while (stack.length > 0) {
             const view = stack.pop();
             if (view) {
                 this._remove(view, destroy, true);
             }
-        }
-        for (const view of this._view2group.keys()) {
-            this._view2group.delete(view);
         }
         // 调整遮罩层级
         this._adjustMaskLayer();
@@ -640,19 +650,15 @@ class UIManager extends CcocosUIManager {
      */
     _internalCloseAll(destroy) {
         const activeViews = this._getActiveViews();
-        for (const node of activeViews) {
-            const comps = node.components;
-            for (let i = 0; i < comps.length; i++) {
-                const comp = comps[i];
-                if ("__isIView__" in comp && comp.__isIView__) {
-                    this._remove(comp, destroy, true);
-                    break;
-                }
+        for (const target of activeViews) {
+            const comp = this._getIViewFromNode(target);
+            if (comp) {
+                this._remove(comp, destroy, true);
+                break;
             }
         }
-        for (const view of this._view2group.keys()) {
-            this._view2group.delete(view);
-        }
+        // 情况所有UI组引用
+        this._view2group.clear();
         // 清空所有栈
         this._groupStacks.clear();
         // 调整遮罩

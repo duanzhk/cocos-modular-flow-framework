@@ -5,8 +5,6 @@ const { ccclass, property } = _decorator;
 export abstract class BaseView extends Component implements IView {
     /** @internal */
     private readonly __isIView__: boolean = true;
-    /** @internal */
-    private __group__: string | undefined = undefined;
 
     //broadcast代理对象
     private _eventProxy?: IEventManager;

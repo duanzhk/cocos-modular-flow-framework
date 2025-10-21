@@ -3,8 +3,6 @@ import { IView, IEventManager, ICocosResManager } from '../core';
 export declare abstract class BaseView extends Component implements IView {
     /** @internal */
     private readonly __isIView__;
-    /** @internal */
-    private __group__;
     private _eventProxy?;
     private _eventHandlers;
     protected get event(): IEventManager;
