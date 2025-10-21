@@ -14,13 +14,13 @@
 ### 基本用法
 
 ```typescript
-import { view, ViewNames, ManagerNames, ModelNames } from 'dzkcc-mflow/core';
+import { view, UIOpenConfig } from 'dzkcc-mflow/core';
 import { BaseView } from 'dzkcc-mflow/libs';
 import { _decorator, Sprite, Label } from 'cc';
 
 const { ccclass, property } = _decorator;
 
-@view('Game')
+@view()
 @ccclass('GameView')
 export class GameView extends BaseView {
     @property(Label)
@@ -29,7 +29,7 @@ export class GameView extends BaseView {
     @property(Sprite)
     playerSprite: Sprite = null!;
     
-    onEnter(args?: any): void {
+    onEnter(args:UIOpenConfig): void {
         // 监听事件（自动清理）
         this.event.on('scoreChanged', this.onScoreChanged, this);
         
@@ -37,10 +37,13 @@ export class GameView extends BaseView {
         this.res.loadSpriteFrame(this.playerSprite, 'textures/player');
         
         // 获取 Manager
-        const gameManager = this.getManager(ManagerNames.Game);
+        const gameManager = this.getManager('Game');
         
         // 获取 Model
-        const userModel = this.getModel(ModelNames.User);
+        const userModel = this.getModel('User');
+
+        // 可以使用onEnter传入的，也可以直接使用this.args，俩者等价
+        console.log(this.args)
     }
     
     onExit(): void {
@@ -123,22 +126,21 @@ export class ExampleView extends BaseView {
 ### 基本操作
 
 ```typescript
-import { ViewNames } from 'dzkcc-mflow/core';
 
 // 打开界面
-const view = await mf.gui.open(ViewNames.Home);
+const view = await mf.gui.open('Home');
 
 // 打开界面并传参
-await mf.gui.open(ViewNames.Game, { level: 1, difficulty: 'hard' });
+await mf.gui.open('GameView', { level: 1, difficulty: 'hard' });
 
 // 关闭界面（保留缓存）
-await mf.gui.close(ViewNames.Home);
+await mf.gui.close('Home');
 
 // 关闭并销毁界面（释放资源）
-await mf.gui.close(ViewNames.Home, true);
+await mf.gui.close('Home', true);
 
 // 通过视图实例关闭
-const view = await mf.gui.open(ViewNames.Settings);
+const view = await mf.gui.open('Settings');
 await mf.gui.close(view);
 ```
 
@@ -158,13 +160,13 @@ mf.gui.setLoadingConfig({
 });
 
 // 打开 UI 时显示等待视图
-await mf.gui.open(ViewNames.Game, { 
+await mf.gui.open("Game", { 
     showLoading: true,               // 单独控制是否显示等待视图
     args: { level: 1 } 
 });
 
 // 打开 UI 时不显示等待视图
-await mf.gui.open(ViewNames.Settings, { 
+await mf.gui.open("Settings", { 
     showLoading: false 
 });
 ```
@@ -181,7 +183,7 @@ mf.gui.setMaskOptions({
 });
 
 // 打开 UI 时单独控制遮罩行为
-await mf.gui.open(ViewNames.Dialog, { 
+await mf.gui.open("Dialog", { 
     clickToClose: false,             // 禁止点击遮罩关闭
     args: { message: '重要提示' } 
 });
@@ -280,14 +282,14 @@ export class CustomPopupView extends BaseView {
 
 ```typescript
 // 检查视图是否正在加载
-if (mf.gui.isLoading(ViewNames.Game)) {
+if (mf.gui.isLoading("Game")) {
     console.log('游戏界面正在加载中...');
     return;
 }
 
 // 多次调用只会加载一次
-const promise1 = mf.gui.open(ViewNames.Game);
-const promise2 = mf.gui.open(ViewNames.Game); // 返回同一个 Promise
+const promise1 = mf.gui.open("Game");
+const promise2 = mf.gui.open("Game"); // 返回同一个 Promise
 ```
 
 #### LRU 缓存策略
@@ -317,13 +319,13 @@ mf.gui.clearCache();
 ```typescript
 // 配置预加载
 mf.gui.setPreloadConfig({
-    views: [ViewNames.Home, ViewNames.Game, ViewNames.Settings],
+    views: ["Home", "Game", "Settings"],
     delay: 1000                      // 延迟预加载时间（毫秒）
 });
 
 // 手动预加载视图
-await mf.gui.preload(ViewNames.Shop);  // 单个视图
-await mf.gui.preload([ViewNames.Inventory, ViewNames.Profile]);  // 多个视图
+await mf.gui.preload("Shop");  // 单个视图
+await mf.gui.preload(["Inventory", "Profile"]);  // 多个视图
 ```
 
 ## 视图栈管理
@@ -333,11 +335,10 @@ await mf.gui.preload([ViewNames.Inventory, ViewNames.Profile]);  // 多个视图
 ### 基本用法
 
 ```typescript
-import { ViewNames } from 'dzkcc-mflow/core';
 
 // 打开视图并入栈
-await mf.gui.openAndPush(ViewNames.Level1, 'game', { levelId: 1 });
-await mf.gui.openAndPush(ViewNames.Level2, 'game', { levelId: 2 });
+await mf.gui.openAndPush("Level1", 'game', { levelId: 1 });
+await mf.gui.openAndPush("Level2", 'game', { levelId: 2 });
 
 // 关闭栈顶视图并弹出（会自动恢复上一个视图）
 await mf.gui.closeAndPop('game');  // Level2 关闭，Level1 恢复
@@ -358,10 +359,10 @@ const topView = mf.gui.getTopView();
 
 ```typescript
 // 进入关卡 1
-await mf.gui.openAndPush(ViewNames.Level1, 'game');
+await mf.gui.openAndPush("Level1", 'game');
 
 // 进入关卡 2（关卡 1 暂停）
-await mf.gui.openAndPush(ViewNames.Level2, 'game');
+await mf.gui.openAndPush("Level2", 'game');
 
 // 关卡 2 失败，返回关卡 1（关卡 1 恢复）
 await mf.gui.closeAndPop('game');
@@ -376,9 +377,9 @@ mf.gui.clearStack('game', true);
 
 ```typescript
 // 添加多个弹窗到同一组
-await mf.gui.openAndPush(ViewNames.Activity1, 'popups', { order: 1 });
-await mf.gui.openAndPush(ViewNames.Activity2, 'popups', { order: 2 });
-await mf.gui.openAndPush(ViewNames.SignIn, 'popups', { order: 3 });
+await mf.gui.openAndPush("Activity1", 'popups', { order: 1 });
+await mf.gui.openAndPush("Activity2", 'popups', { order: 2 });
+await mf.gui.openAndPush("SignIn", 'popups', { order: 3 });
 
 // 关闭当前弹窗，自动显示下一个
 await mf.gui.closeAndPop('popups');  // Activity1 关闭，Activity2 显示
@@ -473,7 +474,7 @@ export class GameView extends BaseView {
 ### 基础示例
 
 ```typescript
-import { view, ViewNames, ManagerNames, ModelNames } from 'dzkcc-mflow/core';
+import { view } from 'dzkcc-mflow/core';
 import { BaseView } from 'dzkcc-mflow/libs';
 import { _decorator, Button, Label, Sprite } from 'cc';
 
@@ -499,8 +500,8 @@ export class HomeView extends BaseView {
     
     onEnter(args?: any): void {
         // 获取 Model 和 Manager
-        const userModel = this.getModel(ModelNames.User);
-        const gameManager = this.getManager(ManagerNames.Game);
+        const userModel = this.getModel("User");
+        const gameManager = this.getManager("Game");
         
         // 监听事件（自动清理）
         this.event.on('scoreChanged', this.onScoreChanged, this);
@@ -533,8 +534,8 @@ export class HomeView extends BaseView {
     }
     
     private async onStartClick(): Promise<void> {
-        await mf.gui.close(ViewNames.Home);
-        await mf.gui.open(ViewNames.Game);
+        await mf.gui.close("Home");
+        await mf.gui.open("Game");
     }
 }
 ```
@@ -542,7 +543,7 @@ export class HomeView extends BaseView {
 ### 高级功能示例
 
 ```typescript
-import { view, ViewNames } from 'dzkcc-mflow/core';
+import { view } from 'dzkcc-mflow/core';
 import { BaseView } from 'dzkcc-mflow/libs';
 import { _decorator, Button, Label } from 'cc';
 
@@ -577,7 +578,7 @@ export class GameView extends BaseView {
     
     private async onPauseClick(): Promise<void> {
         // 打开暂停菜单（使用默认动画效果）
-        await mf.gui.open(ViewNames.PauseMenu, {
+        await mf.gui.open("PauseMenu", {
             showLoading: false,  // 暂停菜单不需要等待视图
             clickToClose: true   // 允许点击遮罩关闭
         });
@@ -586,7 +587,7 @@ export class GameView extends BaseView {
     
     private async onShopClick(): Promise<void> {
         // 打开商店（带等待视图，使用自定义动画效果）
-        await mf.gui.open(ViewNames.Shop, {
+        await mf.gui.open("Shop", {
             showLoading: true,   // 显示等待视图
             clickToClose: false, // 禁止点击遮罩关闭
             args: {
@@ -630,18 +631,18 @@ export class GameBootstrap {
         // 配置预加载
         uiManager.setPreloadConfig({
             views: [
-                ViewNames.Home,
-                ViewNames.Game,
-                ViewNames.Shop,
-                ViewNames.Settings
+                Home,
+                Game,
+                Shop,
+                Settings
             ],
             delay: 2000  // 2秒后开始预加载
         });
         
         // 预加载关键视图
         await uiManager.preload([
-            ViewNames.Home,
-            ViewNames.Game
+            Home,
+            Game
         ]);
         
         console.log('UI 系统初始化完成');
@@ -720,13 +721,13 @@ export class UIPerformanceMonitor {
 
 ```typescript
 // ✅ 好的做法：重要界面使用等待视图
-await mf.gui.open(ViewNames.Game, { showLoading: true });
+await mf.gui.open(Game, { showLoading: true });
 
 // ✅ 好的做法：快速界面不使用等待视图
-await mf.gui.open(ViewNames.Tooltip, { showLoading: false });
+await mf.gui.open(Tooltip, { showLoading: false });
 
 // ❌ 避免：所有界面都使用等待视图
-await mf.gui.open(ViewNames.SmallDialog, { showLoading: true });
+await mf.gui.open(SmallDialog, { showLoading: true });
 ```
 
 ### 2. 优化动画使用
@@ -786,9 +787,9 @@ mf.gui.setCacheConfig({
 // ✅ 好的做法：预加载用户可能访问的界面
 mf.gui.setPreloadConfig({
     views: [
-        ViewNames.Home,      // 主界面
-        ViewNames.Game,      // 游戏界面
-        ViewNames.Shop       // 商店界面
+        Home,      // 主界面
+        Game,      // 游戏界面
+        Shop       // 商店界面
     ],
     delay: 3000  // 游戏启动后 3 秒开始预加载
 });
@@ -805,14 +806,14 @@ mf.gui.setPreloadConfig({
 ```typescript
 // ✅ 好的做法：处理 UI 打开失败
 try {
-    await mf.gui.open(ViewNames.Game);
+    await mf.gui.open(Game);
 } catch (error) {
     console.error('打开游戏界面失败:', error);
     // 显示错误提示或回退到其他界面
 }
 
 // ✅ 好的做法：检查加载状态
-if (mf.gui.isLoading(ViewNames.Game)) {
+if (mf.gui.isLoading(Game)) {
     console.log('游戏界面正在加载，请稍候...');
     return;
 }

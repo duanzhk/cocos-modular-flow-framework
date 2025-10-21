@@ -1,24 +1,11 @@
 import { Component, Node, Color } from "cc";
-import { IUIManager, IView } from "../core";
+import { IUIManager, IView, UIOpenConfig } from "../core";
 /**
  * UI遮罩配置选项
  */
-export interface UIMaskOptions {
+export interface UIMaskConfig {
     /** 遮罩颜色 */
     color?: Color;
-    /** 是否可点击关闭顶层UI */
-    clickToClose?: boolean;
-}
-/**
- * UI打开选项
- */
-export interface UIOpenOptions {
-    /** 是否显示等待视图 */
-    showLoading?: boolean;
-    /** 是否可点击遮罩关闭 */
-    clickToClose?: boolean;
-    /** 自定义参数 */
-    args?: any;
 }
 /**
  * 等待视图配置
@@ -53,18 +40,20 @@ export interface UIPreloadConfig {
     /** 预加载延迟（毫秒） */
     delay?: number;
 }
-type ICocosView = IView & Component;
+type ICocosView = IView & Component & {
+    __config__: UIOpenConfig | undefined;
+};
 declare abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined;
-    open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>>;
+    open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>>;
     close<T extends keyof UIRegistry>(viewClass: T): Promise<void>;
-    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>>;
+    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>>;
     closeAndPop(group: string, destroy?: boolean): Promise<void>;
     clearStack(group: string, destroy?: boolean): void;
     closeAll(destroy?: boolean): void;
-    protected abstract _internalOpen(viewKey: string, args?: UIOpenOptions): Promise<ICocosView>;
+    protected abstract _internalOpen(viewKey: string, args?: UIOpenConfig): Promise<ICocosView>;
     protected abstract _internalClose(viewKey: string | IView, destory?: boolean): Promise<void>;
-    protected abstract _internalOpenAndPush(viewKey: string, group: string, args?: UIOpenOptions): Promise<ICocosView>;
+    protected abstract _internalOpenAndPush(viewKey: string, group: string, args?: UIOpenConfig): Promise<ICocosView>;
     protected abstract _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
     protected abstract _internalClearStack(group: string, destroy?: boolean): void;
     protected abstract _internalGetTopView(): ICocosView | undefined;
@@ -88,7 +77,7 @@ export declare class UIManager extends CcocosUIManager {
     /**
      * 设置遮罩配置
      */
-    setMaskConfig(options: UIMaskOptions): void;
+    setMaskConfig(options: UIMaskConfig): void;
     /**
      * 设置等待视图配置
      */
@@ -168,9 +157,9 @@ export declare class UIManager extends CcocosUIManager {
     protected _internalGetTopView(): ICocosView | undefined;
     private _load;
     private _loadInternal;
-    protected _internalOpen(viewKey: string, options?: UIOpenOptions): Promise<ICocosView>;
+    protected _internalOpen(viewKey: string, options?: UIOpenConfig): Promise<ICocosView>;
     protected _internalClose(viewKeyOrInstance: string | IView, destroy?: boolean): Promise<void>;
-    protected _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenOptions): Promise<ICocosView>;
+    protected _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenConfig): Promise<ICocosView>;
     protected _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
     /**
      * 移除视图

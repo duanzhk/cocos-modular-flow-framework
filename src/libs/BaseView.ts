@@ -1,5 +1,5 @@
 import { _decorator, Asset, Component, tween, Vec3, UIOpacity } from 'cc';
-import { IView, IEventManager, ICocosResManager } from '../core';
+import { IView, IEventManager, ICocosResManager, UIOpenConfig } from '../core';
 const { ccclass, property } = _decorator;
 
 export abstract class BaseView extends Component implements IView {
@@ -56,9 +56,34 @@ export abstract class BaseView extends Component implements IView {
         return this._loaderProxy;
     }
 
+    private _openConfig: UIOpenConfig | undefined;
+    /**
+     * 打开时传入的配置数据
+     * 仅供框架内部使用，业务使用 this.args代替
+     */
+    /** @internal */
+    public get __config__(): UIOpenConfig | undefined {
+        return this._openConfig
+    }
+    /**
+     * 打开时传入的配置数据
+     * 仅供框架内部使用，业务使用 this.args代替
+     */
+    /** @internal */
+    public set __config__(config: UIOpenConfig | undefined) {
+        this._openConfig = config
+    }
+
+    /**
+     * UIOpenConfig.args
+     */
+    protected get args(): any {
+        return this._openConfig?.args
+    }
+
     abstract onPause(): void
     abstract onResume(): void
-    abstract onEnter(args?: any): void
+    abstract onEnter(args?: UIOpenConfig): void
     onExit(): void {
         // 自动清理所有事件监听
         this._eventHandlers.forEach(({ key, listener }) => {
@@ -122,21 +147,21 @@ export abstract class BaseView extends Component implements IView {
     async onEnterAnimation(): Promise<void> {
         const node = this.node;
         node.setScale(0.8, 0.8, 1);
-        
+
         let uiOpacity = node.getComponent(UIOpacity);
         if (uiOpacity) {
             uiOpacity.opacity = 0;
         }
-        
+
         return new Promise<void>((resolve) => {
             const tweenNode = tween(node).to(0.3, { scale: new Vec3(1, 1, 1) }, { easing: 'backOut' });
-            
+
             if (uiOpacity) {
                 tween(uiOpacity)
                     .to(0.3, { opacity: 255 })
                     .start();
             }
-            
+
             tweenNode
                 .call(() => resolve())
                 .start();
@@ -163,16 +188,16 @@ export abstract class BaseView extends Component implements IView {
     async onExitAnimation(): Promise<void> {
         const node = this.node;
         const uiOpacity = node.getComponent(UIOpacity);
-        
+
         return new Promise<void>((resolve) => {
             const tweenNode = tween(node).to(0.2, { scale: new Vec3(0.8, 0.8, 1) }, { easing: 'backIn' });
-            
+
             if (uiOpacity) {
                 tween(uiOpacity)
                     .to(0.2, { opacity: 0 })
                     .start();
             }
-            
+
             tweenNode
                 .call(() => resolve())
                 .start();

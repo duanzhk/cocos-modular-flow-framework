@@ -1,5 +1,5 @@
 import { Component } from 'cc';
-import { IView, IEventManager, ICocosResManager } from '../core';
+import { IView, IEventManager, ICocosResManager, UIOpenConfig } from '../core';
 export declare abstract class BaseView extends Component implements IView {
     /** @internal */
     private readonly __isIView__;
@@ -9,9 +9,26 @@ export declare abstract class BaseView extends Component implements IView {
     private _loaderProxy?;
     private _loaderHandlers;
     protected get res(): ICocosResManager;
+    private _openConfig;
+    /**
+     * 打开时传入的配置数据
+     * 仅供框架内部使用，业务使用 this.args代替
+     */
+    /** @internal */
+    get __config__(): UIOpenConfig | undefined;
+    /**
+     * 打开时传入的配置数据
+     * 仅供框架内部使用，业务使用 this.args代替
+     */
+    /** @internal */
+    set __config__(config: UIOpenConfig | undefined);
+    /**
+     * UIOpenConfig.args
+     */
+    protected get args(): any;
     abstract onPause(): void;
     abstract onResume(): void;
-    abstract onEnter(args?: any): void;
+    abstract onEnter(args?: UIOpenConfig): void;
     onExit(): void;
     protected onDestroy(): void;
     /**

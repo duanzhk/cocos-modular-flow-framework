@@ -73,11 +73,23 @@ export interface IManager {
 }
 
 /**
+ * UI打开选项
+ */
+export interface UIOpenConfig {
+    /** 是否显示等待视图 */
+    showLoading?: boolean;
+    /** 是否可点击遮罩关闭 */
+    clickToCloseMask?: boolean;
+    /** 自定义参数 */
+    args?: any;
+}
+
+/**
  * View 基接口 - 视图生命周期
  */
 export interface IView {
     /** 进入视图 */
-    onEnter(args?: any): void;
+    onEnter(args?: UIOpenConfig): void;
     /** 退出视图 */
     onExit(): void;
     /** 暂停视图（被其他视图覆盖） */

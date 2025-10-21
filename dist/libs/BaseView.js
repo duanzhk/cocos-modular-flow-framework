@@ -53,6 +53,29 @@ class BaseView extends Component {
         }
         return this._loaderProxy;
     }
+    /**
+     * 打开时传入的配置数据
+     * 仅供框架内部使用，业务使用 this.args代替
+     */
+    /** @internal */
+    get __config__() {
+        return this._openConfig;
+    }
+    /**
+     * 打开时传入的配置数据
+     * 仅供框架内部使用，业务使用 this.args代替
+     */
+    /** @internal */
+    set __config__(config) {
+        this._openConfig = config;
+    }
+    /**
+     * UIOpenConfig.args
+     */
+    get args() {
+        var _a;
+        return (_a = this._openConfig) === null || _a === void 0 ? void 0 : _a.args;
+    }
     onExit() {
         // 自动清理所有事件监听
         this._eventHandlers.forEach(({ key, listener }) => {

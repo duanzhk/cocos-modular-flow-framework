@@ -1,27 +1,13 @@
 import { Component, director, input, instantiate, Node, Input, EventTouch, Widget, Sprite, Prefab, Color } from "cc";
-import { ICocosResManager, IUIManager, IView, ServiceLocator, getViewClass } from "../core";
+import { ICocosResManager, IUIManager, IView, ServiceLocator, getViewClass, UIOpenConfig } from "../core";
 import { ImageUtil } from "../utils";
 
 /**
  * UI遮罩配置选项
  */
-export interface UIMaskOptions {
+export interface UIMaskConfig {
     /** 遮罩颜色 */
     color?: Color;
-    /** 是否可点击关闭顶层UI */
-    clickToClose?: boolean;
-}
-
-/**
- * UI打开选项
- */
-export interface UIOpenOptions {
-    /** 是否显示等待视图 */
-    showLoading?: boolean;
-    /** 是否可点击遮罩关闭 */
-    clickToClose?: boolean;
-    /** 自定义参数 */
-    args?: any;
 }
 
 /**
@@ -122,20 +108,20 @@ const UIMask = new Proxy({} as Node, {
     }
 })
 
-type ICocosView = IView & Component
+type ICocosView = IView & Component & { __config__: UIOpenConfig | undefined }
 
 // 接口隔离，实现具体的CcocosUIManager
 abstract class CcocosUIManager implements IUIManager {
     getTopView(): IView | undefined {
         return this._internalGetTopView();
     }
-    open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>> {
+    open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>> {
         return this._internalOpen(viewClass, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
     close<T extends keyof UIRegistry>(viewClass: T): Promise<void> {
         return this._internalClose(viewClass);
     }
-    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: UIOpenOptions): Promise<InstanceType<UIRegistry[T]>> {
+    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>> {
         return this._internalOpenAndPush(viewClass, group, args) as Promise<InstanceType<UIRegistry[T]>>;
     }
     closeAndPop(group: string, destroy?: boolean): Promise<void> {
@@ -147,9 +133,9 @@ abstract class CcocosUIManager implements IUIManager {
     closeAll(destroy?: boolean): void {
         this._internalCloseAll(destroy);
     }
-    protected abstract _internalOpen(viewKey: string, args?: UIOpenOptions): Promise<ICocosView>
+    protected abstract _internalOpen(viewKey: string, args?: UIOpenConfig): Promise<ICocosView>
     protected abstract _internalClose(viewKey: string | IView, destory?: boolean): Promise<void>
-    protected abstract _internalOpenAndPush(viewKey: string, group: string, args?: UIOpenOptions): Promise<ICocosView>
+    protected abstract _internalOpenAndPush(viewKey: string, group: string, args?: UIOpenConfig): Promise<ICocosView>
     protected abstract _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
     protected abstract _internalClearStack(group: string, destroy?: boolean): void
     protected abstract _internalGetTopView(): ICocosView | undefined
@@ -167,11 +153,11 @@ export class UIManager extends CcocosUIManager {
     private _lruOrder: string[] = [];
     private _preloadedViews: Set<string> = new Set();
 
-    private _maskOptions: UIMaskOptions = { clickToClose: true };
+    private _maskOptions: UIMaskConfig = {};
     private _loadingConfig: UILoadingConfig = { enabled: true, delay: 200, minShowTime: 500 };
     private _cacheConfig: UICacheConfig = { maxSize: 10, enableLRU: true };
     private _preloadConfig: UIPreloadConfig = { views: [], delay: 1000 };
-    private _openOptions: UIOpenOptions = { showLoading: true, clickToClose: true };
+    private _openOptions: UIOpenConfig = { showLoading: true, clickToCloseMask: true };
 
     public constructor() {
         super();
@@ -183,7 +169,7 @@ export class UIManager extends CcocosUIManager {
     /**
      * 设置遮罩配置
      */
-    public setMaskConfig(options: UIMaskOptions): void {
+    public setMaskConfig(options: UIMaskConfig): void {
         this._maskOptions = { ...this._maskOptions, ...options };
         if (options.color && UIMask) {
             const sprite = UIMask.getComponent(Sprite);
@@ -387,11 +373,12 @@ export class UIManager extends CcocosUIManager {
      */
     private _setupMaskClickHandler(): void {
         UIMask.on(Node.EventType.TOUCH_END, (event: EventTouch) => {
-            if (!this._maskOptions.clickToClose) {
-                return;
-            }
             const view = this._internalGetTopView();
             if (!view) {
+                return;
+            }
+
+            if (!view.__config__?.clickToCloseMask) {
                 return;
             }
 
@@ -540,7 +527,7 @@ export class UIManager extends CcocosUIManager {
         return target.getComponent(viewType)! as ICocosView;
     }
 
-    protected async _internalOpen(viewKey: string, options?: UIOpenOptions): Promise<ICocosView> {
+    protected async _internalOpen(viewKey: string, options?: UIOpenConfig): Promise<ICocosView> {
         const op = { ...this._openOptions, ...options };
 
         // 显示等待视图
@@ -555,6 +542,7 @@ export class UIManager extends CcocosUIManager {
             addChild(view.node);
             this._adjustMaskLayer();
 
+            view.__config__ = op;
             // 先执行onEnter初始化，再播放动画
             view.onEnter(op.args);
 
@@ -582,7 +570,7 @@ export class UIManager extends CcocosUIManager {
         }
     }
 
-    protected async _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenOptions): Promise<ICocosView> {
+    protected async _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenConfig): Promise<ICocosView> {
         const op = { ...this._openOptions, ...options };
 
         // 显示等待视图
@@ -618,6 +606,7 @@ export class UIManager extends CcocosUIManager {
             addChild(view.node);
             this._adjustMaskLayer();
 
+            view.__config__ = op;
             // 先执行onEnter初始化，再播放动画
             view.onEnter(op.args);
 
@@ -733,7 +722,8 @@ export class UIManager extends CcocosUIManager {
             return;
         }
 
-        //forEach 方法会按插入顺序遍历所有 初始存在的元素，即使元素在遍历过程中被删除，也不会影响剩余元素的遍历（已删除的元素不会被重复遍历，但未遍历的元素仍会被处理）。因此可直接在回调中判断并删除目标元素。
+        // forEach 方法会按插入顺序遍历所有 初始存在的元素，即使元素在遍历过程中被删除，也不会影响剩余元素的遍历（已删除的元素不会被重复遍历，但未遍历的元素仍会被处理）。
+        // 因此可直接在回调中判断并删除目标元素。
         this._view2group.forEach((value, key, map) => {
             if (value === group) {
                 map.delete(key);

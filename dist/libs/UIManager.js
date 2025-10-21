@@ -98,11 +98,11 @@ class UIManager extends CcocosUIManager {
         this._loadingPromises = new Map();
         this._lruOrder = [];
         this._preloadedViews = new Set();
-        this._maskOptions = { clickToClose: true };
+        this._maskOptions = {};
         this._loadingConfig = { enabled: true, delay: 200, minShowTime: 500 };
         this._cacheConfig = { maxSize: 10, enableLRU: true };
         this._preloadConfig = { views: [], delay: 1000 };
-        this._openOptions = { showLoading: true, clickToClose: true };
+        this._openOptions = { showLoading: true, clickToCloseMask: true };
         this._setupMaskClickHandler();
         this._startPreload();
     }
@@ -300,11 +300,12 @@ class UIManager extends CcocosUIManager {
      */
     _setupMaskClickHandler() {
         UIMask.on(Node.EventType.TOUCH_END, (event) => {
-            if (!this._maskOptions.clickToClose) {
-                return;
-            }
+            var _a;
             const view = this._internalGetTopView();
             if (!view) {
+                return;
+            }
+            if (!((_a = view.__config__) === null || _a === void 0 ? void 0 : _a.clickToCloseMask)) {
                 return;
             }
             const group = this._view2group.get(view.node);
@@ -462,6 +463,7 @@ class UIManager extends CcocosUIManager {
                 const view = yield this._load(viewKey);
                 addChild(view.node);
                 this._adjustMaskLayer();
+                view.__config__ = op;
                 // 先执行onEnter初始化，再播放动画
                 view.onEnter(op.args);
                 // 播放打开动画
@@ -520,6 +522,7 @@ class UIManager extends CcocosUIManager {
                 stack.push(view);
                 addChild(view.node);
                 this._adjustMaskLayer();
+                view.__config__ = op;
                 // 先执行onEnter初始化，再播放动画
                 view.onEnter(op.args);
                 // 播放打开动画
@@ -629,7 +632,8 @@ class UIManager extends CcocosUIManager {
             console.warn(`No stack found for group ${group}`);
             return;
         }
-        //forEach 方法会按插入顺序遍历所有 初始存在的元素，即使元素在遍历过程中被删除，也不会影响剩余元素的遍历（已删除的元素不会被重复遍历，但未遍历的元素仍会被处理）。因此可直接在回调中判断并删除目标元素。
+        // forEach 方法会按插入顺序遍历所有 初始存在的元素，即使元素在遍历过程中被删除，也不会影响剩余元素的遍历（已删除的元素不会被重复遍历，但未遍历的元素仍会被处理）。
+        // 因此可直接在回调中判断并删除目标元素。
         this._view2group.forEach((value, key, map) => {
             if (value === group) {
                 map.delete(key);
