@@ -163,7 +163,7 @@ abstract class CcocosUIManager implements IUIManager {
 export class UIManager extends CcocosUIManager {
     private _cache: Map<string, Node> = new Map();
     private _groupStacks: Map<string, ICocosView[]> = new Map();
-    private _view2group: Map<ICocosView, string> = new Map();
+    private _view2group: Map<Node, string> = new Map();
 
     private _inputBlocker: ((event: EventTouch) => void) | null = null;
     private _loadingView: Node | null = null;
@@ -373,7 +373,7 @@ export class UIManager extends CcocosUIManager {
                 return;
             }
 
-            const group = this._view2group.get(view);
+            const group = this._view2group.get(view.node);
             if (group && group.trim() != "") {
                 // 栈式UI：调用 _internalCloseAndPop 来处理返回逻辑
                 this._internalCloseAndPop(group, false);
@@ -484,6 +484,16 @@ export class UIManager extends CcocosUIManager {
         for (let i = 0; i < comps.length; i++) {
             const comp = comps[i];
             if ("__isIView__" in comp && comp.__isIView__) {
+                /**
+                 * 这里需要注意：
+                 * 1、_view2group中存储的是通过getComponent获取的。
+                 * 2、这里是通过所node.components获取的。
+                 * 3、这俩种方式获得的引用可能是不同的(_view2group.get(comp) == undefined)
+                 * 4、所以这里需要通过comp.constructor来获取视图类型，然后通过getComponent获取引用，确保一致。
+                 * 5、但我选择了_view2group使用node当作key，这样更稳定。
+                */
+                // const viewType = comp.constructor as new () => ICocosView;
+                // return target.getComponent(viewType) as ICocosView;
                 return comp as unknown as ICocosView;
             }
         }
@@ -599,7 +609,7 @@ export class UIManager extends CcocosUIManager {
             }
 
             // 标记视图所属组并入栈
-            this._view2group.set(view, group);
+            this._view2group.set(view.node, group);
 
             stack.push(view);
 
@@ -634,8 +644,8 @@ export class UIManager extends CcocosUIManager {
         try {
             // 移除当前栈顶视图
             const removed = stack.pop()!;
+            this._view2group.delete(removed.node);
             await this._remove(removed, destroy);
-            this._view2group.delete(removed);
 
             // 恢复上一个视图
             const top = stack[stack.length - 1];
