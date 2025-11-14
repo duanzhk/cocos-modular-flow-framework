@@ -1,14 +1,15 @@
 import { Component } from 'cc';
-import { IView, IEventManager, ICocosResManager, UIOpenConfig } from '../core';
+import { IView, UIOpenConfig } from '../core';
+import { Broadcaster, ResLoader } from '.';
 export declare abstract class BaseView extends Component implements IView {
     /** @internal */
     private readonly __isIView__;
     private _eventProxy?;
     private _eventHandlers;
-    protected get event(): IEventManager;
+    protected get event(): Broadcaster;
     private _loaderProxy?;
     private _loaderHandlers;
-    protected get res(): ICocosResManager;
+    protected get res(): ResLoader;
     private _openConfig;
     /**
      * 打开时传入的配置数据
@@ -29,7 +30,12 @@ export declare abstract class BaseView extends Component implements IView {
     abstract onPause(): void;
     abstract onResume(): void;
     abstract onEnter(args?: UIOpenConfig): void;
-    onExit(): void;
+    abstract onExit(): void;
+    /**
+    * 仅供框架内部使用，业务覆写onExit即可。
+    */
+    /** @internal */
+    __exit__(): void;
     protected onDestroy(): void;
     /**
      * 获取 Model 实例

@@ -12,7 +12,7 @@ const __dirname = dirname(__filename);
 // 1. 先构建 toolsDir 下的内容
 const toolsDir = path.join(__dirname, '../static/mflow-tools');
 console.log(`Building tools in ${toolsDir}...`);
-execSync('npm run build', { cwd: toolsDir, stdio: 'inherit' });
+execSync('rm -rf dist && npm run build', { cwd: toolsDir, stdio: 'inherit' });
 
 // 压缩 static/mflow-tools 目录为 mflow-tools.zip
 const output = fs.createWriteStream(path.join(__dirname, '../dist/mflow-tools.zip'));

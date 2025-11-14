@@ -8,3 +8,4 @@ export { PlatformUtil } from './PlatformUtil.js';
 export { RotateUtil } from './RotateUtil.js';
 export { StringUtil } from './StringUtil.js';
 export { TimeUtil } from './TimeUtil.js';
+export { addWidget } from './UIUtil.js';

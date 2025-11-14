@@ -1,27 +1,6 @@
-import { Component, Node, Color } from "cc";
-import { IUIManager, IView, UIOpenConfig } from "../core";
-/**
- * UI遮罩配置选项
- */
-export interface UIMaskConfig {
-    /** 遮罩颜色 */
-    color?: Color;
-}
-/**
- * 等待视图配置
- */
-export interface UILoadingConfig {
-    /** 是否全局启用等待视图 */
-    enabled?: boolean;
-    /** 等待视图预制体路径 */
-    prefabPath?: string;
-    /** 等待视图显示延迟（毫秒） */
-    delay?: number;
-    /** 最小显示时间（毫秒） */
-    minShowTime?: number;
-    /** 自定义创建函数（高级用法） */
-    createCustomLoading?: () => Node | Promise<Node>;
-}
+import { Component } from "cc";
+import { IView, UIOpenConfig } from "../core";
+import { LayerConfig, UIMaskConfig, UIWaitConfig } from ".";
 /**
  * LRU缓存配置
  */
@@ -42,38 +21,27 @@ export interface UIPreloadConfig {
 }
 type ICocosView = IView & Component & {
     __config__: UIOpenConfig | undefined;
+    __exit__(): void;
 };
-declare abstract class CcocosUIManager implements IUIManager {
-    getTopView(): IView | undefined;
-    open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>>;
-    close<T extends keyof UIRegistry>(viewClass: T): Promise<void>;
-    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>>;
-    closeAndPop(group: string, destroy?: boolean): Promise<void>;
-    clearStack(group: string, destroy?: boolean): void;
-    closeAll(destroy?: boolean): void;
-    protected abstract _internalOpen(viewKey: string, args?: UIOpenConfig): Promise<ICocosView>;
-    protected abstract _internalClose(viewKey: string | IView, destory?: boolean): Promise<void>;
-    protected abstract _internalOpenAndPush(viewKey: string, group: string, args?: UIOpenConfig): Promise<ICocosView>;
-    protected abstract _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
-    protected abstract _internalClearStack(group: string, destroy?: boolean): void;
-    protected abstract _internalGetTopView(): ICocosView | undefined;
-    protected abstract _internalCloseAll(destroy?: boolean): void;
-}
-export declare class UIManager extends CcocosUIManager {
+declare class UIManager {
     private _cache;
     private _groupStacks;
     private _view2group;
     private _inputBlocker;
-    private _loadingView;
-    private _loadingPromises;
+    private _uiLoadingPromises;
     private _lruOrder;
     private _preloadedViews;
-    private _maskOptions;
-    private _loadingConfig;
     private _cacheConfig;
     private _preloadConfig;
     private _openOptions;
+    private _uiRoot;
+    private get Root();
     constructor();
+    /**
+     * 初始化UI层级配置
+     * @param layers 层级配置数组，可以是字符串数组或LayerConfig数组
+     */
+    setLayerConfig(layers: (string | LayerConfig)[]): void;
     /**
      * 设置遮罩配置
      */
@@ -81,7 +49,7 @@ export declare class UIManager extends CcocosUIManager {
     /**
      * 设置等待视图配置
      */
-    setLoadingConfig(config: UILoadingConfig): void;
+    setWaitConfig(config: UIWaitConfig): void;
     /**
      * 设置缓存配置
      */
@@ -93,20 +61,16 @@ export declare class UIManager extends CcocosUIManager {
     /**
      * 检查指定视图是否已打开
      */
-    contains<T extends keyof UIRegistry>(viewKey: T): boolean;
+    isOpened<T extends keyof UIRegistry>(viewKey: T): boolean;
     /**
      * 检查视图是否正在加载
-    */
+     */
     isLoading<T extends keyof UIRegistry>(viewKey: T): boolean;
     /**
      * 预加载视图（支持单个或多个）
      */
     preload<T extends keyof UIRegistry>(viewKeyOrKeys: T | T[]): Promise<void>;
     private _getPrefabPath;
-    /**
-     * 获取所有活跃的视图节点（排除遮罩节点）
-     */
-    private _getActiveViews;
     /**
      * 从给定的Node对象上获得IView类型的脚本
      * @param target
@@ -120,10 +84,6 @@ export declare class UIManager extends CcocosUIManager {
      */
     private _generateNode;
     /**
-     * 调整遮罩层级：始终保持在最顶层UI的下一层
-     */
-    private _adjustMaskLayer;
-    /**
      * 更新LRU顺序
      */
     private _updateLRUOrder;
@@ -131,18 +91,6 @@ export declare class UIManager extends CcocosUIManager {
      * 阻塞/解除输入事件
      */
     private _blockInput;
-    /**
-     * 设置遮罩点击处理器
-     */
-    private _setupMaskClickHandler;
-    /**
-    * 显示等待视图
-    */
-    private _showLoading;
-    /**
-     * 隐藏等待视图
-     */
-    private _hideLoading;
     /**
      * 预加载视图
      */
@@ -152,7 +100,7 @@ export declare class UIManager extends CcocosUIManager {
      */
     private _preloadView;
     /**
-     * 获取当前最顶层的视图
+     * 计算所有层级，获取最顶层的视图
      */
     protected _internalGetTopView(): ICocosView | undefined;
     private _load;
@@ -161,6 +109,14 @@ export declare class UIManager extends CcocosUIManager {
     protected _internalClose(viewKeyOrInstance: string | IView, destroy?: boolean): Promise<void>;
     protected _internalOpenAndPush(viewKey: string, group: string, options?: UIOpenConfig): Promise<ICocosView>;
     protected _internalCloseAndPop(group: string, destroy?: boolean): Promise<void>;
+    /**
+     * 按顺序打开一组UI，如果前一个UI正在打开，则等待前一个UI关闭后再打开下一个UI
+     * @param queue 要打开的UI队列
+     */
+    protected _internalOpenQueue(queue: {
+        viewKey: string;
+        options: UIOpenConfig;
+    }[], index?: number): void;
     /**
      * 移除视图
      */
@@ -171,5 +127,18 @@ export declare class UIManager extends CcocosUIManager {
      * 关闭所有视图，不播放动画
      */
     protected _internalCloseAll(destroy?: boolean): void;
+}
+export declare class CCUIManager extends UIManager {
+    getTopView(): IView | undefined;
+    open<T extends keyof UIRegistry>(viewClass: T, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>>;
+    close<T extends keyof UIRegistry>(viewClass: T): Promise<void>;
+    openAndPush<T extends keyof UIRegistry>(viewClass: T, group: string, args?: UIOpenConfig): Promise<InstanceType<UIRegistry[T]>>;
+    closeAndPop(group: string, destroy?: boolean): Promise<void>;
+    openQueue(queue: {
+        viewKey: string;
+        options: UIOpenConfig;
+    }[]): void;
+    clearStack(group: string, destroy?: boolean): void;
+    closeAll(destroy?: boolean): void;
 }
 export {};

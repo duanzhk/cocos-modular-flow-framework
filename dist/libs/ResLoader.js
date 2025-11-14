@@ -34,18 +34,20 @@ class ResLoader {
      */
     loadAsset(path, type, nameOrUrl = DefaultBundle) {
         return __awaiter(this, void 0, void 0, function* () {
-            // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
-            const _path = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
             // 加载资源的通用逻辑
-            const loadFromBundle = (bundle) => {
-                const cachedAsset = bundle.get(_path, type);
+            const _loadFromBundle = (bundle) => {
+                // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
+                let assetPath = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
+                // 删除后缀
+                assetPath = assetPath.replace(/\.[^/.]+$/, '');
+                const cachedAsset = bundle.get(assetPath, type);
                 if (cachedAsset) {
                     cachedAsset.addRef();
                     return Promise.resolve(cachedAsset);
                 }
                 else {
                     return new Promise((resolve, reject) => {
-                        bundle.load(_path, type, (err, data) => {
+                        bundle.load(assetPath, type, (err, data) => {
                             if (err) {
                                 reject(err);
                             }
@@ -58,7 +60,7 @@ class ResLoader {
                 }
             };
             const bundle = yield this._loadBundle(nameOrUrl);
-            return loadFromBundle(bundle);
+            return _loadFromBundle(bundle);
         });
     }
     loadPrefab(path, nameOrUrl = DefaultBundle) {

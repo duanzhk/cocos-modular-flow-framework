@@ -7,6 +7,7 @@ class RedDotManager {
     constructor() {
         this._root = null;
         this._nodeCache = new Map();
+        this.initialize();
     }
     initialize() {
         this._root = new RedDotNode('root');

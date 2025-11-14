@@ -1,12 +1,15 @@
-import { IRedDotManager } from "../../core";
 import { RedDotNode } from "./RedDotNode";
 
 /**
  * 红点管理器,管理整个游戏的红点系统
  */
-export class RedDotManager implements IRedDotManager {
+export class RedDotManager {
     private _root: RedDotNode = null!;
     private _nodeCache: Map<string, RedDotNode> = new Map();
+
+    constructor() {
+        this.initialize();
+    }
 
     initialize(): void {
         this._root = new RedDotNode('root');
@@ -26,7 +29,7 @@ export class RedDotManager implements IRedDotManager {
     private _getOrCreateNode(path: string): RedDotNode {
         // 标准化路径
         path = this._normalizePath(path);
-        
+
         // 检查缓存
         if (this._nodeCache.has(path)) {
             return this._nodeCache.get(path)!;
@@ -40,16 +43,16 @@ export class RedDotManager implements IRedDotManager {
         // 逐级创建节点
         for (const part of parts) {
             if (!part) continue;
-            
+
             currentPath = currentPath === 'root' ? part : `${currentPath}/${part}`;
-            
+
             let childNode = currentNode.getChild(part);
             if (!childNode) {
                 childNode = new RedDotNode(currentPath);
                 currentNode.addChild(childNode);
                 this._nodeCache.set(currentPath, childNode);
             }
-            
+
             currentNode = childNode;
         }
 
@@ -112,7 +115,7 @@ export class RedDotManager implements IRedDotManager {
     on(path: string, listener: Function): void {
         const node = this._getOrCreateNode(path);
         node.addListener(listener);
-        
+
         // 立即触发一次，让监听者知道当前状态
         listener(node.getTotalCount(), node.getCount());
     }

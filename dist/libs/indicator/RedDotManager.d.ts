@@ -1,10 +1,10 @@
-import { IRedDotManager } from "../../core";
 /**
  * 红点管理器,管理整个游戏的红点系统
  */
-export declare class RedDotManager implements IRedDotManager {
+export declare class RedDotManager {
     private _root;
     private _nodeCache;
+    constructor();
     initialize(): void;
     dispose(): void;
     /**

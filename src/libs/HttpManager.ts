@@ -1,4 +1,20 @@
-import { IHttpManager, HttpRequestOptions } from "../core";
+/**
+* HTTP 请求配置
+*/
+export interface HttpRequestOptions {
+    /** 请求 URL */
+    url: string;
+    /** HTTP 方法 */
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
+    /** 请求头 */
+    headers?: Record<string, string>;
+    /** URL 参数 */
+    params?: Record<string, any>;
+    /** 请求体数据 */
+    data?: any;
+    /** 超时时间（毫秒） */
+    timeout?: number;
+}
 
 /**
  * HTTP 管理器实现类
@@ -19,8 +35,7 @@ import { IHttpManager, HttpRequestOptions } from "../core";
     ↓
     【错误拦截器】统一处理错误（如显示提示、记录日志等）
  */
-
-export class HttpManager implements IHttpManager {
+export class HttpManager {
     private baseURL: string = ''; // 基础 URL
     private defaultTimeout: number = 10000; // 默认超时时间 10 秒
     private defaultHeaders: Record<string, string> = {

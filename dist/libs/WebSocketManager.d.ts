@@ -1,4 +1,24 @@
-import { IWebSocketManager, WebSocketConfig } from "../core";
+/**
+ * WebSocket 配置
+ */
+export interface WebSocketConfig {
+    /** WebSocket URL */
+    url: string;
+    /** 协议 */
+    protocols?: string | string[];
+    /** 是否自动重连 */
+    reconnect?: boolean;
+    /** 重连间隔（毫秒） */
+    reconnectInterval?: number;
+    /** 重连尝试次数 */
+    reconnectAttempts?: number;
+    /** 是否启用心跳 */
+    heartbeat?: boolean;
+    /** 心跳间隔（毫秒） */
+    heartbeatInterval?: number;
+    /** 心跳消息 */
+    heartbeatMessage?: string;
+}
 /**
  * WebSocket 管理器实现类
  *
@@ -8,7 +28,7 @@ import { IWebSocketManager, WebSocketConfig } from "../core";
  * 3. 事件管理：统一的事件监听和触发
  * 4. 消息队列：连接断开时缓存消息，重连后自动发送
  */
-export declare class WebSocketManager implements IWebSocketManager {
+export declare class WebSocketManager {
     private ws;
     private url;
     private protocols?;

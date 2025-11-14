@@ -25,7 +25,8 @@ class BaseView extends Component {
                                     this._eventHandlers.push({ key: keyOrHandler, listener: listener });
                                 }
                             });
-                            return Reflect.get(target, prop).apply(target, [keyOrHandler, listener, context, args]);
+                            // return Reflect.get(target, prop).apply(target, [keyOrHandler, listener, context, args]);
+                            return target[prop](keyOrHandler, listener, context, args);
                         };
                     }
                     return Reflect.get(target, prop);
@@ -76,13 +77,19 @@ class BaseView extends Component {
         var _a;
         return (_a = this._openConfig) === null || _a === void 0 ? void 0 : _a.args;
     }
-    onExit() {
+    /**
+    * 仅供框架内部使用，业务覆写onExit即可。
+    */
+    /** @internal */
+    __exit__() {
+        var _a, _b;
         // 自动清理所有事件监听
         this._eventHandlers.forEach(({ key, listener }) => {
             //@ts-ignore
             mf.event.off(key, listener);
         });
         this._eventHandlers = [];
+        (_b = (_a = this.__config__) === null || _a === void 0 ? void 0 : _a.onExitCallback) === null || _b === void 0 ? void 0 : _b.call(_a, this);
     }
     onDestroy() {
         // 自动清理加载的资源

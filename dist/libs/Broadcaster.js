@@ -1,12 +1,30 @@
 import { ObjectUtil } from '../utils/ObjectUtil.js';
 import { StringUtil } from '../utils/StringUtil.js';
 
+/**
+ * 事件广播器 - 非泛型版本
+ * 提供事件的注册、派发、粘性广播等功能
+ */
 class Broadcaster {
     constructor() {
+        this.initialize();
+    }
+    initialize() {
         this._persistBrodcastMap = {};
         this._listenerHandlerMap = {};
         this._stickBrodcastMap = {};
         this._unuseHandlers = [];
+    }
+    /**
+     * 销毁广播系统
+     */
+    dispose() {
+        //@ts-ignore
+        this._listenerHandlerMap = undefined;
+        //@ts-ignore
+        this._stickBrodcastMap = undefined;
+        //@ts-ignore
+        this._persistBrodcastMap = undefined;
     }
     /**
      * 回收handler
@@ -17,8 +35,11 @@ class Broadcaster {
             return;
         //@ts-ignore
         handler.listener = undefined;
+        //@ts-ignore
         handler.key = undefined;
+        //@ts-ignore
         handler.args = undefined;
+        //@ts-ignore
         handler.context = undefined;
         this._unuseHandlers.push(handler);
     }
@@ -46,10 +67,10 @@ class Broadcaster {
         const stickyHandlers = this._stickBrodcastMap[msgKey];
         if (stickyHandlers) {
             //需要把执行过的粘性广播删除，防止注册时再次执行
-            this.removeStickyBroadcast(msgKey);
+            this.removeStickyBroadcast(handler.key);
             for (let i = 0; i < stickyHandlers.length; i++) {
                 let e = stickyHandlers[i];
-                this.dispatch(msgKey, e.data, e.callback, e.persistence);
+                this.dispatch(e.key, e.data, e.callback, e.persistence);
             }
         }
     }
@@ -63,11 +84,11 @@ class Broadcaster {
         if (!handler.listener)
             return;
         let args = [];
-        if (data) {
+        if (data !== undefined) {
             args.push(data);
         }
         if (callback) {
-            data.push(callback);
+            args.push(callback);
         }
         //如果有透传参数，则添加到参数列表中
         if (handler.args && handler.args.length > 0) {
@@ -133,16 +154,16 @@ class Broadcaster {
             this._checkListenerValidity(msgKey);
         };
         if (key) { //清除指定key的所有监听
-            if (!handlerMap[key]) {
+            const keyStr = key;
+            if (!handlerMap[keyStr]) {
                 throw new Error(`没有找到key为${key.toString()}的事件`);
             }
-            processHandler(handlerMap[key], key, false);
+            processHandler(handlerMap[keyStr], keyStr, false);
         }
         else { //处理全局或上下文清除
             const isGlobalClear = !context;
             Object.keys(handlerMap).forEach((msgKey) => {
-                const k = msgKey;
-                processHandler(handlerMap[k], k, !isGlobalClear);
+                processHandler(handlerMap[msgKey], msgKey, !isGlobalClear);
             });
             isGlobalClear && (this._listenerHandlerMap = {});
         }
@@ -156,14 +177,17 @@ class Broadcaster {
      * @param persistence 是否持久化消息类型。持久化的消息可以在任意时刻通过 getPersistentValue(key) 获取最后一次被持久化的数据。
      */
     dispatch(key, data, callback, persistence) {
-        if (StringUtil.isEmptyOrWhiteSpace(key.toString())) {
+        const keyStr = key;
+        if (StringUtil.isEmptyOrWhiteSpace(keyStr)) {
             throw new Error('广播的key不能为空');
         }
         //持久化
-        persistence !== null && persistence !== void 0 ? persistence : (this._persistBrodcastMap[key] = data);
-        const handlers = this._listenerHandlerMap[key];
+        if (persistence) {
+            this._persistBrodcastMap[keyStr] = data;
+        }
+        const handlers = this._listenerHandlerMap[keyStr];
         if (!handlers || handlers.length == 0) {
-            console.warn(`没有注册广播：${key.toString()}`);
+            console.warn(`没有注册广播：${keyStr}`);
             return;
         }
         for (let i = handlers.length - 1; i >= 0; i--) {
@@ -173,7 +197,7 @@ class Broadcaster {
                 this.off(key, handler.listener);
             }
         }
-        this._checkListenerValidity(key);
+        this._checkListenerValidity(keyStr);
     }
     /**
      * 广播一条粘性消息。如果广播系统中没有注册该类型的接收者，本条信息将被滞留在系统中，否则等效dispatch方法。
@@ -187,16 +211,17 @@ class Broadcaster {
     dispatchSticky(key, data, callback, persistence) {
         var _a;
         var _b;
-        if (StringUtil.isEmptyOrWhiteSpace(key.toString())) {
+        const keyStr = key;
+        if (StringUtil.isEmptyOrWhiteSpace(keyStr)) {
             throw new Error('广播的key不能为空');
         }
         //如果已经有了监听者，则直接广播
-        if (this._listenerHandlerMap[key]) {
+        if (this._listenerHandlerMap[keyStr]) {
             this.dispatch(key, data, callback, persistence);
             return;
         }
         //注意：??= 在ES2021(TypeScript版本4.4)引入
-        ((_a = (_b = this._stickBrodcastMap)[key]) !== null && _a !== void 0 ? _a : (_b[key] = [])).push({
+        ((_a = (_b = this._stickBrodcastMap)[keyStr]) !== null && _a !== void 0 ? _a : (_b[keyStr] = [])).push({
             key: key,
             data: data,
             callback: callback,
@@ -204,7 +229,9 @@ class Broadcaster {
         });
         //如果persistence=true需要先持久化，不能等到通过on->broadcast的时候再持久化。
         //因为中途可能会有removeStickyBroadcast操作，那么on就不会调用broadcast，造成持久化无效bug。
-        persistence !== null && persistence !== void 0 ? persistence : (this._persistBrodcastMap[key] = data);
+        if (persistence) {
+            this._persistBrodcastMap[keyStr] = data;
+        }
     }
     /**
      * 移除指定的粘性广播
@@ -212,8 +239,9 @@ class Broadcaster {
      * @param key
      */
     removeStickyBroadcast(key) {
-        if (this._stickBrodcastMap[key]) {
-            delete this._stickBrodcastMap[key];
+        const keyStr = key;
+        if (this._stickBrodcastMap[keyStr]) {
+            delete this._stickBrodcastMap[keyStr];
         }
     }
     /**
@@ -229,17 +257,6 @@ class Broadcaster {
      */
     getPersistentValue(key) {
         return this._persistBrodcastMap[key];
-    }
-    /**
-    * 销毁广播系统
-    */
-    dispose() {
-        //@ts-ignore
-        this._listenerHandlerMap = undefined;
-        //@ts-ignore
-        this._stickBrodcastMap = undefined;
-        //@ts-ignore
-        this._persistBrodcastMap = undefined;
     }
 }
 

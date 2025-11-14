@@ -8,3 +8,4 @@ export * from './PlatformUtil';
 export * from './RotateUtil';
 export * from './StringUtil';
 export * from './TimeUtil';
+export * from './UIUtil';

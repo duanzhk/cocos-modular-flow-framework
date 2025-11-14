@@ -1,8 +1,10 @@
 import { assetManager, Asset, AssetManager, Prefab, SpriteFrame, Sprite, sp, path } from "cc";
-import { ICocosResManager, AssetType } from "../core";
+
+export type AssetType<T> = new (...args: any[]) => T;
 
 const DefaultBundle = "resources";
-export class ResLoader implements ICocosResManager {
+
+export class ResLoader {
     /**
      * 
      * @param nameOrUrl 资源包名称或路径
@@ -33,17 +35,19 @@ export class ResLoader implements ICocosResManager {
      * @returns 
      */
     async loadAsset<T extends Asset>(path: string, type: AssetType<T>, nameOrUrl: string = DefaultBundle): Promise<T> {
-        // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
-        const _path = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
         // 加载资源的通用逻辑
-        const loadFromBundle = (bundle: AssetManager.Bundle): Promise<T> => {
-            const cachedAsset = bundle.get<T>(_path, type);
+        const _loadFromBundle = (bundle: AssetManager.Bundle): Promise<T> => {
+            // 如果是在resources路径下，则截取resources之后的路径，否则直接使用路径
+            let assetPath = (nameOrUrl == DefaultBundle && path.includes('resources')) ? path.split('resources/')[1] : path;
+            // 删除后缀
+            assetPath = assetPath.replace(/\.[^/.]+$/, '');
+            const cachedAsset = bundle.get<T>(assetPath, type);
             if (cachedAsset) {
                 cachedAsset.addRef();
                 return Promise.resolve(cachedAsset);
             } else {
                 return new Promise((resolve, reject) => {
-                    bundle.load<T>(_path, type, (err: Error | null, data: T) => {
+                    bundle.load<T>(assetPath, type, (err: Error | null, data: T) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -56,7 +60,7 @@ export class ResLoader implements ICocosResManager {
         };
 
         const bundle = await this._loadBundle(nameOrUrl);
-        return loadFromBundle(bundle);
+        return _loadFromBundle(bundle);
     }
 
     async loadPrefab(path: string, nameOrUrl: string = DefaultBundle): Promise<Prefab> {

@@ -1,5 +1,5 @@
-import { ICore, IUIManager, ServiceLocator, IEventMsgKey, IEventManager, ICocosResManager, IHttpManager, IWebSocketManager, IRedDotManager } from "./core";
-
+import { ICore, ServiceLocator } from "./core";
+import { CCUIManager, HttpManager, WebSocketManager, ResLoader, RedDotManager, Broadcaster } from "./libs";
 /**
  * 对外暴露的全局app对像，用于访问基础能力，为上层业务提供了简洁的访问方式
  * 
@@ -11,23 +11,23 @@ export class App {
     }
     static readonly log: any = null;
     static readonly config: any = null;
-    static get gui(): IUIManager {
-        return ServiceLocator.getService<IUIManager>('UIManager')
+    static get gui(): CCUIManager {
+        return ServiceLocator.getService<CCUIManager>('UIManager');
     }
-    static get http(): IHttpManager {
-        return ServiceLocator.getService<IHttpManager>('HttpManager')
+    static get http(): HttpManager {
+        return ServiceLocator.getService<HttpManager>('HttpManager');
     }
-    static get socket(): IWebSocketManager {
-        return ServiceLocator.getService<IWebSocketManager>('WebSocketManager')
+    static get socket(): WebSocketManager {
+        return ServiceLocator.getService<WebSocketManager>('WebSocketManager');
     }
-    static get res(): ICocosResManager {
-        return ServiceLocator.getService<ICocosResManager>('ResLoader')
+    static get res(): ResLoader {
+        return ServiceLocator.getService<ResLoader>('ResLoader');
     }
-    static get event(): IEventManager {
-        return ServiceLocator.getService<IEventManager>('EventManager')
+    static get event(): Broadcaster {
+        return ServiceLocator.getService<Broadcaster>('EventManager');
     }
-    static get reddot(): IRedDotManager {
-        return ServiceLocator.getService<IRedDotManager>('ReddotManager')
+    static get reddot(): RedDotManager {
+        return ServiceLocator.getService<RedDotManager>('ReddotManager');
     }
     static readonly storage: any = null;
     static readonly audio: any = null;

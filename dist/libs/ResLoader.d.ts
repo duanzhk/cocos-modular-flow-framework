@@ -1,6 +1,6 @@
 import { Asset, Prefab, SpriteFrame, Sprite, sp } from "cc";
-import { ICocosResManager, AssetType } from "../core";
-export declare class ResLoader implements ICocosResManager {
+export type AssetType<T> = new (...args: any[]) => T;
+export declare class ResLoader {
     /**
      *
      * @param nameOrUrl 资源包名称或路径

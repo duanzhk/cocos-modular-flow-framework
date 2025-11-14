@@ -1,4 +1,24 @@
-import { IWebSocketManager, WebSocketConfig } from "../core";
+/**
+ * WebSocket 配置
+ */
+export interface WebSocketConfig {
+    /** WebSocket URL */
+    url: string;
+    /** 协议 */
+    protocols?: string | string[];
+    /** 是否自动重连 */
+    reconnect?: boolean;
+    /** 重连间隔（毫秒） */
+    reconnectInterval?: number;
+    /** 重连尝试次数 */
+    reconnectAttempts?: number;
+    /** 是否启用心跳 */
+    heartbeat?: boolean;
+    /** 心跳间隔（毫秒） */
+    heartbeatInterval?: number;
+    /** 心跳消息 */
+    heartbeatMessage?: string;
+}
 
 /**
  * WebSocket 管理器实现类
@@ -9,28 +29,28 @@ import { IWebSocketManager, WebSocketConfig } from "../core";
  * 3. 事件管理：统一的事件监听和触发
  * 4. 消息队列：连接断开时缓存消息，重连后自动发送
  */
-export class WebSocketManager implements IWebSocketManager {
+export class WebSocketManager {
     private ws: WebSocket | null = null;
     private url: string = '';
     private protocols?: string | string[];
-    
+
     // 配置项
     private reconnect: boolean = true; // 是否自动重连
     private reconnectInterval: number = 3000; // 重连间隔（毫秒）
     private reconnectAttempts: number = 5; // 最大重连次数
     private currentReconnectAttempts: number = 0; // 当前重连次数
-    
+
     private heartbeat: boolean = true; // 是否启用心跳
     private heartbeatInterval: number = 30000; // 心跳间隔（毫秒）
     private heartbeatMessage: string = 'ping'; // 心跳消息
     private heartbeatTimer: any = null; // 心跳定时器
-    
+
     // 事件监听器
     private eventHandlers: Map<string, Set<Function>> = new Map();
-    
+
     // 消息队列（连接断开时缓存消息）
     private messageQueue: Array<string | ArrayBuffer | Blob> = [];
-    
+
     // 重连定时器
     private reconnectTimer: any = null;
 
@@ -66,14 +86,14 @@ export class WebSocketManager implements IWebSocketManager {
      */
     disconnect(code?: number, reason?: string): void {
         this.reconnect = false; // 禁止自动重连
-        
+
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
         }
-        
+
         this._stopHeartbeat();
-        
+
         if (this.ws) {
             this.ws.close(code || 1000, reason || 'Normal closure');
             this.ws = null;
@@ -90,14 +110,14 @@ export class WebSocketManager implements IWebSocketManager {
      */
     send(data: string | ArrayBuffer | Blob | object): void {
         let sendData: string | ArrayBuffer | Blob;
-        
+
         // 自动处理对象类型，转换为 JSON 字符串
         if (typeof data === 'object' && !(data instanceof ArrayBuffer) && !(data instanceof Blob)) {
             sendData = JSON.stringify(data);
         } else {
             sendData = data as string | ArrayBuffer | Blob;
         }
-        
+
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(sendData);
         } else {
@@ -175,7 +195,7 @@ export class WebSocketManager implements IWebSocketManager {
      */
     private _createWebSocket(): void {
         try {
-            this.ws = this.protocols 
+            this.ws = this.protocols
                 ? new WebSocket(this.url, this.protocols)
                 : new WebSocket(this.url);
 
@@ -197,15 +217,15 @@ export class WebSocketManager implements IWebSocketManager {
     private _onOpen(event: Event): void {
         console.log('✅ WebSocket 连接成功');
         this.currentReconnectAttempts = 0;
-        
+
         // 启动心跳
         if (this.heartbeat) {
             this._startHeartbeat();
         }
-        
+
         // 发送队列中的消息
         this._sendQueuedMessages();
-        
+
         // 触发 open 事件
         this._emit('open', event);
     }
@@ -231,17 +251,17 @@ export class WebSocketManager implements IWebSocketManager {
      */
     private _onClose(event: CloseEvent): void {
         console.log(`🔌 WebSocket 连接关闭: code=${event.code}, reason=${event.reason}`);
-        
+
         this._stopHeartbeat();
-        
+
         // 触发 close 事件
         this._emit('close', event);
-        
+
         // 尝试重连
         if (this.reconnect && this.currentReconnectAttempts < this.reconnectAttempts) {
             this.currentReconnectAttempts++;
             console.log(`🔄 尝试重连 (${this.currentReconnectAttempts}/${this.reconnectAttempts})...`);
-            
+
             this.reconnectTimer = setTimeout(() => {
                 this._createWebSocket();
             }, this.reconnectInterval);
@@ -271,7 +291,7 @@ export class WebSocketManager implements IWebSocketManager {
      */
     private _startHeartbeat(): void {
         this._stopHeartbeat();
-        
+
         this.heartbeatTimer = setInterval(() => {
             if (this.isConnected()) {
                 console.log('💓 发送心跳');
@@ -296,7 +316,7 @@ export class WebSocketManager implements IWebSocketManager {
     private _sendQueuedMessages(): void {
         if (this.messageQueue.length > 0) {
             console.log(`📤 发送队列中的 ${this.messageQueue.length} 条消息`);
-            
+
             while (this.messageQueue.length > 0) {
                 const message = this.messageQueue.shift();
                 if (message) {

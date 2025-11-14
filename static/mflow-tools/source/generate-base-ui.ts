@@ -42,7 +42,7 @@ async function createScript(info: { url: string, name: string, props: Props }): 
     //创建base脚本
     let content = `
 import { _decorator,Component,${imports} } from 'cc';
-import { BaseView } from "dzkcc-mflow/libs";
+import { BaseView } from "@sm-fe/cc-mflow/libs";
 const { ccclass, property, disallowMultiple } = _decorator;
 @disallowMultiple()
 export abstract class ${basescript} extends BaseView {
@@ -65,7 +65,7 @@ export abstract class ${basescript} extends BaseView {
 //@ts-ignore
 import { ${basescript} } from 'db://assets/src/views/${basescript}';
 import { _decorator } from 'cc';
-import { view } from 'dzkcc-mflow/core';
+import { view } from '@sm-fe/cc-mflow/core';
 const { ccclass, property } = _decorator;
 
 @view()

@@ -125,6 +125,7 @@ export class HomeView extends BaseHomeView {
 ### 步骤 4：脚本自动挂载
 
 插件会自动将生成的脚本挂载到 Prefab 上，并设置好所有组件引用。
+- ***`ps：这里需要注意，脚本需要在UITransform组件下面才能被正确设置属性。`***
 
 ## 完整示例
 
